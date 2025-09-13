@@ -35,6 +35,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+   # 狀態管理
+  provider: ^6.1.2
+
+  # 本地資料庫 (Isar)
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.2
+
+  # 語音功能
+  flutter_tts: ^3.8.5       # 文字轉語音
+  speech_to_text: ^6.6.1    # 語音轉文字
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
