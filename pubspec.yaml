@@ -44,7 +44,7 @@ dependencies:
   path_provider: ^2.1.5
 
   # 語音功能
-  flutter_tts: ^3.8.5       # 文字轉語音
+  flutter_tts: ^4.2.3       # 文字轉語音
   speech_to_text: ^7.3.0    # 語音轉文字
 
 dev_dependencies:
