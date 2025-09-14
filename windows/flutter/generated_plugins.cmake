@@ -4,7 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_tts
-  isar_flutter_libs
   speech_to_text_windows
 )
 

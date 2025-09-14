@@ -1,122 +1,132 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+// models (Isar collections)
+import 'package:accessible_shop/models/product.dart';
+import 'package:accessible_shop/models/cart_item.dart';
+import 'package:accessible_shop/models/order.dart';
+import 'package:accessible_shop/models/user_settings.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// services
+import 'package:accessible_shop/services/database_service.dart';
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+// pages - 使用 package 匯入，確保 analyzer 能正確解析符號
+import 'package:accessible_shop/pages/home/home_page.dart';
+import 'package:accessible_shop/pages/product/product_detail_page.dart';
+import 'package:accessible_shop/pages/cart/cart_page.dart';
+import 'package:accessible_shop/pages/checkout/checkout_page.dart';
+import 'package:accessible_shop/pages/orders/order_history_page.dart';
+import 'package:accessible_shop/pages/settings/settings_page.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 取得 app documents 目錄 (Isar 存放目錄)
+  final dir = await getApplicationDocumentsDirectory();
+
+  // 開啟 Isar DB，並傳入所有需要的 schema（由 build_runner 產生）
+  // 注意：schemas 參數需為 collection schema 列表（ProductSchema 等）
+  late final Isar isar;
+  try {
+    isar = await Isar.open(
+      [
+        ProductSchema,
+        CartItemSchema,
+        OrderSchema,
+        UserSettingsSchema,
+      ],
+      directory: dir.path,
     );
+  } catch (e, st) {
+    // 若 Isar 開啟失敗，印出錯誤以供診斷
+    // 常見原因：未產生 *.g.dart、schema 名稱拼錯、build_runner 尚未執行
+    debugPrint('Failed to open Isar: $e');
+    debugPrint('$st');
+    rethrow;
   }
+
+  // 啟動 App 並把 isar 傳入（DatabaseService 會使用它）
+  runApp(AccessibleShopApp(isar: isar));
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class AccessibleShopApp extends StatelessWidget {
+  final Isar isar;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  const AccessibleShopApp({super.key, required this.isar});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MultiProvider(
+      providers: [
+        // DatabaseService 負責 Isar 操作與 ChangeNotifier 事件通知
+        ChangeNotifierProvider<DatabaseService>(
+          create: (_) => DatabaseService(isar),
         ),
+        // 若有其他全域 state，也在這裡加入 Provider 或其它 state 管理器
+      ],
+      child: MaterialApp(
+        title: 'Accessible Shop',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          // 為了無障礙，可考慮 later 提供多種 theme 與高對比模式
+          primarySwatch: Colors.teal,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+
+        // 初始頁面
+        initialRoute: '/',
+
+        // 固定 route 表
+        // 若某些 page 需要接收參數（例：商品 id），請改用 onGenerateRoute 處理帶參路由
+        routes: {
+          '/': (context) => HomePage(),                // 確保已正確 import 並定義 HomePage
+          '/product': (context) => ProductDetailPage(),// 若需要 productId，改用 onGenerateRoute 傳參
+          '/cart': (context) => CartPage(),
+          '/checkout': (context) => CheckoutPage(),
+          '/orders': (context) => OrderHistoryPage(),
+          '/settings': (context) => SettingsPage(),
+        },
+
+        // onGenerateRoute: 建議用法（範例：若 product page 需要 id）
+        // 當你要以 Navigator.pushNamed(context, '/product', arguments: 123) 的方式呼叫時，
+        // 可在這裡把 arguments 取出並傳給對應的頁面建構子。
+        onGenerateRoute: (settings) {
+          // 範例處理：'/product' 並帶一個 int productId
+          if (settings.name == '/product') {
+            final args = settings.arguments;
+            if (args is int) {
+              // 這裡假設 ProductDetailPage 有一個 productId 的命名參數
+              return MaterialPageRoute(
+                builder: (_) => ProductDetailPage(productId: args),
+                settings: settings,
+              );
+            } else {
+              // 未傳參時，回傳一個空白或錯誤頁面（或使用無參構造）
+              return MaterialPageRoute(
+                builder: (_) => ProductDetailPage(),
+                settings: settings,
+              );
+            }
+          }
+
+          // 其它動態路由可以在此處擴充
+
+          // 若不是我們處理的路由，回傳 null 讓 framework 使用 routes map 或 onUnknownRoute
+          return null;
+        },
+
+        // onUnknownRoute: fallback route（可顯示 404 / 提示頁）
+        onUnknownRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('頁面不存在')),
+              body: const Center(child: Text('找不到該頁面')),
+            ),
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
