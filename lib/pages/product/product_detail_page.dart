@@ -1,17 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/database_service.dart';
+import '../../models/product.dart';
 
-class ProductDetailPage extends StatelessWidget {
-  final int? productId; // 可選，未來可傳入商品 ID
+class ProductDetailPage extends StatefulWidget {
+  final int? productId;
+  final Map<String, dynamic>? productArguments;
 
-  const ProductDetailPage({super.key, this.productId});
+  // ✅ 使用 super.key
+  const ProductDetailPage({super.key, this.productId, this.productArguments});
+
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  Map<String, dynamic>? _product;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProduct();
+  }
+
+  Future<void> _loadProduct() async {
+    if (widget.productArguments != null) {
+      _product = widget.productArguments;
+    } else if (widget.productId != null) {
+      try {
+        final db = Provider.of<DatabaseService>(context, listen: false);
+        final Product? p = await db.getProductById(widget.productId!);
+        if (p != null) {
+          _product = {
+            'id': p.id,
+            'name': p.name,
+            'price': p.price,
+            'imageUrl': p.imageUrl ?? '',
+            'description': p.description ?? '',
+          };
+        }
+      } catch (_) {}
+    }
+    setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("📄 商品詳細頁")),
-      body: Center(
-        child: Text("這裡是商品詳細資訊頁面 (商品ID: ${productId ?? '未提供'})"),
+      appBar: AppBar(
+        title: Text(_product?['name'] ?? '商品詳情'),
       ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _product == null
+              ? const Center(child: Text('找不到商品資料'))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.network(
+                          _product!['imageUrl'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _product!['name'],
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '\$${_product!['price'].toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 18, color: Colors.teal),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(_product!['description'] ?? '沒有描述'),
+                    ],
+                  ),
+                ),
     );
   }
 }
