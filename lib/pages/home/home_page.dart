@@ -1,203 +1,192 @@
-// lib/pages/home/home_page.dart
-//
-// HomePage：
-// - 會嘗試從已註冊的 DatabaseService 讀取商品（若 Provider 存在且 DB 有資料）
-// - 如果沒有 Provider 或 DB 無資料，會使用檔案內的假資料（方便快速預覽）
-// - 支援搜尋（本地過濾）
-// - 商品卡點擊會使用 Navigator.pushNamed('/product', arguments: {...})
-//
-// 注意：為避免與 Isar 的 model 直接耦合，這裡用 Map<String,dynamic> 作為輕量的 UI 商品表示。
-// 若未來你要改用 Data Model，請在 DatabaseService 裡提供一個轉換方法。
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:accessible_shop/services/database_service.dart';
-import '../../widgets/custom_card.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
+/// 入口卡片資料結構
+class ShopEntryItem {
+  final String title;
+  final IconData icon;
+  final String route; // 對應的路由名稱
+  final Widget Function(BuildContext) contentBuilder;
+
+  const ShopEntryItem({
+    required this.title,
+    required this.icon,
+    required this.route,
+    required this.contentBuilder,
+  });
+}
+
+/// 首頁（滑動卡片 + 無障礙語音 + 單擊/雙擊操作）
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  // 本頁面的資料形式：List of Map (id, name, price, imageUrl)
-  List<Map<String, dynamic>> _products = [];
-  List<Map<String, dynamic>> _filtered = [];
-  bool _loading = true;
-  String _query = '';
+  late PageController _pageController;
+  int _currentPageIndex = 0;
+  final FlutterTts _flutterTts = FlutterTts();
 
-  // 假資料：開發 / 預覽用（若 DB 沒資料會使用這些）
-  static const List<Map<String, dynamic>> _fakeProducts = [
-    {
-      'id': 1,
-      'name': 'Vintage Camera',
-      'price': 299.99,
-      'imageUrl': 'https://picsum.photos/400/300?image=1',
-    },
-    {
-      'id': 2,
-      'name': 'Wireless Headphones',
-      'price': 149.99,
-      'imageUrl': 'https://picsum.photos/400/300?image=2',
-    },
-    {
-      'id': 3,
-      'name': 'Smart Watch',
-      'price': 199.99,
-      'imageUrl': 'https://picsum.photos/400/300?image=3',
-    },
-    {
-      'id': 4,
-      'name': 'Gaming Mouse',
-      'price': 79.99,
-      'imageUrl': 'https://picsum.photos/400/300?image=4',
-    },
-    {
-      'id': 5,
-      'name': 'Portable Speaker',
-      'price': 89.99,
-      'imageUrl': 'https://picsum.photos/400/300?image=5',
-    },
+  /// 定義入口卡片（與路由綁定）
+  final List<ShopEntryItem> _entryItems = <ShopEntryItem>[
+    ShopEntryItem(
+      title: '搜尋',
+      icon: Icons.search,
+      route: '/search', // 對應 search_page.dart
+      contentBuilder: (context) => const Center(child: Text('搜尋入口')),
+    ),
+    ShopEntryItem(
+      title: '購物車',
+      icon: Icons.shopping_cart,
+      route: '/cart', // 對應 cart_page.dart
+      contentBuilder: (context) => const Center(child: Text('購物車入口')),
+    ),
+    ShopEntryItem(
+      title: '訂單',
+      icon: Icons.list_alt,
+      route: '/orders', // 對應 order_history_page.dart
+      contentBuilder: (context) => const Center(child: Text('訂單入口')),
+    ),
+    ShopEntryItem(
+      title: '帳號',
+      icon: Icons.person,
+      route: '/settings', // 對應 settings_page.dart
+      contentBuilder: (context) => const Center(child: Text('帳號入口')),
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
-  }
-
-  // 嘗試從 DatabaseService 讀取商品；若失敗則使用假資料
-  Future<void> _loadProducts() async {
-    setState(() => _loading = true);
-
-    try {
-      // 嘗試從 Provider 取得 DatabaseService（若 main.dart 已註冊）
-      final dbService = Provider.of<DatabaseService>(context, listen: false);
-      final dbProducts = await dbService.getProducts(); // 這會回傳 Isar model list
-
-      if (dbProducts.isNotEmpty) {
-        // 將 Isar model 轉成 Map<String,dynamic> 供 UI 使用
-        _products = dbProducts.map((p) {
-          return <String, dynamic>{
-            'id': p.id, // Isar 的 Id
-            'name': p.name,
-            'price': p.price,
-            'imageUrl': p.imageUrl ?? '',
-            'description': p.description ?? '',
-          };
-        }).toList();
-      } else {
-        // DB 有但沒有記錄 → 使用假資料
-        _products = List<Map<String, dynamic>>.from(_fakeProducts);
-      }
-    } catch (e) {
-      // Provider 不存在 / DB 失敗 -> 使用假資料（可以在開發階段這樣安全回退）
-      _products = List<Map<String, dynamic>>.from(_fakeProducts);
-    }
-
-    // 套用搜尋（若有）
-    _applyFilter();
-    setState(() => _loading = false);
-  }
-
-  void _applyFilter() {
-    if (_query.isEmpty) {
-      _filtered = List<Map<String, dynamic>>.from(_products);
-    } else {
-      _filtered = _products
-          .where((p) => (p['name'] as String).toLowerCase().contains(_query.toLowerCase()))
-          .toList();
-    }
-  }
-
-  void _onSearchChanged(String q) {
-    setState(() {
-      _query = q;
-      _applyFilter();
-    });
-  }
-
-  void _onAddToCart(Map<String, dynamic> productMap) {
-    // 目前示範以 snackbar 提示；實際可呼叫 DatabaseService 或 Cart provider
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已加入購物車：${productMap['name']}')),
+    final int initialPageOffset = _entryItems.length * 1000;
+    _pageController = PageController(
+      viewportFraction: 0.85,
+      initialPage: initialPageOffset,
     );
+    _currentPageIndex = initialPageOffset % _entryItems.length;
+    _pageController.addListener(_onPageChanged);
+
+    _initTts();
   }
 
-  void _openProductDetail(Map<String, dynamic> productMap) {
-    // 使用 pushNamed 並傳遞 arguments（Map），ProductDetailPage 會嘗試讀取 arguments
-    Navigator.pushNamed(context, '/product', arguments: productMap);
+  /// 初始化 TTS
+  Future<void> _initTts() async {
+    await _flutterTts.setLanguage("zh-TW");
+    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.setPitch(1.0);
+    _speak(_entryItems[_currentPageIndex].title); // 首次播報首頁名稱
+  }
+
+  /// 語音播報
+  Future<void> _speak(String text) async {
+    await _flutterTts.stop();
+    await _flutterTts.speak(text);
+  }
+
+  void _onPageChanged() {
+    final int? page = _pageController.page?.round();
+    if (page != null && _currentPageIndex != page % _entryItems.length) {
+      setState(() {
+        _currentPageIndex = page % _entryItems.length;
+      });
+      _speak(_entryItems[_currentPageIndex].title); // 切換卡片時播報名稱
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_onPageChanged);
+    _pageController.dispose();
+    _flutterTts.stop();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accessible Shop'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () => Navigator.pushNamed(context, '/cart'),
-            tooltip: '購物車',
-          ),
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            onPressed: () => Navigator.pushNamed(context, '/orders'),
-            tooltip: '訂單',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
-            tooltip: '設定',
-          ),
-        ],
+        title: Text(_entryItems[_currentPageIndex].title),
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // 搜尋列
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: '搜尋商品（支援輸入）',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-              ),
-              onChanged: _onSearchChanged,
-            ),
-          ),
+      body: Center(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: 999999,
+            itemBuilder: (BuildContext context, int index) {
+              final int actualIndex = index % _entryItems.length;
+              double value = 0.0;
+              if (_pageController.position.haveDimensions) {
+                value = index.toDouble() - (_pageController.page ?? 0);
+                value = value.clamp(-1.0, 1.0);
+              }
 
-          // 內容區
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _filtered.isEmpty
-                    ? const Center(child: Text('找不到商品。請更換關鍵字或稍後再試。'))
-                    : GridView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.72,
-                        ),
-                        itemCount: _filtered.length,
-                        itemBuilder: (context, idx) {
-                          final product = _filtered[idx];
-                          return GestureDetector(
-                            onTap: () => _openProductDetail(product),
-                            child: CustomCard(
-                              productMap: product,
-                              onAddToCart: () => _onAddToCart(product),
-                            ),
-                          );
-                        },
+              final double scale = 1.0 - (value.abs() * 0.1);
+              final double translate =
+                  value * MediaQuery.of(context).size.width * 0.05;
+
+              return Align(
+                alignment: Alignment.center,
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..scale(scale)
+                    ..translate(translate, 0.0),
+                  alignment: Alignment.center,
+                  child: GestureDetector(
+                    onTap: () {
+                      // 點擊一下：語音重播名稱
+                      _speak(_entryItems[actualIndex].title);
+                    },
+                    onDoubleTap: () {
+                      // 點擊兩下：導航到對應頁面
+                      Navigator.pushNamed(
+                        context,
+                        _entryItems[actualIndex].route,
+                      );
+                    },
+                    child: Card(
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(
+                              _entryItems[actualIndex].icon,
+                              size: 60,
+                              color: Colors.blueGrey[700],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _entryItems[actualIndex].title,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: _entryItems[actualIndex].contentBuilder(
+                                context,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }

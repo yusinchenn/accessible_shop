@@ -7,7 +7,9 @@ import 'pages/product/product_detail_page.dart';
 import 'pages/cart/cart_page.dart';
 import 'pages/checkout/checkout_page.dart';
 import 'pages/orders/order_history_page.dart';
+
 import 'pages/settings/settings_page.dart';
+import 'pages/search/search_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -45,6 +47,7 @@ class AccessibleShopApp extends StatelessWidget {
           '/checkout': (context) => const CheckoutPage(),
           '/orders': (context) => const OrderHistoryPage(),
           '/settings': (context) => const SettingsPage(),
+          '/search': (context) => const SearchPage(),
         },
       ),
     );
