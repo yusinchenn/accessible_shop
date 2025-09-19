@@ -57,13 +57,13 @@ class ProductCard extends StatelessWidget {
           children: <Widget>[
             Text(
               product.name,
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               '\$${product.price.toStringAsFixed(2)}',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 30,
                 color: Colors.green,
                 fontWeight: FontWeight.w600,
               ),
@@ -72,7 +72,7 @@ class ProductCard extends StatelessWidget {
             Expanded(
               child: Text(
                 product.description,
-                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                style: const TextStyle(fontSize: 30, color: Colors.black),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -89,7 +89,7 @@ class ProductCard extends StatelessWidget {
                 child: Text(
                   product.tag,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 30,
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
                   ),
@@ -150,11 +150,6 @@ class _SearchPageState extends State<SearchPage> {
       ).setCurrentPageIndex(currentPage);
       _speakProductCard(currentPage);
     }
-  }
-
-  Future<void> _speakSearchAndProduct(int index) async {
-    // 已廢棄，不再使用
-    return;
   }
 
   Future<void> _speakSearchResult() async {
