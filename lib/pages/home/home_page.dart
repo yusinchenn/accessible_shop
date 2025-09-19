@@ -1,5 +1,15 @@
+// lib/pages/home/home_page.dart
+//
+// HomePage:
+// - 進入/回到首頁時會朗讀「進入首頁」+ 當前卡片名稱
+// - 切換卡片時朗讀新卡片名稱（不說 "切換到"）
+// - 單擊卡片朗讀卡片名稱；雙擊卡片導航至對應頁面（返回時會再次朗讀「進入首頁 + 卡片名稱」）
+// - 使用 TtsHelper.speakQueue 來確保多句按順序播放
+//
+// 請確保你有安裝並使用 lib/utils/tts_helper.dart（含 speakQueue 實作）
+
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:accessible_shop/utils/tts_helper.dart';
 
 /// 入口卡片資料結構
 class ShopEntryItem {
@@ -25,34 +35,45 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late PageController _pageController;
+  late final PageController _pageController;
+  final TtsHelper _ttsHelper = TtsHelper();
+
+  // 當前顯示的卡片索引（0..n-1）
   int _currentPageIndex = 0;
-  final FlutterTts _flutterTts = FlutterTts();
+
+  // 控制目前是否正在播放「進入首頁」或其他系統性播報
+  bool _isAnnouncingHome = false;
+
+  // 控制是否有任何正在進行的 TTS 播放，避免重疊呼叫
+  bool _speaking = false;
+
+  // 用來避免 didChangeDependencies 或 frame callback 被重複 schedule
+  bool _announceScheduled = false;
 
   /// 定義入口卡片（與路由綁定）
   final List<ShopEntryItem> _entryItems = <ShopEntryItem>[
     ShopEntryItem(
       title: '搜尋',
       icon: Icons.search,
-      route: '/search', // 對應 search_page.dart
+      route: '/search',
       contentBuilder: (context) => const Center(child: Text('搜尋入口')),
     ),
     ShopEntryItem(
       title: '購物車',
       icon: Icons.shopping_cart,
-      route: '/cart', // 對應 cart_page.dart
+      route: '/cart',
       contentBuilder: (context) => const Center(child: Text('購物車入口')),
     ),
     ShopEntryItem(
       title: '訂單',
       icon: Icons.list_alt,
-      route: '/orders', // 對應 order_history_page.dart
+      route: '/orders',
       contentBuilder: (context) => const Center(child: Text('訂單入口')),
     ),
     ShopEntryItem(
       title: '帳號',
       icon: Icons.person,
-      route: '/settings', // 對應 settings_page.dart
+      route: '/settings',
       contentBuilder: (context) => const Center(child: Text('帳號入口')),
     ),
   ];
@@ -60,29 +81,47 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    // 使用一個較大的 offset 以模擬無限滑動
     final int initialPageOffset = _entryItems.length * 1000;
     _pageController = PageController(
       viewportFraction: 0.85,
       initialPage: initialPageOffset,
     );
     _currentPageIndex = initialPageOffset % _entryItems.length;
+
+    // 監聽 page 變化，用以播報卡片名稱（當不是在首頁系統播報期間）
     _pageController.addListener(_onPageChanged);
-
-    _initTts();
   }
 
-  /// 初始化 TTS
-  Future<void> _initTts() async {
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    _speak(_entryItems[_currentPageIndex].title); // 首次播報首頁名稱
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 當這個 route 成為目前 route（首次顯示或從其他頁返回）時，安排朗讀「進入首頁 + 當前卡片名稱」
+    // 使用 schedule flag 避免重複註冊多個 frame callback
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    if (routeIsCurrent && !_announceScheduled) {
+      _announceScheduled = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 非同步執行，不阻塞 UI
+        _announceScheduled = false;
+        _announceEnter();
+      });
+    }
   }
 
-  /// 語音播報
-  Future<void> _speak(String text) async {
-    await _flutterTts.stop();
-    await _flutterTts.speak(text);
+  /// 宣告：進入首頁（或回到首頁）時要播的內容
+  Future<void> _announceEnter() async {
+    if (_isAnnouncingHome) return;
+
+    _isAnnouncingHome = true;
+
+    // 使用 speakQueue，逐句播報
+    await _ttsHelper.speakQueue(["進入首頁", _entryItems[_currentPageIndex].title]);
+
+    _isAnnouncingHome = false;
   }
 
   void _onPageChanged() {
@@ -91,7 +130,10 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _currentPageIndex = page % _entryItems.length;
       });
-      _speak(_entryItems[_currentPageIndex].title); // 切換卡片時播報名稱
+
+      if (!_isAnnouncingHome) {
+        _ttsHelper.speak(_entryItems[_currentPageIndex].title);
+      }
     }
   }
 
@@ -99,8 +141,24 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
-    _flutterTts.stop();
+    _ttsHelper.dispose();
     super.dispose();
+  }
+
+  /// 單擊：重播卡片名稱
+  void _onSingleTap(int actualIndex) {
+    // 如果目前正在系統播報（進入首頁），可以忽略，或仍播視需求而定
+    if (_isAnnouncingHome || _speaking) return;
+
+    _ttsHelper.speak(_entryItems[actualIndex].title);
+  }
+
+  /// 雙擊：導航到路由，並在返回時再次播報「進入首頁 + 當前卡片名稱」
+  void _onDoubleTap(String route) {
+    Navigator.pushNamed(context, route).then((_) {
+      // 回到首頁（pop 回來）時再次公告
+      _announceEnter();
+    });
   }
 
   @override
@@ -115,11 +173,14 @@ class _HomePageState extends State<HomePage> {
           height: MediaQuery.of(context).size.height * 0.75,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: 999999,
+            itemCount: 999999, // 模擬無限滑動
             itemBuilder: (BuildContext context, int index) {
               final int actualIndex = index % _entryItems.length;
+
+              // Animation 計算（縮放與位移）
               double value = 0.0;
-              if (_pageController.position.haveDimensions) {
+              if (_pageController.hasClients &&
+                  _pageController.position.haveDimensions) {
                 value = index.toDouble() - (_pageController.page ?? 0);
                 value = value.clamp(-1.0, 1.0);
               }
@@ -136,17 +197,9 @@ class _HomePageState extends State<HomePage> {
                     ..translate(translate, 0.0),
                   alignment: Alignment.center,
                   child: GestureDetector(
-                    onTap: () {
-                      // 點擊一下：語音重播名稱
-                      _speak(_entryItems[actualIndex].title);
-                    },
-                    onDoubleTap: () {
-                      // 點擊兩下：導航到對應頁面
-                      Navigator.pushNamed(
-                        context,
-                        _entryItems[actualIndex].route,
-                      );
-                    },
+                    onTap: () => _onSingleTap(actualIndex),
+                    onDoubleTap: () =>
+                        _onDoubleTap(_entryItems[actualIndex].route),
                     child: Card(
                       elevation: 8,
                       shape: RoundedRectangleBorder(
@@ -154,7 +207,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(12.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[

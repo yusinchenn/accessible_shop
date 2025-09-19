@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:provider/provider.dart';
 
 /// 商品資料模型
@@ -115,7 +115,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late final PageController _pageController;
   late final List<Product> _products;
-  final FlutterTts _flutterTts = FlutterTts();
+  final TtsHelper _ttsHelper = TtsHelper();
   String _searchKeyword = '商品名稱'; // 模擬用戶搜尋關鍵字
 
   @override
@@ -153,23 +153,15 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _speakSearchResult() async {
-    await _flutterTts.stop();
     final searchText = '搜尋$_searchKeyword 的結果';
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.speak(searchText);
+    await _ttsHelper.speak(searchText);
   }
 
   Future<void> _speakProductCard(int index) async {
     if (index < 0 || index >= _products.length) return;
-    await _flutterTts.stop();
     final product = _products[index];
     final productText = _getProductCardText(product);
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.speak(productText);
+    await _ttsHelper.speak(productText);
   }
 
   String _getProductCardText(Product product) {
@@ -180,7 +172,7 @@ class _SearchPageState extends State<SearchPage> {
   void dispose() {
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
-    _flutterTts.stop();
+    _ttsHelper.dispose();
     super.dispose();
   }
 

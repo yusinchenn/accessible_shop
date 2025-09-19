@@ -3,7 +3,7 @@
 // 訂單歷史頁 (暫時以空/有資料 flag 示範)
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:accessible_shop/utils/tts_helper.dart';
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({Key? key}) : super(key: key);
@@ -14,7 +14,7 @@ class OrderHistoryPage extends StatefulWidget {
 
 class _OrderHistoryPageState extends State<OrderHistoryPage> {
   final bool _hasOrders = false; // 開發測試改成 true 可顯示範例
-  final FlutterTts _flutterTts = FlutterTts();
+  final TtsHelper _ttsHelper = TtsHelper();
 
   @override
   void initState() {
@@ -23,15 +23,12 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 
   Future<void> _speakEnterPage() async {
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.speak("進入訂單頁面");
+    await _ttsHelper.speak("進入訂單頁面");
   }
 
   @override
   void dispose() {
-    _flutterTts.stop();
+    _ttsHelper.dispose();
     super.dispose();
   }
 

@@ -4,7 +4,7 @@
 // 若你實作了 Cart 的資料模型與 Provider，這裡可以改用 Provider 顯示實際資料。
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:accessible_shop/utils/tts_helper.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   final bool _hasItems = false; // 開發測試時可改成 true
-  final FlutterTts _flutterTts = FlutterTts();
+  final TtsHelper _ttsHelper = TtsHelper();
 
   @override
   void initState() {
@@ -24,15 +24,12 @@ class _CartPageState extends State<CartPage> {
   }
 
   Future<void> _speakEnterPage() async {
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.speak("進入購物車頁面");
+    await _ttsHelper.speak("進入購物車頁面");
   }
 
   @override
   void dispose() {
-    _flutterTts.stop();
+    _ttsHelper.dispose();
     super.dispose();
   }
 

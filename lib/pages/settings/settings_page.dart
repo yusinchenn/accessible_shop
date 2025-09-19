@@ -3,7 +3,7 @@
 // 簡單示範設定頁（未來可加入 TTS 開關、字體大小等）
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:accessible_shop/utils/tts_helper.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -13,7 +13,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final FlutterTts _flutterTts = FlutterTts();
+  final TtsHelper _ttsHelper = TtsHelper();
 
   @override
   void initState() {
@@ -22,15 +22,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _speakEnterPage() async {
-    await _flutterTts.setLanguage("zh-TW");
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.speak("進入設定頁面");
+    await _ttsHelper.speak("進入設定頁面");
   }
 
   @override
   void dispose() {
-    _flutterTts.stop();
+    _ttsHelper.dispose();
     super.dispose();
   }
 
