@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 // 匯入模型
 import '../models/product.dart';
-import '../models/cart_item.dart';
+import '../models/cart_item.dart' show CartItemSchema;
 import '../models/order.dart';
 import '../models/user_settings.dart';
 
@@ -18,10 +18,11 @@ class DatabaseService extends ChangeNotifier {
   /// 初始化 Isar（非同步，不阻塞 UI）
   Future<Isar> _initIsar() async {
     final dir = await getApplicationDocumentsDirectory();
-    return await Isar.open(
-      [ProductSchema, CartItemSchema, OrderSchema, UserSettingsSchema],
-      directory: dir.path,
-    );
+    return await Isar.open([
+      ProductSchema,
+      CartItemSchema,
+      UserSettingsSchema,
+    ], directory: dir.path);
   }
 
   /// 外部存取 Isar 實例

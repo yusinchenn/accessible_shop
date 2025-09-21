@@ -4,6 +4,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/pages/settings/account_info_page.dart';
+import 'package:accessible_shop/pages/settings/app_settings_page.dart';
+import 'package:accessible_shop/pages/settings/help_support_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -13,46 +16,73 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final TtsHelper _ttsHelper = TtsHelper();
-
   @override
   void initState() {
     super.initState();
-    _speakEnterPage();
+    Future.delayed(Duration.zero, () {
+      ttsHelper.speak("進入帳號頁面");
+    });
   }
 
-  Future<void> _speakEnterPage() async {
-    await _ttsHelper.speak("進入設定頁面");
+  void _speak(String text) {
+    ttsHelper.speak(text);
   }
 
-  @override
-  void dispose() {
-    _ttsHelper.dispose();
-    super.dispose();
+  Future<void> _navigate(Widget page) async {
+    await ttsHelper.stop();
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    // 回首頁時不做任何 TTS，讓首頁自動朗讀
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('設定')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
+      appBar: AppBar(title: const Text('帳號')),
+      body: Column(
         children: [
-          ListTile(
-            leading: const Icon(Icons.volume_up),
-            title: const Text('語音提示 (TTS)'),
-            trailing: Switch(value: true, onChanged: (v) {}),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _speak("帳號資訊"),
+              onDoubleTap: () => _navigate(const AccountInfoPage()),
+              child: Container(
+                color: Colors.blue[50],
+                alignment: Alignment.center,
+                child: const Text(
+                  '帳號資訊',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.format_size),
-            title: const Text('字體大小'),
-            subtitle: const Text('中 (可調整)'),
-            onTap: () {},
+          Divider(height: 1, thickness: 1),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _speak("App 設定"),
+              onDoubleTap: () => _navigate(const AppSettingsPage()),
+              child: Container(
+                color: Colors.green[50],
+                alignment: Alignment.center,
+                child: const Text(
+                  'App 設定',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('應用版本'),
-            subtitle: const Text('v0.1.0'),
+          Divider(height: 1, thickness: 1),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _speak("幫助與客服"),
+              onDoubleTap: () => _navigate(const HelpSupportPage()),
+              child: Container(
+                color: Colors.orange[50],
+                alignment: Alignment.center,
+                child: const Text(
+                  '幫助與客服',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ),
         ],
       ),

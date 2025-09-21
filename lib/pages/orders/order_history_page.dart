@@ -13,8 +13,9 @@ class OrderHistoryPage extends StatefulWidget {
 }
 
 class _OrderHistoryPageState extends State<OrderHistoryPage> {
+  // 若未來有自訂返回按鈕，請於返回前加上：
+  // await ttsHelper.stop();
   final bool _hasOrders = false; // 開發測試改成 true 可顯示範例
-  final TtsHelper _ttsHelper = TtsHelper();
 
   @override
   void initState() {
@@ -23,14 +24,10 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 
   Future<void> _speakEnterPage() async {
-    await _ttsHelper.speak("進入訂單頁面");
+    await ttsHelper.speak("進入訂單頁面");
   }
 
-  @override
-  void dispose() {
-    _ttsHelper.dispose();
-    super.dispose();
-  }
+  // 不要在這裡呼叫 ttsHelper.dispose()，全域單例不需釋放
 
   @override
   Widget build(BuildContext context) {

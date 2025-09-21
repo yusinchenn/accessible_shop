@@ -1,62 +1,50 @@
 // lib/pages/home/home_page.dart
 //
-// HomePage:
-// - 進入/回到首頁時會朗讀「進入首頁」+ 當前卡片名稱
-// - 切換卡片時朗讀新卡片名稱（不說 "切換到"）
-// - 單擊卡片朗讀卡片名稱；雙擊卡片導航至對應頁面（返回時會再次朗讀「進入首頁 + 卡片名稱」）
-// - 使用 TtsHelper.speakQueue 來確保多句按順序播放
-//
-// 請確保你有安裝並使用 lib/utils/tts_helper.dart（含 speakQueue 實作）
+// 使用全域 ttsHelper (在 lib/utils/tts_helper.dart 定義)
+// 注意此檔案使用相對路徑 import，確保位置為 lib/pages/home/home_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:accessible_shop/utils/tts_helper.dart';
+import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 
-/// 入口卡片資料結構
+/// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
-  final String title;
-  final IconData icon;
-  final String route; // 對應的路由名稱
-  final Widget Function(BuildContext) contentBuilder;
+  final String title; // 卡片顯示的標題文字
+  final IconData icon; // 卡片顯示的圖示
+  final String route; // 點擊卡片後導航的路由名稱
+  final Widget Function(BuildContext) contentBuilder; // 動態生成卡片內容的函數，返回一個 Widget
 
   const ShopEntryItem({
-    required this.title,
-    required this.icon,
-    required this.route,
-    required this.contentBuilder,
+    required this.title, // 標題為必要參數
+    required this.icon, // 圖示為必要參數
+    required this.route, // 路由名稱為必要參數
+    required this.contentBuilder, // 內容生成函數為必要參數
   });
 }
 
-/// 首頁（滑動卡片 + 無障礙語音 + 單擊/雙擊操作）
+/// HomePage 是應用程式的首頁，是一個有狀態的 Widget（StatefulWidget）
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key}); // 建構函數，接受一個可選的 key 參數
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState(); // 創建對應的狀態物件
 }
 
+/// HomePage 的狀態類，管理頁面的動態行為和狀態
 class _HomePageState extends State<HomePage> {
-  late final PageController _pageController;
-  final TtsHelper _ttsHelper = TtsHelper();
+  late final PageController _pageController; // 控制 PageView 的滾動控制器，延遲初始化
 
-  // 當前顯示的卡片索引（0..n-1）
-  int _currentPageIndex = 0;
+  int _currentPageIndex = 0; // 當前顯示的卡片索引（對應 _entryItems 的實際索引）
+  bool _isAnnouncingHome = false; // 標記是否正在進行首頁進入的語音播報
+  bool _speaking = false; // 標記是否正在進行語音播報
+  bool _announceScheduled = false; // 標記是否已排程首頁進入的播報
 
-  // 控制目前是否正在播放「進入首頁」或其他系統性播報
-  bool _isAnnouncingHome = false;
-
-  // 控制是否有任何正在進行的 TTS 播放，避免重疊呼叫
-  bool _speaking = false;
-
-  // 用來避免 didChangeDependencies 或 frame callback 被重複 schedule
-  bool _announceScheduled = false;
-
-  /// 定義入口卡片（與路由綁定）
+  /// 定義首頁的卡片清單，包含搜尋、購物車、訂單和帳號四個入口
   final List<ShopEntryItem> _entryItems = <ShopEntryItem>[
     ShopEntryItem(
-      title: '搜尋',
-      icon: Icons.search,
-      route: '/search',
-      contentBuilder: (context) => const Center(child: Text('搜尋入口')),
+      title: '搜尋', // 卡片標題
+      icon: Icons.search, // 搜尋圖示
+      route: '/search', // 導航路由
+      contentBuilder: (context) => const Center(child: Text('搜尋入口')), // 卡片內容
     ),
     ShopEntryItem(
       title: '購物車',
@@ -78,157 +66,164 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  /// 初始化狀態，設置 PageView 控制器並監聽頁面變化
   @override
   void initState() {
     super.initState();
-
-    // 使用一個較大的 offset 以模擬無限滑動
-    final int initialPageOffset = _entryItems.length * 1000;
+    final int initialPageOffset =
+        _entryItems.length * 1000; // 設置初始頁面偏移，實現無限滾動效果
     _pageController = PageController(
-      viewportFraction: 0.85,
-      initialPage: initialPageOffset,
+      viewportFraction: 0.85, // 每個卡片佔據視窗寬度的 85%，營造間距效果
+      initialPage: initialPageOffset, // 設置初始頁面索引
     );
-    _currentPageIndex = initialPageOffset % _entryItems.length;
-
-    // 監聽 page 變化，用以播報卡片名稱（當不是在首頁系統播報期間）
-    _pageController.addListener(_onPageChanged);
+    _currentPageIndex = initialPageOffset % _entryItems.length; // 計算實際的卡片索引
+    _pageController.addListener(_onPageChanged); // 監聽頁面變化事件
   }
 
+  /// 當依賴項變更時（例如導航狀態變化），檢查是否需要播報首頁進入語音
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // 當這個 route 成為目前 route（首次顯示或從其他頁返回）時，安排朗讀「進入首頁 + 當前卡片名稱」
-    // 使用 schedule flag 避免重複註冊多個 frame callback
-    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    final routeIsCurrent =
+        ModalRoute.of(context)?.isCurrent ?? false; // 檢查當前頁面是否為活躍路由
     if (routeIsCurrent && !_announceScheduled) {
-      _announceScheduled = true;
-
+      // 如果是活躍頁面且未排程播報
+      _announceScheduled = true; // 標記已排程
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 非同步執行，不阻塞 UI
-        _announceScheduled = false;
-        _announceEnter();
+        // 在框架繪製完成後執行
+        _announceScheduled = false; // 重置排程標記
+        _announceEnter(); // 執行首頁進入語音播報
       });
     }
   }
 
-  /// 宣告：進入首頁（或回到首頁）時要播的內容
+  /// 執行首頁進入的語音播報，播報「進入首頁」和當前卡片標題
   Future<void> _announceEnter() async {
-    if (_isAnnouncingHome) return;
+    if (_isAnnouncingHome) return; // 如果正在播報首頁，則跳過
 
-    _isAnnouncingHome = true;
+    await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
 
-    // 使用 speakQueue，逐句播報
-    await _ttsHelper.speakQueue(["進入首頁", _entryItems[_currentPageIndex].title]);
-
-    _isAnnouncingHome = false;
-  }
-
-  void _onPageChanged() {
-    final int? page = _pageController.page?.round();
-    if (page != null && _currentPageIndex != page % _entryItems.length) {
-      setState(() {
-        _currentPageIndex = page % _entryItems.length;
-      });
-
-      if (!_isAnnouncingHome) {
-        _ttsHelper.speak(_entryItems[_currentPageIndex].title);
-      }
+    _isAnnouncingHome = true; // 標記正在播報首頁
+    _speaking = true; // 標記正在語音播報
+    try {
+      await ttsHelper.speak('進入首頁'); // 播報「進入首頁」
+      await Future.delayed(const Duration(seconds: 1)); // 等待 1 秒
+      await ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報當前卡片標題
+    } finally {
+      _isAnnouncingHome = false; // 重置首頁播報標記
+      _speaking = false; // 重置語音播報標記
     }
   }
 
+  /// 監聽 PageView 頁面變化，當卡片切換時更新索引並播報新卡片標題
+  void _onPageChanged() {
+    final int? page = _pageController.page?.round(); // 獲取當前頁面索引（四捨五入）
+    if (page == null) return; // 如果頁面索引無效，則跳過
+    final int actual = page % _entryItems.length; // 計算實際的卡片索引（處理無限滾動）
+    if (actual == _currentPageIndex) return; // 如果索引未變，則跳過
+
+    setState(() {
+      _currentPageIndex = actual; // 更新當前卡片索引
+    });
+
+    // 如果正在進行系統播報或語音播報，則不進行新播報
+    if (_isAnnouncingHome || _speaking) return;
+
+    ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報新卡片的標題
+  }
+
+  /// 清理資源，釋放 PageController
   @override
   void dispose() {
-    _pageController.removeListener(_onPageChanged);
-    _pageController.dispose();
-    _ttsHelper.dispose();
+    _pageController.removeListener(_onPageChanged); // 移除頁面變化監聽器
+    _pageController.dispose(); // 釋放 PageController
+    // 不要 dispose 全域 ttsHelper，因為它是全域資源
     super.dispose();
   }
 
-  /// 單擊：重播卡片名稱
-  void _onSingleTap(int actualIndex) {
-    // 如果目前正在系統播報（進入首頁），可以忽略，或仍播視需求而定
-    if (_isAnnouncingHome || _speaking) return;
-
-    _ttsHelper.speak(_entryItems[actualIndex].title);
+  /// 處理單次點擊事件，播報當前卡片的標題
+  void _onSingleTap(int index) {
+    if (_isAnnouncingHome || _speaking) return; // 如果正在播報，則跳過
+    ttsHelper.speak(_entryItems[index].title); // 播報點擊的卡片標題
   }
 
-  /// 雙擊：導航到路由，並在返回時再次播報「進入首頁 + 當前卡片名稱」
+  /// 處理雙擊事件，導航到指定路由
   void _onDoubleTap(String route) {
     Navigator.pushNamed(context, route).then((_) {
-      // 回到首頁（pop 回來）時再次公告
-      _announceEnter();
+      // 導航返回後，didChangeDependencies 會觸發 _announceEnter
     });
   }
 
+  /// 構建頁面 UI，使用 Scaffold 和 PageView 顯示卡片
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_entryItems[_currentPageIndex].title),
-        centerTitle: true,
+        title: Text(_entryItems[_currentPageIndex].title), // 顯示當前卡片的標題
+        centerTitle: true, // 標題居中
       ),
       body: Center(
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.75,
+          height: MediaQuery.of(context).size.height * 0.75, // 卡片區域高度為螢幕高度的 75%
           child: PageView.builder(
-            controller: _pageController,
-            itemCount: 999999, // 模擬無限滑動
-            itemBuilder: (BuildContext context, int index) {
-              final int actualIndex = index % _entryItems.length;
+            controller: _pageController, // 使用 PageController 控制滾動
+            itemCount: 999999, // 設置大量項目數以實現無限滾動
+            itemBuilder: (context, index) {
+              final actualIndex = index % _entryItems.length; // 計算實際卡片索引
 
-              // Animation 計算（縮放與位移）
+              // 計算卡片的縮放和位移效果，營造視覺動態
               double value = 0.0;
               if (_pageController.hasClients &&
                   _pageController.position.haveDimensions) {
-                value = index.toDouble() - (_pageController.page ?? 0);
-                value = value.clamp(-1.0, 1.0);
+                value =
+                    index.toDouble() - (_pageController.page ?? 0); // 計算相對頁面位置
+                value = value.clamp(-1.0, 1.0); // 限制範圍在 -1.0 到 1.0
               }
-
-              final double scale = 1.0 - (value.abs() * 0.1);
+              final double scale = 1.0 - (value.abs() * 0.1); // 計算縮放比例
               final double translate =
-                  value * MediaQuery.of(context).size.width * 0.05;
+                  value * MediaQuery.of(context).size.width * 0.05; // 計算水平位移
 
               return Align(
-                alignment: Alignment.center,
+                alignment: Alignment.center, // 卡片居中對齊
                 child: Transform(
                   transform: Matrix4.identity()
-                    ..scale(scale)
-                    ..translate(translate, 0.0),
-                  alignment: Alignment.center,
+                    ..scale(scale) // 應用縮放效果
+                    ..translate(translate, 0.0), // 應用水平位移
+                  alignment: Alignment.center, // 變形效果以中心為基準
                   child: GestureDetector(
-                    onTap: () => _onSingleTap(actualIndex),
-                    onDoubleTap: () =>
-                        _onDoubleTap(_entryItems[actualIndex].route),
+                    onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
+                    onDoubleTap: () => _onDoubleTap(
+                      _entryItems[actualIndex].route,
+                    ), // 雙擊導航到對應路由
                     child: Card(
-                      elevation: 8,
+                      elevation: 8, // 卡片陰影效果
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16), // 圓角邊框
                       ),
-                      clipBehavior: Clip.antiAlias,
+                      clipBehavior: Clip.antiAlias, // 裁剪溢出內容
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(12.0), // 卡片內邊距
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
+                          mainAxisAlignment: MainAxisAlignment.center, // 內容垂直居中
+                          children: [
                             Icon(
-                              _entryItems[actualIndex].icon,
-                              size: 60,
-                              color: Colors.blueGrey[700],
+                              _entryItems[actualIndex].icon, // 顯示卡片圖示
+                              size: 60, // 圖示大小
+                              color: Colors.blueGrey[700], // 圖示顏色
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 16), // 間距
                             Text(
-                              _entryItems[actualIndex].title,
+                              _entryItems[actualIndex].title, // 顯示卡片標題
                               style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 24, // 字體大小
+                                fontWeight: FontWeight.bold, // 粗體
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 16), // 間距
                             Expanded(
                               child: _entryItems[actualIndex].contentBuilder(
                                 context,
-                              ),
+                              ), // 動態生成卡片內容
                             ),
                           ],
                         ),
