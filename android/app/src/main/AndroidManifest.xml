@@ -1,4 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+     <!-- ==================== TTS 權限設定 ==================== -->
+    <!-- 網路權限 (某些 TTS 引擎可能需要網路連線) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- TTS 相關權限 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <!-- 音訊相關權限 -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Wake Lock (防止 TTS 時螢幕關閉中斷播放) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- ===================================================== -->
     <application
         android:label="accessible_shop"
         android:name="${applicationName}"
