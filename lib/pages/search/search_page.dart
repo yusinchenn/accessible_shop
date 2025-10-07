@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:provider/provider.dart';
 
 /// 商品資料模型
@@ -48,42 +49,42 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
               product.name,
-              style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: AppColors.text),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               '\$${product.price.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontSize: 30,
-                color: Colors.green,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Expanded(
               child: Text(
                 product.description,
-                style: const TextStyle(fontSize: 30, color: Colors.black),
+                style: const TextStyle(fontSize: 30, color: AppColors.text),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Align(
               alignment: Alignment.bottomRight,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade800,
+                  color: AppColors.accent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -184,6 +185,7 @@ class _SearchPageState extends State<SearchPage> {
         final productBrowserData = Provider.of<ProductBrowserData>(context);
 
         return Scaffold(
+          backgroundColor: AppColors.background, // 套用背景色
           appBar: AppBar(title: Text('搜尋 $_searchKeyword'), centerTitle: true),
           body: NotificationListener<ScrollEndNotification>(
             onNotification: (notification) {

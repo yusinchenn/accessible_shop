@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/cart_item.dart';
-import 'cart_provider.dart';
+import '../../providers/cart_provider.dart'; // Updated import path
 import '../../utils/tts_helper.dart'; // ✅ 改用全域 ttsHelper
+import '../../utils/app_constants.dart'; // ✅ 匯入全域樣式常數
 
 /// 購物車頁面
 class ShoppingCartPage extends StatefulWidget {
@@ -43,6 +44,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('購物車')),
       body: Consumer<ShoppingCartData>(
         builder: (context, cartData, _) {
@@ -56,10 +58,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: const Text(
                       "購物車",
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: AppTextStyles.title,
                     ),
                   ),
                   Expanded(
@@ -72,7 +74,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       itemBuilder: (context, index) {
                         final item = items[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                           child: ShoppingCartItemCard(
                             item: item,
                             cartData: cartData,
@@ -103,21 +105,25 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(16.0),
-                      color: Colors.grey[200],
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      color: AppColors.background,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("選取商品總數: ${cartData.totalSelectedCount}"),
+                          Text(
+                            "選取商品總數: ${cartData.totalSelectedCount}",
+                            style: AppTextStyles.body,
+                          ),
                           Text(
                             "總價: \$${cartData.totalSelectedPrice.toStringAsFixed(0)}",
+                            style: AppTextStyles.body,
                           ),
                         ],
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: GestureDetector(
                       onTap: () => ttsHelper.speak("結帳"),
                       onDoubleTap: () {
@@ -126,9 +132,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         alignment: Alignment.center,
@@ -136,7 +142,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           "結帳",
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: AppFontSizes.subtitle,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -192,14 +198,17 @@ class ShoppingCartItemCard extends StatelessWidget {
               : BorderSide.none,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.name, style: Theme.of(context).textTheme.titleLarge),
-              Text("規格: ${item.specification}"),
-              Text("單價: \$${item.unitPrice.toStringAsFixed(0)}"),
-              Text("數量: ${item.quantity}"),
+              Text(item.name, style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.sm),
+              Text("規格: ${item.specification}", style: AppTextStyles.body),
+              const SizedBox(height: AppSpacing.xs),
+              Text("單價: \$${item.unitPrice.toStringAsFixed(0)}", style: AppTextStyles.body),
+              const SizedBox(height: AppSpacing.xs),
+              Text("數量: ${item.quantity}", style: AppTextStyles.body),
               const Spacer(),
               Row(
                 children: [

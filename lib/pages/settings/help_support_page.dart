@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/utils/app_constants.dart';
 
 class HelpSupportPage extends StatefulWidget {
   const HelpSupportPage({Key? key}) : super(key: key);
@@ -26,6 +27,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('幫助與客服')),
       body: const Center(child: Text('這是幫助與客服頁面')),
     );

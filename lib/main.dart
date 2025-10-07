@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 // 匯入頁面
 import 'pages/home/home_page.dart';
@@ -9,15 +11,19 @@ import 'pages/checkout/checkout_page.dart';
 import 'pages/orders/order_history_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/search/search_page.dart';
+import 'pages/auth/accessible_auth_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
 
-// 匯入購物車 Provider
-import 'pages/cart/cart_provider.dart';
+// 匯入 Providers
+import 'providers/cart_provider.dart';
+import 'providers/auth_provider.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+// 匯入常數
+import 'utils/app_constants.dart';
+
+void main() {
   runApp(const AccessibleShopApp());
 }
 
@@ -26,35 +32,244 @@ class AccessibleShopApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        /// DatabaseService 在背景初始化 Isar
-        ChangeNotifierProvider(create: (_) => DatabaseService()),
-
-        /// 購物車資料
-        ChangeNotifierProvider(create: (_) => ShoppingCartData()),
-      ],
-      child: MaterialApp(
-        title: 'Accessible Shop',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.teal,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MaterialApp(
+      title: 'Accessible Shop',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
         ),
+        textTheme: const TextTheme(
+          displayLarge: AppTextStyles.extraLargeTitle,
+          titleLarge: AppTextStyles.title,
+          titleMedium: AppTextStyles.subtitle,
+          bodyLarge: AppTextStyles.body,
+          bodyMedium: AppTextStyles.small,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.cardBackground,
+          elevation: 2,
+        ),
+        dividerTheme: DividerThemeData(
+          color: AppColors.divider,
+          thickness: 1,
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const FirebaseInitializer(),
+    );
+  }
+}
 
-        /// 首頁
-        home: const HomePage(),
+/// Firebase 初始化包裝器
+class FirebaseInitializer extends StatefulWidget {
+  const FirebaseInitializer({super.key});
 
-        /// 路由註冊
-        routes: {
-          '/product': (context) => const ProductDetailPage(),
-          '/cart': (context) => const ShoppingCartPage(),
-          '/checkout': (context) => const CheckoutPage(),
-          '/orders': (context) => const OrderHistoryPage(),
-          '/settings': (context) => const SettingsPage(),
-          '/search': (context) => const SearchPage(),
+  @override
+  State<FirebaseInitializer> createState() => _FirebaseInitializerState();
+}
+
+class _FirebaseInitializerState extends State<FirebaseInitializer> {
+  Future<FirebaseApp>? _initialization;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialization = _initializeFirebase();
+  }
+
+  Future<FirebaseApp> _initializeFirebase() async {
+    await Future.delayed(const Duration(milliseconds: 500)); // 確保啟動畫面顯示
+    return await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<FirebaseApp>(
+      future: _initialization,
+      builder: (context, snapshot) {
+        // 錯誤處理
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 80,
+                      color: Colors.red,
+                    ),
+                    SizedBox(height: AppSpacing.lg),
+                    Text(
+                      '初始化失敗',
+                      style: AppTextStyles.title.copyWith(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    Text(
+                      '${snapshot.error}',
+                      style: AppTextStyles.body,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppSpacing.lg),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _initialization = _initializeFirebase();
+                        });
+                      },
+                      icon: Icon(Icons.refresh),
+                      label: Text('重試', style: AppTextStyles.body),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.text,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.md,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // 初始化完成
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MultiProvider(
+            providers: [
+              /// 身份驗證
+              ChangeNotifierProvider(create: (_) => AuthProvider()),
+
+              /// DatabaseService 在背景初始化 Isar
+              ChangeNotifierProvider(create: (_) => DatabaseService()),
+
+              /// 購物車資料
+              ChangeNotifierProvider(create: (_) => ShoppingCartData()),
+            ],
+            child: const AppRouter(),
+          );
+        }
+
+        // 載入中
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_bag,
+                  size: 120,
+                  color: AppColors.text,
+                ),
+                SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Accessible Shop',
+                  style: AppTextStyles.extraLargeTitle.copyWith(
+                    color: AppColors.text,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xl),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.text),
+                  strokeWidth: 4,
+                ),
+                SizedBox(height: AppSpacing.lg),
+                Text(
+                  '正在初始化...',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: AppColors.subtitle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// App 路由器
+class AppRouter extends StatelessWidget {
+  const AppRouter({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Accessible Shop',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+        ),
+        textTheme: const TextTheme(
+          displayLarge: AppTextStyles.extraLargeTitle,
+          titleLarge: AppTextStyles.title,
+          titleMedium: AppTextStyles.subtitle,
+          bodyLarge: AppTextStyles.body,
+          bodyMedium: AppTextStyles.small,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.cardBackground,
+          elevation: 2,
+        ),
+        dividerTheme: DividerThemeData(
+          color: AppColors.divider,
+          thickness: 1,
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+
+      /// 根據登入狀態決定首頁
+      home: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          return authProvider.isAuthenticated
+              ? const HomePage()
+              : const AccessibleAuthPage();
         },
       ),
+
+      /// 路由註冊
+      routes: {
+        '/auth': (context) => const AccessibleAuthPage(),
+        '/home': (context) => const HomePage(),
+        '/product': (context) => const ProductDetailPage(),
+        '/cart': (context) => const ShoppingCartPage(),
+        '/checkout': (context) => const CheckoutPage(),
+        '/orders': (context) => const OrderHistoryPage(),
+        '/settings': (context) => const SettingsPage(),
+        '/search': (context) => const SearchPage(),
+      },
     );
   }
 }

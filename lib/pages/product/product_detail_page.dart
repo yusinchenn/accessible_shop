@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../models/product.dart';
+import '../../utils/app_constants.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final int? productId;
@@ -48,6 +49,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(
         title: Text(_product?['name'] ?? '商品詳情'),
       ),
@@ -56,7 +58,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           : _product == null
               ? const Center(child: Text('找不到商品資料'))
               : Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -68,18 +70,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Text(
                         _product!['name'],
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.title,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         '\$${_product!['price'].toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 18, color: Colors.teal),
+                        style: AppTextStyles.subtitle.copyWith(color: AppColors.primary),
                       ),
-                      const SizedBox(height: 12),
-                      Text(_product!['description'] ?? '沒有描述'),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        _product!['description'] ?? '沒有描述',
+                        style: AppTextStyles.body,
+                      ),
                     ],
                   ),
                 ),

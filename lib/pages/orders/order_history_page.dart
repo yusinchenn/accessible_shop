@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/utils/app_constants.dart';
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({Key? key}) : super(key: key);
@@ -32,21 +33,22 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('歷史訂單')),
       body: _hasOrders
           ? ListView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               children: const [
                 ListTile(
-                  title: Text('訂單 #20250901'),
+                  title: Text('訂單 #20250901', style: AppTextStyles.body),
                   subtitle: Text('2025-09-01'),
-                  trailing: Text('\$129.99'),
+                  trailing: Text('\$129.99', style: AppTextStyles.body),
                 ),
                 Divider(),
                 ListTile(
-                  title: Text('訂單 #20250815'),
+                  title: Text('訂單 #20250815', style: AppTextStyles.body),
                   subtitle: Text('2025-08-15'),
-                  trailing: Text('\$79.99'),
+                  trailing: Text('\$79.99', style: AppTextStyles.body),
                 ),
               ],
             )
@@ -54,14 +56,17 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Icon(Icons.list_alt, size: 80, color: Colors.teal),
-                  SizedBox(height: 16),
+                  Icon(Icons.list_alt, size: 80, color: AppColors.primary),
+                  SizedBox(height: AppSpacing.md),
                   Text(
                     '目前沒有訂單',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.subtitle,
                   ),
-                  SizedBox(height: 8),
-                  Text('你的訂單紀錄會出現在這裡。', style: TextStyle(color: Colors.grey)),
+                  SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '你的訂單紀錄會出現在這裡。',
+                    style: TextStyle(color: AppColors.subtitle),
+                  ),
                 ],
               ),
             ),

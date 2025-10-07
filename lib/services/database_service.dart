@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 // 匯入模型
 import '../models/product.dart';
 import '../models/cart_item.dart' show CartItemSchema;
-import '../models/order.dart';
 import '../models/user_settings.dart';
 
 class DatabaseService extends ChangeNotifier {

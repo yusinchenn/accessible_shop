@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/pages/settings/account_info_page.dart';
 import 'package:accessible_shop/pages/settings/app_settings_page.dart';
 import 'package:accessible_shop/pages/settings/help_support_page.dart';
@@ -37,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('帳號')),
       body: Column(
         children: [
@@ -47,14 +49,15 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Container(
                 color: Colors.blue[50],
                 alignment: Alignment.center,
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: const Text(
                   '帳號資訊',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.title,
                 ),
               ),
             ),
           ),
-          Divider(height: 1, thickness: 1),
+          const Divider(height: 1, thickness: 1),
           Expanded(
             child: GestureDetector(
               onTap: () => _speak("App 設定"),
@@ -62,14 +65,15 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Container(
                 color: Colors.green[50],
                 alignment: Alignment.center,
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: const Text(
                   'App 設定',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.title,
                 ),
               ),
             ),
           ),
-          Divider(height: 1, thickness: 1),
+          const Divider(height: 1, thickness: 1),
           Expanded(
             child: GestureDetector(
               onTap: () => _speak("幫助與客服"),
@@ -77,9 +81,10 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Container(
                 color: Colors.orange[50],
                 alignment: Alignment.center,
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: const Text(
                   '幫助與客服',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.title,
                 ),
               ),
             ),

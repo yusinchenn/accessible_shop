@@ -14,48 +14,66 @@ import 'package:flutter/material.dart';
 
 /// 顏色常數
 class AppColors {
-  static const primary = Color(0xFF1976D2); // 主色
-  static const accent = Color(0xFFFFA726); // 強調色
-  static const background = Color(0xFFF5F5F5); // 背景色
-  static const text = Color(0xFF222222); // 主要文字色
-  static const subtitle = Color(0xFF666666); // 副標文字色
+  static const primary = Color(0xFFD4A574); // 主色 - 杏色
+  static const accent = Color(0xFFF5DEB3); // 強調色 - 淺杏色
+  static const background = Color(0xFFD4A574); // 背景色 - 杏色
+  static const text = Color(0xFF3A3A3A); // 主要文字色 - 深灰
+  static const subtitle = Color(0xFF707070); // 副標文字色 - 中灰
+  static const cardBackground = Color(0xFFFFF8F0); // 卡片背景 - 淡杏色
+  static const divider = Color(0xFFE0E0E0); // 分隔線 - 淺灰
   // ...可自行擴充
 }
 
-/// 字體大小常數
+/// 字體大小常數 (針對年長者優化，字體加大)
 class AppFontSizes {
-  static const double title = 24;
-  static const double subtitle = 18;
-  static const double body = 16;
-  static const double small = 13;
+  static const double extraLarge = 32; // 特大標題
+  static const double title = 28; // 標題 (原 24 -> 28)
+  static const double subtitle = 24; // 副標題 (原 18 -> 24)
+  static const double body = 20; // 內文 (原 16 -> 20)
+  static const double small = 18; // 小字 (原 13 -> 18)
   // ...可自行擴充
 }
 
-/// 文字樣式
+/// 文字樣式 (針對年長者優化，增加行距和字重)
 class AppTextStyles {
+  static const extraLargeTitle = TextStyle(
+    fontSize: AppFontSizes.extraLarge,
+    fontWeight: FontWeight.bold,
+    color: AppColors.text,
+    height: 1.4, // 增加行距
+  );
   static const title = TextStyle(
     fontSize: AppFontSizes.title,
     fontWeight: FontWeight.bold,
     color: AppColors.text,
+    height: 1.4, // 增加行距
   );
   static const subtitle = TextStyle(
     fontSize: AppFontSizes.subtitle,
+    fontWeight: FontWeight.w600, // 加粗副標題
     color: AppColors.subtitle,
+    height: 1.4,
   );
   static const body = TextStyle(
     fontSize: AppFontSizes.body,
     color: AppColors.text,
+    height: 1.5, // 增加行距提升可讀性
+  );
+  static const small = TextStyle(
+    fontSize: AppFontSizes.small,
+    color: AppColors.subtitle,
+    height: 1.4,
   );
   // ...可自行擴充
 }
 
-/// 間距常數
+/// 間距常數 (針對年長者優化，增加間距)
 class AppSpacing {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 16;
-  static const double lg = 24;
-  static const double xl = 32;
+  static const double xs = 6; // 原 4 -> 6
+  static const double sm = 12; // 原 8 -> 12
+  static const double md = 20; // 原 16 -> 20
+  static const double lg = 28; // 原 24 -> 28
+  static const double xl = 40; // 原 32 -> 40
   // ...可自行擴充
 }
 

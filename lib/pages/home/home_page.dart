@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
+import '../../utils/app_constants.dart'; // 匯入全域樣式常數
 
 /// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
@@ -158,6 +159,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(
         title: Text(_entryItems[_currentPageIndex].title), // 顯示當前卡片的標題
         centerTitle: true, // 標題居中
@@ -202,24 +204,21 @@ class _HomePageState extends State<HomePage> {
                       ),
                       clipBehavior: Clip.antiAlias, // 裁剪溢出內容
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0), // 卡片內邊距
+                        padding: const EdgeInsets.all(AppSpacing.md), // 卡片內邊距
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center, // 內容垂直居中
                           children: [
                             Icon(
                               _entryItems[actualIndex].icon, // 顯示卡片圖示
                               size: 60, // 圖示大小
-                              color: Colors.blueGrey[700], // 圖示顏色
+                              color: AppColors.text, // 圖示顏色
                             ),
-                            const SizedBox(height: 16), // 間距
+                            const SizedBox(height: AppSpacing.md), // 間距
                             Text(
                               _entryItems[actualIndex].title, // 顯示卡片標題
-                              style: const TextStyle(
-                                fontSize: 24, // 字體大小
-                                fontWeight: FontWeight.bold, // 粗體
-                              ),
+                              style: AppTextStyles.title,
                             ),
-                            const SizedBox(height: 16), // 間距
+                            const SizedBox(height: AppSpacing.md), // 間距
                             Expanded(
                               child: _entryItems[actualIndex].contentBuilder(
                                 context,

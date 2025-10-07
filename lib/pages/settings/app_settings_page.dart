@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
+import 'package:accessible_shop/utils/app_constants.dart';
 
 class AppSettingsPage extends StatefulWidget {
   const AppSettingsPage({Key? key}) : super(key: key);
@@ -26,8 +27,17 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('App 設定')),
-      body: const Center(child: Text('這是 App 設定頁面')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: const Text(
+            '這是 App 設定頁面',
+            style: AppTextStyles.subtitle,
+          ),
+        ),
+      ),
     );
   }
 }

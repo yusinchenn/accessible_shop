@@ -18,6 +18,8 @@ dependencies:
   speech_to_text: ^7.3.0             # 語音轉文字
   build_runner: ^2.4.13              # 代碼生成工具
   isar_generator: ^3.1.0+1           # Isar 代碼生成插件
+  firebase_core: ^4.1.1
+  firebase_auth: ^6.1.0
 
 # ------------------ 開發相關套件 ------------------
 dev_dependencies:
