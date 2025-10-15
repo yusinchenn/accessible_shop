@@ -86,13 +86,87 @@ AccessibleSpeakWrapper(
 
 ---
 
+### 3. 全域手勢導航系統
+**位置**: `lib/widgets/global_gesture_wrapper.dart` 和 `lib/services/global_gesture_service.dart`
+
+提供全域導航手勢支援，讓使用者可以透過手勢快速導航。
+
+#### 支援的手勢
+
+| 手勢 | 功能 | 語音提示 |
+|------|------|---------|
+| 兩指上滑 | 回到首頁 | "回到首頁" |
+| 兩指下滑 | 返回上一頁 | "返回上一頁" |
+
+#### GlobalGestureWrapper
+基本的全域手勢包裝器，可以包裝任何 Widget。
+
+**使用範例**:
+```dart
+Scaffold(
+  appBar: AppBar(title: Text('我的頁面')),
+  body: GlobalGestureWrapper(
+    child: YourPageContent(),
+  ),
+)
+```
+
+#### GlobalGestureScaffold
+簡化版的 Scaffold，自動整合全域手勢功能。
+
+**使用範例**:
+```dart
+return GlobalGestureScaffold(
+  appBar: AppBar(title: Text('我的頁面')),
+  body: YourPageContent(),
+  enableGlobalGestures: true, // 預設為 true
+);
+```
+
+#### 智能啟用機制
+為了避免與系統無障礙手勢衝突，全域手勢預設**只在自訂模式下啟用**：
+
+```dart
+GlobalGestureWrapper(
+  child: YourContent(),
+  onlyInCustomMode: true,  // 預設為 true
+)
+```
+
+- **系統無障礙已啟用（TalkBack/VoiceOver）**: 自動停用全域手勢，避免衝突
+- **系統無障礙未啟用**: 啟用全域手勢，提供快速導航
+
+#### 配置選項
+透過 `GlobalGestureService` 自訂手勢行為：
+
+```dart
+globalGestureService.updateConfig(
+  GlobalGestureConfig(
+    enableVoiceFeedback: true,    // 啟用語音提示
+    enableHapticFeedback: true,   // 啟用觸覺反饋
+    swipeThreshold: 50.0,         // 滑動距離閾值（像素）
+  ),
+);
+```
+
+---
+
 ## 手勢設計對照表
+
+### 元素互動手勢
 
 | 使用者操作 | 系統無障礙模式 | 自訂模式 |
 |----------|-------------|---------|
 | 單擊元素 | 聚焦並朗讀 | 朗讀說明 |
 | 雙擊元素 | 執行動作 | 執行動作 |
 | 語音來源 | 系統 TTS (TalkBack/VoiceOver) | 自訂 TTS (flutter_tts) |
+
+### 全域導航手勢
+
+| 手勢類型 | 動作 | 系統無障礙模式 | 自訂模式 |
+|---------|------|--------------|---------|
+| 兩指上滑 | 回到首頁 | 停用（避免衝突） | 啟用 + 語音提示 |
+| 兩指下滑 | 返回上一頁 | 停用（避免衝突） | 啟用 + 語音提示 |
 
 ---
 
@@ -135,6 +209,23 @@ void initState() {
 }
 ```
 
+### 整合全域手勢
+```dart
+@override
+Widget build(BuildContext context) {
+  return GlobalGestureScaffold(  // 使用 GlobalGestureScaffold
+    backgroundColor: AppColors.background,
+    appBar: AppBar(
+      title: Text('結帳 - 步驟 ${_currentStep + 1}/5'),
+      centerTitle: true,
+    ),
+    body: PageView(
+      // 頁面內容
+    ),
+  );
+}
+```
+
 ### 按鈕實作
 ```dart
 AccessibleGestureWrapper(
@@ -168,19 +259,26 @@ AccessibleSpeakWrapper(
 ### 測試自訂模式（系統無障礙關閉）
 1. 確保手機 TalkBack/VoiceOver **已關閉**
 2. 開啟 App
-3. 驗證行為:
+3. 驗證元素互動:
    - 單擊元素 → 播放語音說明
    - 雙擊元素 → 執行動作
    - 語音來源: flutter_tts
+4. 驗證全域手勢:
+   - 兩指上滑 → 回到首頁（播放「回到首頁」）
+   - 兩指下滑 → 返回上一頁（播放「返回上一頁」）
+   - 在首頁兩指下滑 → 播放「已在最上層頁面」
 
 ### 測試系統模式（系統無障礙開啟）
 1. 開啟手機 TalkBack (Android) 或 VoiceOver (iOS)
 2. 開啟 App
-3. 驗證行為:
+3. 驗證元素互動:
    - 單擊元素 → 聚焦並朗讀（系統語音）
    - 雙擊元素 → 執行動作
    - 語音來源: 系統 TTS
    - 無雙重朗讀
+4. 驗證全域手勢:
+   - 兩指上滑/下滑 → 不觸發自訂導航（避免衝突）
+   - 使用系統原生手勢進行導航
 
 ---
 
@@ -301,6 +399,38 @@ bool get shouldUseCustomTTS => true; // 強制自訂
 修改 `lib/utils/tts_helper.dart`:
 ```dart
 await _flutterTts.setSpeechRate(0.45); // 調整數值 (0.0 - 1.0)
+```
+
+### Q: 全域手勢為什麼在 TalkBack/VoiceOver 下不作用？
+**A**:
+這是**刻意設計**，避免與系統無障礙手勢衝突。當偵測到系統無障礙啟用時，全域手勢會自動停用，讓使用者使用系統原生的導航手勢。
+
+### Q: 如何調整手勢靈敏度？
+**A**:
+調整 `swipeThreshold` 參數（預設為 50 像素）：
+```dart
+globalGestureService.updateConfig(
+  GlobalGestureConfig(
+    swipeThreshold: 80.0,  // 增加到 80 像素（降低靈敏度）
+  ),
+);
+```
+
+### Q: 可以在其他頁面也加入全域手勢嗎？
+**A**:
+可以！只需將頁面的 `Scaffold` 改為 `GlobalGestureScaffold`：
+```dart
+// 原本的程式碼
+return Scaffold(
+  appBar: AppBar(...),
+  body: YourContent(),
+);
+
+// 改為
+return GlobalGestureScaffold(
+  appBar: AppBar(...),
+  body: YourContent(),
+);
 ```
 
 ---
