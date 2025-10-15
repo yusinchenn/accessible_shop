@@ -161,7 +161,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(
-        title: Text(_entryItems[_currentPageIndex].title), // 顯示當前卡片的標題
+        title: const Text('首頁'), // 顯示固定文字「首頁」
         centerTitle: true, // 標題居中
       ),
       body: Center(
