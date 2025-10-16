@@ -7,6 +7,7 @@ import '../../models/cart_item.dart';
 import '../../models/coupon.dart';
 import '../../models/shipping_method.dart';
 import '../../models/payment_method.dart';
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 結帳主頁面
 class CheckoutPage extends StatefulWidget {
@@ -73,7 +74,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final selectedItems = cartData.selectedItems;
 
     if (selectedItems.isEmpty) {
-      return Scaffold(
+      return GlobalGestureScaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('結帳')),
         body: Center(
@@ -92,7 +93,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
     }
 
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('結帳 - 步驟 ${_currentStep + 1}/5'),

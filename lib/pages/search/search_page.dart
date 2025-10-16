@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:provider/provider.dart';
+import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 商品資料模型
 class Product {
@@ -184,7 +185,7 @@ class _SearchPageState extends State<SearchPage> {
       builder: (context, _) {
         final productBrowserData = Provider.of<ProductBrowserData>(context);
 
-        return Scaffold(
+        return GlobalGestureScaffold(
           backgroundColor: AppColors.background, // 套用背景色
           appBar: AppBar(title: Text('搜尋 $_searchKeyword'), centerTitle: true),
           body: NotificationListener<ScrollEndNotification>(

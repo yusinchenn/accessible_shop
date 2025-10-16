@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
+import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class HelpSupportPage extends StatefulWidget {
   const HelpSupportPage({Key? key}) : super(key: key);
@@ -26,7 +27,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('幫助與客服')),
       body: const Center(child: Text('這是幫助與客服頁面')),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 無障礙登入/註冊頁面 - 分步驟設計
 class AccessibleAuthPage extends StatefulWidget {
@@ -158,7 +159,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(

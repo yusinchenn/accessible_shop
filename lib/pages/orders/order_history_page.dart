@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
+import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({Key? key}) : super(key: key);
@@ -32,7 +33,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('歷史訂單')),
       body: _hasOrders

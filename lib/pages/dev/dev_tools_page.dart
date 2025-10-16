@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../services/test_data_service.dart';
 import '../../utils/app_constants.dart';
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 開發工具頁面
 /// 用於初始化測試資料和管理資料庫
@@ -194,7 +195,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       appBar: AppBar(
         title: const Text('開發工具'),
         centerTitle: true,

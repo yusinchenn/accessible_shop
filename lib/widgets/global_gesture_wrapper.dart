@@ -50,6 +50,9 @@ class _GlobalGestureWrapperState extends State<GlobalGestureWrapper> {
   // 記錄觸控點的當前位置
   final Map<int, Offset> _currentTouchPoints = {};
 
+  // 記錄最大觸控點數量
+  int _maxPointers = 0;
+
   @override
   Widget build(BuildContext context) {
     // 檢查是否應該啟用手勢
@@ -61,39 +64,62 @@ class _GlobalGestureWrapperState extends State<GlobalGestureWrapper> {
     }
 
     return Listener(
+      behavior: HitTestBehavior.translucent,
       onPointerDown: (event) {
         // 記錄觸控點的起始位置
         _touchPoints[event.pointer] = event.position;
         _currentTouchPoints[event.pointer] = event.position;
+
+        // 更新最大觸控點數量
+        if (_touchPoints.length > _maxPointers) {
+          _maxPointers = _touchPoints.length;
+        }
+
+        debugPrint('[GlobalGesture] 觸控點按下: pointer=${event.pointer}, 總數=${_touchPoints.length}');
       },
       onPointerMove: (event) {
         // 更新觸控點的當前位置
-        _currentTouchPoints[event.pointer] = event.position;
+        if (_touchPoints.containsKey(event.pointer)) {
+          _currentTouchPoints[event.pointer] = event.position;
+        }
       },
       onPointerUp: (event) {
+        debugPrint('[GlobalGesture] 觸控點放開: pointer=${event.pointer}, 當前總數=${_touchPoints.length}');
+
+        // 在移除觸控點之前，檢查是否為兩指手勢
+        if (_maxPointers == 2 && _touchPoints.length == 2) {
+          _handleTwoFingerGesture();
+        }
+
         // 移除觸控點記錄
         _touchPoints.remove(event.pointer);
         _currentTouchPoints.remove(event.pointer);
+
+        // 如果所有觸控點都已移除，重置計數器
+        if (_touchPoints.isEmpty) {
+          _maxPointers = 0;
+        }
       },
       onPointerCancel: (event) {
+        debugPrint('[GlobalGesture] 觸控點取消: pointer=${event.pointer}');
         // 移除觸控點記錄
         _touchPoints.remove(event.pointer);
         _currentTouchPoints.remove(event.pointer);
+
+        // 如果所有觸控點都已移除，重置計數器
+        if (_touchPoints.isEmpty) {
+          _maxPointers = 0;
+        }
       },
-      child: GestureDetector(
-        // 偵測垂直拖曳（用於兩指滑動）
-        onVerticalDragEnd: (details) {
-          _handleVerticalDragEnd(details);
-        },
-        child: widget.child,
-      ),
+      child: widget.child,
     );
   }
 
-  /// 處理垂直拖曳結束
-  void _handleVerticalDragEnd(DragEndDetails details) {
-    // 檢查是否有兩個觸控點
+  /// 處理兩指手勢
+  void _handleTwoFingerGesture() {
+    // 確保有兩個觸控點的完整記錄
     if (_touchPoints.length != 2 || _currentTouchPoints.length != 2) {
+      debugPrint('[GlobalGesture] 觸控點數量不符: start=${_touchPoints.length}, current=${_currentTouchPoints.length}');
       return;
     }
 
@@ -105,27 +131,34 @@ class _GlobalGestureWrapperState extends State<GlobalGestureWrapper> {
       if (_currentTouchPoints.containsKey(pointer)) {
         final startY = _touchPoints[pointer]!.dy;
         final currentY = _currentTouchPoints[pointer]!.dy;
-        totalDeltaY += (currentY - startY);
+        final deltaY = currentY - startY;
+        totalDeltaY += deltaY;
         validPointsCount++;
+        debugPrint('[GlobalGesture] 觸控點 $pointer: startY=$startY, currentY=$currentY, deltaY=$deltaY');
       }
     }
 
     if (validPointsCount != 2) {
+      debugPrint('[GlobalGesture] 有效觸控點數量不足: $validPointsCount');
       return;
     }
 
     final averageDeltaY = totalDeltaY / validPointsCount;
     final threshold = globalGestureService.config.swipeThreshold;
 
-    debugPrint('[GlobalGesture] 兩指滑動距離: $averageDeltaY');
+    debugPrint('[GlobalGesture] 兩指平均滑動距離: $averageDeltaY (閾值: $threshold)');
 
     // 判斷滑動方向
     if (averageDeltaY < -threshold) {
       // 向上滑動 - 回首頁
+      debugPrint('[GlobalGesture] ✅ 偵測到兩指上滑 - 回首頁');
       globalGestureService.handleTwoFingerSwipeUp(context);
     } else if (averageDeltaY > threshold) {
       // 向下滑動 - 回上一頁
+      debugPrint('[GlobalGesture] ✅ 偵測到兩指下滑 - 回上一頁');
       globalGestureService.handleTwoFingerSwipeDown(context);
+    } else {
+      debugPrint('[GlobalGesture] ❌ 滑動距離未達閾值');
     }
   }
 }
@@ -170,7 +203,10 @@ class GlobalGestureScaffold extends StatelessWidget {
     return Scaffold(
       appBar: appBar,
       body: enableGlobalGestures && body != null
-          ? GlobalGestureWrapper(child: body!)
+          ? GlobalGestureWrapper(
+              onlyInCustomMode: false, // 始終啟用手勢，不限於自訂模式
+              child: body!,
+            )
           : body,
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,

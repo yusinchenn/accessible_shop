@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/providers/auth_provider.dart';
+import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class AccountInfoPage extends StatefulWidget {
   const AccountInfoPage({Key? key}) : super(key: key);
@@ -59,7 +60,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
 
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('帳號資訊'),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../models/product.dart';
 import '../../utils/app_constants.dart';
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class ProductDetailPage extends StatefulWidget {
   final int? productId;
@@ -48,7 +49,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(
         title: Text(_product?['name'] ?? '商品詳情'),

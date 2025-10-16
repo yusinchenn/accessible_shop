@@ -4,6 +4,7 @@ import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart'; // Updated import path
 import '../../utils/tts_helper.dart'; // ✅ 改用全域 ttsHelper
 import '../../utils/app_constants.dart'; // ✅ 匯入全域樣式常數
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 購物車頁面
 class ShoppingCartPage extends StatefulWidget {
@@ -43,7 +44,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('購物車')),
       body: Consumer<ShoppingCartData>(

@@ -59,7 +59,7 @@ class GlobalGestureService {
     }
 
     // 導航到首頁（移除所有路由）
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
   }
 
   /// 處理兩指下滑（回上一頁）

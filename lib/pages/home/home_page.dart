@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 import '../../utils/app_constants.dart'; // 匯入全域樣式常數
+import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
@@ -158,7 +159,7 @@ class _HomePageState extends State<HomePage> {
   /// 構建頁面 UI，使用 Scaffold 和 PageView 顯示卡片
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(
         title: const Text('首頁'), // 顯示固定文字「首頁」

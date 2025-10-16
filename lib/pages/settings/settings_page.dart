@@ -8,6 +8,7 @@ import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/pages/settings/account_info_page.dart';
 import 'package:accessible_shop/pages/settings/app_settings_page.dart';
 import 'package:accessible_shop/pages/settings/help_support_page.dart';
+import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -37,7 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
       appBar: AppBar(title: const Text('帳號')),
       body: Column(
