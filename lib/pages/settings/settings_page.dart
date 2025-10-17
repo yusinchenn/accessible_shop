@@ -90,6 +90,22 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
+          const Divider(height: 1, thickness: 1),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _speak("開發工具"),
+              onDoubleTap: () => Navigator.pushNamed(context, '/dev-tools'),
+              child: Container(
+                color: Colors.purple[50],
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: const Text(
+                  '開發工具',
+                  style: AppTextStyles.title,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

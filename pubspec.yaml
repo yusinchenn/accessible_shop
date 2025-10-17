@@ -13,11 +13,10 @@ dependencies:
   cupertino_icons: ^1.0.8            # iOS Cupertino Icon 套件
   provider: ^6.1.5+1                 # 狀態管理
   isar: ^3.1.0+1                     # 本地資料庫核心
+  isar_flutter_libs: ^3.1.0+1        # Isar Flutter 原生庫（必需）
   path_provider: ^2.1.5              # 取得裝置資料夾路徑
   flutter_tts: ^4.2.3                # 文字轉語音
   speech_to_text: ^7.3.0             # 語音轉文字
-  build_runner: ^2.4.13              # 代碼生成工具
-  isar_generator: ^3.1.0+1           # Isar 代碼生成插件
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0
 
@@ -26,6 +25,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter                     # Flutter 測試框架
   flutter_lints: ^6.0.0              # Flutter 專案建議 Lint 規則
+  build_runner: ^2.4.13              # 代碼生成工具
+  isar_generator: ^3.1.0+1           # Isar 代碼生成插件
 
 # ------------------ Flutter 專屬設定 ------------------
 flutter:

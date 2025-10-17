@@ -53,6 +53,11 @@ class DatabaseService extends ChangeNotifier {
     final isar = await _isarFuture;
     final allProducts = await isar.products.where().findAll();
 
+    if (kDebugMode) {
+      print('🔍 [DatabaseService] 資料庫總商品數: ${allProducts.length}');
+      print('🔍 [DatabaseService] 搜尋關鍵字: "$keyword"');
+    }
+
     final searchKeyword = keyword.toLowerCase().trim();
 
     // 使用評分系統進行排序
@@ -112,6 +117,17 @@ class DatabaseService extends ChangeNotifier {
 
     // 按分數排序（高到低）
     scoredProducts.sort((a, b) => b.value.compareTo(a.value));
+
+    if (kDebugMode) {
+      print('🔍 [DatabaseService] 找到 ${scoredProducts.length} 筆符合的商品');
+      if (scoredProducts.isNotEmpty) {
+        print('🔍 [DatabaseService] 前 3 筆結果（含分數）:');
+        for (var i = 0; i < scoredProducts.length && i < 3; i++) {
+          final entry = scoredProducts[i];
+          print('   ${i + 1}. ${entry.key.name} (分數: ${entry.value}, 分類: ${entry.key.category})');
+        }
+      }
+    }
 
     // 返回排序後的商品列表
     return scoredProducts.map((entry) => entry.key).toList();

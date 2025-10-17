@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:accessible_shop/utils/tts_helper.dart';
-import 'package:accessible_shop/utils/app_constants.dart';
-import 'package:accessible_shop/widgets/global_gesture_wrapper.dart';
-import 'package:accessible_shop/widgets/product_card.dart';
-import 'package:accessible_shop/models/product.dart';
-import 'package:accessible_shop/services/database_service.dart';
+import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
+import '../../utils/app_constants.dart';
+import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/product_card.dart';
+import '../../models/product.dart';
+import '../../services/database_service.dart';
 
 /// 搜尋頁面
 class SearchPage extends StatefulWidget {
@@ -19,7 +19,6 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late final PageController _pageController;
   List<Product> _products = [];
-  final TtsHelper _ttsHelper = TtsHelper();
   String _searchKeyword = ''; // 用戶搜尋關鍵字
   int _currentPageIndex = 0; // 當前頁面索引
   bool _loading = true;
@@ -49,8 +48,22 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
 
+      if (kDebugMode) {
+        print('🔍 [SearchPage] 開始搜尋關鍵字: "$_searchKeyword"');
+      }
+
       // 使用智能搜尋方法（支援模糊搜尋與優先級排序）
       List<Product> searchResults = await db.searchProducts(_searchKeyword);
+
+      if (kDebugMode) {
+        print('🔍 [SearchPage] 搜尋結果數量: ${searchResults.length}');
+        if (searchResults.isNotEmpty) {
+          print('🔍 [SearchPage] 前 3 筆結果:');
+          for (var i = 0; i < searchResults.length && i < 3; i++) {
+            print('   ${i + 1}. ${searchResults[i].name} (分類: ${searchResults[i].category})');
+          }
+        }
+      }
 
       setState(() {
         _products = searchResults;
@@ -65,13 +78,13 @@ class _SearchPageState extends State<SearchPage> {
       } else {
         // 沒有搜尋結果時也播報
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _ttsHelper.speak('找不到相關商品，請嘗試其他關鍵字');
+          ttsHelper.speak('找不到相關商品，請嘗試其他關鍵字');
         });
       }
     } catch (e) {
       setState(() => _loading = false);
       if (kDebugMode) {
-        print('載入商品失敗: $e');
+        print('❌ [SearchPage] 載入商品失敗: $e');
       }
     }
   }
@@ -87,14 +100,14 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _speakSearchResult() async {
     final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
     final searchText = '搜尋 $keyword 的結果';
-    await _ttsHelper.speak(searchText);
+    await ttsHelper.speak(searchText);
   }
 
   Future<void> _speakProductCard(int index) async {
     if (index < 0 || index >= _products.length) return;
     final product = _products[index];
     final productText = _getProductCardText(product);
-    await _ttsHelper.speak(productText);
+    await ttsHelper.speak(productText);
   }
 
   String _getProductCardText(Product product) {
@@ -115,7 +128,7 @@ class _SearchPageState extends State<SearchPage> {
   void dispose() {
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
-    _ttsHelper.dispose();
+    // 不要 dispose 全域 ttsHelper，因為它是全域資源
     super.dispose();
   }
 
