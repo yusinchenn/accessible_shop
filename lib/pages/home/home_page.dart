@@ -34,19 +34,41 @@ class HomePage extends StatefulWidget {
 /// HomePage 的狀態類，管理頁面的動態行為和狀態
 class _HomePageState extends State<HomePage> {
   late final PageController _pageController; // 控制 PageView 的滾動控制器，延遲初始化
+  final TextEditingController _searchController = TextEditingController(); // 搜尋輸入控制器
+  final FocusNode _searchFocusNode = FocusNode(); // 搜尋輸入框焦點節點
 
   int _currentPageIndex = 0; // 當前顯示的卡片索引（對應 _entryItems 的實際索引）
   bool _isAnnouncingHome = false; // 標記是否正在進行首頁進入的語音播報
   bool _speaking = false; // 標記是否正在進行語音播報
   bool _announceScheduled = false; // 標記是否已排程首頁進入的播報
 
-  /// 定義首頁的卡片清單，包含搜尋、購物車、訂單和帳號四個入口
-  final List<ShopEntryItem> _entryItems = <ShopEntryItem>[
+  /// 取得首頁的卡片清單，包含搜尋、購物車、訂單和帳號四個入口
+  List<ShopEntryItem> get _entryItems => <ShopEntryItem>[
     ShopEntryItem(
       title: '搜尋', // 卡片標題
       icon: Icons.search, // 搜尋圖示
       route: '/search', // 導航路由
-      contentBuilder: (context) => const Center(child: Text('搜尋入口')), // 卡片內容
+      contentBuilder: (context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: TextField(
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            style: const TextStyle(fontSize: 28),
+            decoration: const InputDecoration(
+              hintText: '輸入商品名稱...',
+              hintStyle: TextStyle(fontSize: 28),
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(AppSpacing.md),
+            ),
+            onSubmitted: (value) {
+              if (value.trim().isNotEmpty) {
+                _onSearchSubmit(value.trim());
+              }
+            },
+          ),
+        ),
+      ),
     ),
     ShopEntryItem(
       title: '購物車',
@@ -134,11 +156,13 @@ class _HomePageState extends State<HomePage> {
     ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報新卡片的標題
   }
 
-  /// 清理資源，釋放 PageController
+  /// 清理資源，釋放 PageController 和搜尋相關控制器
   @override
   void dispose() {
     _pageController.removeListener(_onPageChanged); // 移除頁面變化監聽器
     _pageController.dispose(); // 釋放 PageController
+    _searchController.dispose(); // 釋放搜尋輸入控制器
+    _searchFocusNode.dispose(); // 釋放搜尋輸入框焦點節點
     // 不要 dispose 全域 ttsHelper，因為它是全域資源
     super.dispose();
   }
@@ -149,9 +173,29 @@ class _HomePageState extends State<HomePage> {
     ttsHelper.speak(_entryItems[index].title); // 播報點擊的卡片標題
   }
 
-  /// 處理雙擊事件，導航到指定路由
-  void _onDoubleTap(String route) {
-    Navigator.pushNamed(context, route).then((_) {
+  /// 處理雙擊事件，導航到指定路由或開啟搜尋輸入
+  void _onDoubleTap(String route, int actualIndex) {
+    // 如果是搜尋卡片，開啟鍵盤輸入
+    if (actualIndex == 0) {
+      _searchFocusNode.requestFocus();
+      ttsHelper.speak('請輸入商品名稱');
+    } else {
+      Navigator.pushNamed(context, route).then((_) {
+        // 導航返回後，didChangeDependencies 會觸發 _announceEnter
+      });
+    }
+  }
+
+  /// 處理搜尋提交事件
+  void _onSearchSubmit(String keyword) {
+    _searchFocusNode.unfocus(); // 關閉鍵盤
+    Navigator.pushNamed(
+      context,
+      '/search',
+      arguments: keyword,
+    ).then((_) {
+      // 清空搜尋框
+      _searchController.clear();
       // 導航返回後，didChangeDependencies 會觸發 _announceEnter
     });
   }
@@ -197,7 +241,8 @@ class _HomePageState extends State<HomePage> {
                     onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
                     onDoubleTap: () => _onDoubleTap(
                       _entryItems[actualIndex].route,
-                    ), // 雙擊導航到對應路由
+                      actualIndex,
+                    ), // 雙擊導航到對應路由或開啟搜尋輸入
                     child: Card(
                       elevation: 8, // 卡片陰影效果
                       shape: RoundedRectangleBorder(
