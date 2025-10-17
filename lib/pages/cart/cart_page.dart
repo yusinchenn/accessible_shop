@@ -185,8 +185,8 @@ class ShoppingCartItemCard extends StatelessWidget {
       onTap: () => ttsHelper.speak(
         "${item.name}，${item.specification}，單價${item.unitPrice.toStringAsFixed(0)}元，數量${item.quantity}",
       ),
-      onDoubleTap: () {
-        cartData.toggleSelection(item.id);
+      onDoubleTap: () async {
+        await cartData.toggleSelection(item.id);
         ttsHelper.speak("${item.isSelected ? '選取' : '取消選取'}${item.name}");
       },
       onLongPress: () => onShowMoreActions(item),
@@ -216,9 +216,9 @@ class ShoppingCartItemCard extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => ttsHelper.speak("減少商品${item.name}"),
-                      onDoubleTap: () {
-                        cartData.decrementQuantity(item.id);
-                        ttsHelper.speak("已減少商品${item.name}，共${item.quantity}項");
+                      onDoubleTap: () async {
+                        await cartData.decrementQuantity(item.id);
+                        ttsHelper.speak("已減少商品${item.name}");
                       },
                       child: Container(
                         height: 50,
@@ -237,9 +237,9 @@ class ShoppingCartItemCard extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => ttsHelper.speak("增加商品${item.name}"),
-                      onDoubleTap: () {
-                        cartData.incrementQuantity(item.id);
-                        ttsHelper.speak("已增加商品${item.name}，共${item.quantity}項");
+                      onDoubleTap: () async {
+                        await cartData.incrementQuantity(item.id);
+                        ttsHelper.speak("已增加商品${item.name}");
                       },
                       child: Container(
                         height: 50,
@@ -298,8 +298,8 @@ class MoreActionsOverlay extends StatelessWidget {
                   child: const Text("加入比較"),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    cartData.removeItem(item.id);
+                  onPressed: () async {
+                    await cartData.removeItem(item.id);
                     ttsHelper.speak("刪除商品");
                     onDismiss();
                   },

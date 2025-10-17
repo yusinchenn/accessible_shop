@@ -163,8 +163,14 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
               /// DatabaseService 在背景初始化 Isar
               ChangeNotifierProvider(create: (_) => DatabaseService()),
 
-              /// 購物車資料
-              ChangeNotifierProvider(create: (_) => ShoppingCartData()),
+              /// 購物車資料 (依賴 DatabaseService)
+              ChangeNotifierProxyProvider<DatabaseService, ShoppingCartData>(
+                create: (context) => ShoppingCartData(
+                  Provider.of<DatabaseService>(context, listen: false),
+                ),
+                update: (context, dbService, previous) =>
+                  previous ?? ShoppingCartData(dbService),
+              ),
             ],
             child: const AppRouter(),
           );

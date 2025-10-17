@@ -27,18 +27,23 @@ const CartItemSchema = CollectionSchema(
       name: r'name',
       type: IsarType.string,
     ),
-    r'quantity': PropertySchema(
+    r'productId': PropertySchema(
       id: 2,
+      name: r'productId',
+      type: IsarType.long,
+    ),
+    r'quantity': PropertySchema(
+      id: 3,
       name: r'quantity',
       type: IsarType.long,
     ),
     r'specification': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'specification',
       type: IsarType.string,
     ),
     r'unitPrice': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'unitPrice',
       type: IsarType.double,
     )
@@ -76,9 +81,10 @@ void _cartItemSerialize(
 ) {
   writer.writeBool(offsets[0], object.isSelected);
   writer.writeString(offsets[1], object.name);
-  writer.writeLong(offsets[2], object.quantity);
-  writer.writeString(offsets[3], object.specification);
-  writer.writeDouble(offsets[4], object.unitPrice);
+  writer.writeLong(offsets[2], object.productId);
+  writer.writeLong(offsets[3], object.quantity);
+  writer.writeString(offsets[4], object.specification);
+  writer.writeDouble(offsets[5], object.unitPrice);
 }
 
 CartItem _cartItemDeserialize(
@@ -91,9 +97,10 @@ CartItem _cartItemDeserialize(
   object.id = id;
   object.isSelected = reader.readBool(offsets[0]);
   object.name = reader.readString(offsets[1]);
-  object.quantity = reader.readLong(offsets[2]);
-  object.specification = reader.readString(offsets[3]);
-  object.unitPrice = reader.readDouble(offsets[4]);
+  object.productId = reader.readLong(offsets[2]);
+  object.quantity = reader.readLong(offsets[3]);
+  object.specification = reader.readString(offsets[4]);
+  object.unitPrice = reader.readDouble(offsets[5]);
   return object;
 }
 
@@ -111,8 +118,10 @@ P _cartItemDeserializeProp<P>(
     case 2:
       return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -400,6 +409,59 @@ extension CartItemQueryFilter
     });
   }
 
+  QueryBuilder<CartItem, CartItem, QAfterFilterCondition> productIdEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'productId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CartItem, CartItem, QAfterFilterCondition> productIdGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'productId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CartItem, CartItem, QAfterFilterCondition> productIdLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'productId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<CartItem, CartItem, QAfterFilterCondition> productIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'productId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<CartItem, CartItem, QAfterFilterCondition> quantityEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -681,6 +743,18 @@ extension CartItemQuerySortBy on QueryBuilder<CartItem, CartItem, QSortBy> {
     });
   }
 
+  QueryBuilder<CartItem, CartItem, QAfterSortBy> sortByProductId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'productId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CartItem, CartItem, QAfterSortBy> sortByProductIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'productId', Sort.desc);
+    });
+  }
+
   QueryBuilder<CartItem, CartItem, QAfterSortBy> sortByQuantity() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'quantity', Sort.asc);
@@ -756,6 +830,18 @@ extension CartItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<CartItem, CartItem, QAfterSortBy> thenByProductId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'productId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CartItem, CartItem, QAfterSortBy> thenByProductIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'productId', Sort.desc);
+    });
+  }
+
   QueryBuilder<CartItem, CartItem, QAfterSortBy> thenByQuantity() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'quantity', Sort.asc);
@@ -808,6 +894,12 @@ extension CartItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<CartItem, CartItem, QDistinct> distinctByProductId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'productId');
+    });
+  }
+
   QueryBuilder<CartItem, CartItem, QDistinct> distinctByQuantity() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'quantity');
@@ -846,6 +938,12 @@ extension CartItemQueryProperty
   QueryBuilder<CartItem, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<CartItem, int, QQueryOperations> productIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'productId');
     });
   }
 

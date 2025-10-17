@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 // 匯入模型
 import '../models/product.dart';
-import '../models/cart_item.dart' show CartItemSchema;
+import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 
 class DatabaseService extends ChangeNotifier {
@@ -131,6 +131,133 @@ class DatabaseService extends ChangeNotifier {
 
     // 返回排序後的商品列表
     return scoredProducts.map((entry) => entry.key).toList();
+  }
+
+  // ==================== 購物車相關方法 ====================
+
+  /// 取得所有購物車項目
+  Future<List<CartItem>> getCartItems() async {
+    final isar = await _isarFuture;
+    return await isar.cartItems.where().findAll();
+  }
+
+  /// 加入商品到購物車
+  /// 如果相同商品+規格已存在，則增加數量；否則新增項目
+  Future<void> addToCart({
+    required int productId,
+    required String productName,
+    required double price,
+    required String specification,
+    int quantity = 1,
+  }) async {
+    final isar = await _isarFuture;
+
+    // 檢查是否已有相同商品+規格的項目
+    final allItems = await isar.cartItems.where().findAll();
+    CartItem? existingItem;
+
+    try {
+      existingItem = allItems.firstWhere(
+        (item) => item.productId == productId && item.specification == specification,
+      );
+    } catch (e) {
+      existingItem = null;
+    }
+
+    await isar.writeTxn(() async {
+      if (existingItem != null) {
+        // 更新數量
+        existingItem.quantity += quantity;
+        await isar.cartItems.put(existingItem);
+        if (kDebugMode) {
+          print('🛒 [DatabaseService] 更新購物車項目: ${existingItem.name}, 新數量: ${existingItem.quantity}');
+        }
+      } else {
+        // 新增項目
+        final newItem = CartItem()
+          ..productId = productId
+          ..name = productName
+          ..specification = specification
+          ..unitPrice = price
+          ..quantity = quantity
+          ..isSelected = true; // 預設為選取狀態
+
+        await isar.cartItems.put(newItem);
+        if (kDebugMode) {
+          print('🛒 [DatabaseService] 新增購物車項目: $productName ($specification) x$quantity');
+        }
+      }
+    });
+
+    notifyListeners();
+  }
+
+  /// 更新購物車項目的數量
+  Future<void> updateCartItemQuantity(int cartItemId, int newQuantity) async {
+    if (newQuantity < 1) return;
+
+    final isar = await _isarFuture;
+    final item = await isar.cartItems.get(cartItemId);
+
+    if (item != null) {
+      await isar.writeTxn(() async {
+        item.quantity = newQuantity;
+        await isar.cartItems.put(item);
+      });
+
+      if (kDebugMode) {
+        print('🛒 [DatabaseService] 更新購物車項目數量: ${item.name}, 新數量: $newQuantity');
+      }
+
+      notifyListeners();
+    }
+  }
+
+  /// 切換購物車項目的選取狀態
+  Future<void> toggleCartItemSelection(int cartItemId) async {
+    final isar = await _isarFuture;
+    final item = await isar.cartItems.get(cartItemId);
+
+    if (item != null) {
+      await isar.writeTxn(() async {
+        item.isSelected = !item.isSelected;
+        await isar.cartItems.put(item);
+      });
+
+      if (kDebugMode) {
+        print('🛒 [DatabaseService] 切換購物車項目選取狀態: ${item.name}, 選取: ${item.isSelected}');
+      }
+
+      notifyListeners();
+    }
+  }
+
+  /// 從購物車移除項目
+  Future<void> removeFromCart(int cartItemId) async {
+    final isar = await _isarFuture;
+
+    await isar.writeTxn(() async {
+      final deleted = await isar.cartItems.delete(cartItemId);
+      if (kDebugMode) {
+        print('🛒 [DatabaseService] 從購物車移除項目, 成功: $deleted');
+      }
+    });
+
+    notifyListeners();
+  }
+
+  /// 清空購物車
+  Future<void> clearCart() async {
+    final isar = await _isarFuture;
+
+    await isar.writeTxn(() async {
+      await isar.cartItems.clear();
+      if (kDebugMode) {
+        print('🛒 [DatabaseService] 已清空購物車');
+      }
+    });
+
+    notifyListeners();
   }
 
   // 這裡還可以擴充其他 CRUD 方法...

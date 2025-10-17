@@ -1,31 +1,40 @@
 import 'package:flutter/material.dart';
-import '../../models/cart_item.dart';
+import '../models/cart_item.dart';
+import '../services/database_service.dart';
 
 /// 購物車狀態管理 (Provider)
 class ShoppingCartData extends ChangeNotifier {
-  final List<CartItem> _items = [
-    CartItem()
-      ..id = 1
-      ..name = '經典運動鞋'
-      ..specification = '22cm, 白色'
-      ..unitPrice = 1200.0
-      ..quantity = 1
-      ..isSelected = false,
-    CartItem()
-      ..id = 2
-      ..name = '經典運動鞋'
-      ..specification = '23cm, 黑色'
-      ..unitPrice = 1250.0
-      ..quantity = 2
-      ..isSelected = false,
-    CartItem()
-      ..id = 3
-      ..name = '專業慢跑襪'
-      ..specification = 'M號, 灰色'
-      ..unitPrice = 150.0
-      ..quantity = 3
-      ..isSelected = false,
-  ];
+  final DatabaseService _databaseService;
+  List<CartItem> _items = [];
+  bool _isLoading = false;
+
+  ShoppingCartData(this._databaseService) {
+    _loadCartItems();
+  }
+
+  /// 載入購物車項目
+  Future<void> _loadCartItems() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _items = await _databaseService.getCartItems();
+    } catch (e) {
+      debugPrint('載入購物車失敗: $e');
+      _items = [];
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// 重新載入購物車資料
+  Future<void> reload() async {
+    await _loadCartItems();
+  }
+
+  /// 是否正在載入
+  bool get isLoading => _isLoading;
 
   /// 讀取購物車商品
   List<CartItem> get items => List.unmodifiable(_items);
@@ -40,36 +49,33 @@ class ShoppingCartData extends ChangeNotifier {
   }
 
   /// 增加數量
-  void incrementQuantity(int id) {
-    final index = _items.indexWhere((item) => item.id == id);
-    if (index != -1) {
-      _items[index].quantity++;
-      notifyListeners();
+  Future<void> incrementQuantity(int id) async {
+    final item = getItemById(id);
+    if (item != null) {
+      await _databaseService.updateCartItemQuantity(id, item.quantity + 1);
+      await reload();
     }
   }
 
   /// 減少數量
-  void decrementQuantity(int id) {
-    final index = _items.indexWhere((item) => item.id == id);
-    if (index != -1 && _items[index].quantity > 1) {
-      _items[index].quantity--;
-      notifyListeners();
+  Future<void> decrementQuantity(int id) async {
+    final item = getItemById(id);
+    if (item != null && item.quantity > 1) {
+      await _databaseService.updateCartItemQuantity(id, item.quantity - 1);
+      await reload();
     }
   }
 
   /// 選取商品
-  void toggleSelection(int id) {
-    final index = _items.indexWhere((item) => item.id == id);
-    if (index != -1) {
-      _items[index].isSelected = !_items[index].isSelected;
-      notifyListeners();
-    }
+  Future<void> toggleSelection(int id) async {
+    await _databaseService.toggleCartItemSelection(id);
+    await reload();
   }
 
   /// 移除商品
-  void removeItem(int id) {
-    _items.removeWhere((item) => item.id == id);
-    notifyListeners();
+  Future<void> removeItem(int id) async {
+    await _databaseService.removeFromCart(id);
+    await reload();
   }
 
   /// 已選商品數量

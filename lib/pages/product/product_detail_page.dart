@@ -18,6 +18,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _loading = true;
   final TtsHelper _ttsHelper = TtsHelper();
 
+  // 規格選擇狀態
+  String _selectedSize = '通用尺寸';
+  String _selectedColor = '預設顏色';
+  int _quantity = 1;
+
+  // 可選的規格選項（可以從商品屬性動態生成）
+  final List<String> _sizeOptions = ['通用尺寸', 'S', 'M', 'L', 'XL'];
+  final List<String> _colorOptions = ['預設顏色', '黑色', '白色', '灰色', '藍色', '紅色'];
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +79,264 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final category = _product!.category != null ? '，分類${_product!.category}' : '';
     final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$category';
     await _ttsHelper.speak(text);
+  }
+
+  /// 加入購物車
+  Future<void> _addToCart() async {
+    if (_product == null) return;
+
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final specification = '尺寸: $_selectedSize / 顏色: $_selectedColor';
+
+      await db.addToCart(
+        productId: _product!.id,
+        productName: _product!.name,
+        price: _product!.price,
+        specification: specification,
+        quantity: _quantity,
+      );
+
+      _ttsHelper.speak('已加入購物車，$_quantity 項');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '已加入購物車: ${_product!.name} x$_quantity',
+              style: const TextStyle(fontSize: 24),
+            ),
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: '查看購物車',
+              onPressed: () {
+                Navigator.pushNamed(context, '/cart');
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      _ttsHelper.speak('加入購物車失敗');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '加入購物車失敗: $e',
+              style: const TextStyle(fontSize: 24),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 建立規格選擇區域
+  Widget _buildSpecificationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 尺寸選擇
+        GestureDetector(
+          onTap: () => _ttsHelper.speak('選擇尺寸'),
+          child: const Text(
+            '選擇尺寸',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: _sizeOptions.map((size) {
+            final isSelected = size == _selectedSize;
+            return GestureDetector(
+              onTap: () => _ttsHelper.speak('尺寸 $size'),
+              onDoubleTap: () {
+                setState(() => _selectedSize = size);
+                _ttsHelper.speak('已選擇尺寸 $size');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey[400]!,
+                    width: 2,
+                  ),
+                ),
+                child: Text(
+                  size,
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: isSelected ? Colors.white : AppColors.text,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // 顏色選擇
+        GestureDetector(
+          onTap: () => _ttsHelper.speak('選擇顏色'),
+          child: const Text(
+            '選擇顏色',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: _colorOptions.map((color) {
+            final isSelected = color == _selectedColor;
+            return GestureDetector(
+              onTap: () => _ttsHelper.speak('顏色 $color'),
+              onDoubleTap: () {
+                setState(() => _selectedColor = color);
+                _ttsHelper.speak('已選擇顏色 $color');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.accent : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? AppColors.accent : Colors.grey[400]!,
+                    width: 2,
+                  ),
+                ),
+                child: Text(
+                  color,
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: isSelected ? Colors.white : AppColors.text,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// 建立數量選擇器
+  Widget _buildQuantitySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _ttsHelper.speak('選擇數量'),
+          child: const Text(
+            '選擇數量',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            // 減少按鈕
+            GestureDetector(
+              onTap: () => _ttsHelper.speak('減少數量'),
+              onDoubleTap: () {
+                if (_quantity > 1) {
+                  setState(() => _quantity--);
+                  _ttsHelper.speak('數量 $_quantity');
+                }
+              },
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: _quantity > 1 ? AppColors.primary : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.remove,
+                  color: _quantity > 1 ? Colors.white : Colors.grey[600],
+                  size: 32,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+
+            // 數量顯示
+            GestureDetector(
+              onTap: () => _ttsHelper.speak('數量 $_quantity'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.divider, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$_quantity',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+
+            // 增加按鈕
+            GestureDetector(
+              onTap: () => _ttsHelper.speak('增加數量'),
+              onDoubleTap: () {
+                if (_quantity < 99) {
+                  setState(() => _quantity++);
+                  _ttsHelper.speak('數量 $_quantity');
+                }
+              },
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: _quantity < 99 ? AppColors.primary : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: _quantity < 99 ? Colors.white : Colors.grey[600],
+                  size: 32,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -219,19 +486,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ),
                         const SizedBox(height: AppSpacing.xl),
 
+                        // 規格選擇區域
+                        _buildSpecificationSection(),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // 數量選擇
+                        _buildQuantitySelector(),
+
+                        const SizedBox(height: AppSpacing.xl),
+
                         // 加入購物車按鈕
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              _ttsHelper.speak('已加入購物車');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('已加入購物車', style: TextStyle(fontSize: 24)),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
+                            onPressed: _addToCart,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),

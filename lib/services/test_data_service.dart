@@ -220,22 +220,25 @@ class TestDataService {
   List<CartItem> _getSampleCartItems() {
     return [
       CartItem()
+        ..productId = 1 // Nike Air Max 270
         ..name = 'Nike Air Max 270'
-        ..specification = '尺寸: US 9 / 顏色: 黑色'
+        ..specification = '尺寸: L / 顏色: 黑色'
         ..unitPrice = 4500
         ..quantity = 1
         ..isSelected = true,
 
       CartItem()
+        ..productId = 10 // 運動水壺
         ..name = '運動水壺'
-        ..specification = '容量: 750ml / 顏色: 藍色'
+        ..specification = '尺寸: 通用尺寸 / 顏色: 藍色'
         ..unitPrice = 450
         ..quantity = 2
         ..isSelected = true,
 
       CartItem()
+        ..productId = 9 // 瑜珈墊
         ..name = '瑜珈墊'
-        ..specification = '厚度: 8mm / 顏色: 紫色'
+        ..specification = '尺寸: 通用尺寸 / 顏色: 紫色'
         ..unitPrice = 800
         ..quantity = 1
         ..isSelected = false,
