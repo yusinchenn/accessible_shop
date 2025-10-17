@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
+import '../models/order.dart';
 
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
@@ -21,6 +22,8 @@ class DatabaseService extends ChangeNotifier {
       ProductSchema,
       CartItemSchema,
       UserSettingsSchema,
+      OrderSchema,
+      OrderItemSchema,
     ], directory: dir.path);
   }
 
@@ -254,6 +257,156 @@ class DatabaseService extends ChangeNotifier {
       await isar.cartItems.clear();
       if (kDebugMode) {
         print('🛒 [DatabaseService] 已清空購物車');
+      }
+    });
+
+    notifyListeners();
+  }
+
+  // ==================== 訂單相關方法 ====================
+
+  /// 生成訂單編號（格式：YYYYMMDD-序號）
+  Future<String> generateOrderNumber() async {
+    final isar = await _isarFuture;
+    final now = DateTime.now();
+    final datePrefix = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+
+    // 查詢今天已有的訂單數量
+    final todayOrders = await isar.orders
+        .filter()
+        .orderNumberStartsWith(datePrefix)
+        .findAll();
+
+    final sequence = (todayOrders.length + 1).toString().padLeft(4, '0');
+    return '$datePrefix-$sequence';
+  }
+
+  /// 建立訂單
+  /// 從購物車選取項目和結帳選項建立訂單
+  Future<Order> createOrder({
+    required List<CartItem> cartItems,
+    int? couponId,
+    String? couponName,
+    double discount = 0.0,
+    required int shippingMethodId,
+    required String shippingMethodName,
+    required double shippingFee,
+    required int paymentMethodId,
+    required String paymentMethodName,
+  }) async {
+    final isar = await _isarFuture;
+
+    // 計算金額
+    final subtotal = cartItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+    final total = subtotal - discount + shippingFee;
+
+    // 生成訂單編號
+    final orderNumber = await generateOrderNumber();
+
+    // 建立訂單
+    final order = Order()
+      ..orderNumber = orderNumber
+      ..createdAt = DateTime.now()
+      ..status = 'pending'
+      ..subtotal = subtotal
+      ..discount = discount
+      ..shippingFee = shippingFee
+      ..total = total
+      ..couponId = couponId
+      ..couponName = couponName
+      ..shippingMethodId = shippingMethodId
+      ..shippingMethodName = shippingMethodName
+      ..paymentMethodId = paymentMethodId
+      ..paymentMethodName = paymentMethodName;
+
+    await isar.writeTxn(() async {
+      // 儲存訂單
+      await isar.orders.put(order);
+
+      // 建立訂單項目
+      for (var cartItem in cartItems) {
+        final orderItem = OrderItem()
+          ..orderId = order.id
+          ..productId = cartItem.productId
+          ..productName = cartItem.name
+          ..specification = cartItem.specification
+          ..unitPrice = cartItem.unitPrice
+          ..quantity = cartItem.quantity
+          ..subtotal = cartItem.unitPrice * cartItem.quantity;
+
+        await isar.orderItems.put(orderItem);
+      }
+
+      if (kDebugMode) {
+        print('📦 [DatabaseService] 建立訂單: $orderNumber, 共 ${cartItems.length} 項商品, 總金額: \$${total.toStringAsFixed(0)}');
+      }
+    });
+
+    notifyListeners();
+    return order;
+  }
+
+  /// 取得所有訂單（按時間倒序）
+  Future<List<Order>> getOrders() async {
+    final isar = await _isarFuture;
+    return await isar.orders
+        .where()
+        .sortByCreatedAtDesc()
+        .findAll();
+  }
+
+  /// 查詢單筆訂單
+  Future<Order?> getOrderById(int orderId) async {
+    final isar = await _isarFuture;
+    return await isar.orders.get(orderId);
+  }
+
+  /// 取得訂單的所有項目
+  Future<List<OrderItem>> getOrderItems(int orderId) async {
+    final isar = await _isarFuture;
+    return await isar.orderItems
+        .filter()
+        .orderIdEqualTo(orderId)
+        .findAll();
+  }
+
+  /// 更新訂單狀態
+  Future<void> updateOrderStatus(int orderId, String newStatus) async {
+    final isar = await _isarFuture;
+    final order = await isar.orders.get(orderId);
+
+    if (order != null) {
+      await isar.writeTxn(() async {
+        order.status = newStatus;
+        await isar.orders.put(order);
+      });
+
+      if (kDebugMode) {
+        print('📦 [DatabaseService] 更新訂單狀態: ${order.orderNumber}, 新狀態: $newStatus');
+      }
+
+      notifyListeners();
+    }
+  }
+
+  /// 結帳後清除購物車中已選取的項目
+  Future<void> clearSelectedCartItems() async {
+    final isar = await _isarFuture;
+    final selectedItems = await isar.cartItems
+        .filter()
+        .isSelectedEqualTo(true)
+        .findAll();
+
+    await isar.writeTxn(() async {
+      for (var item in selectedItems) {
+        await isar.cartItems.delete(item.id);
+      }
+
+      if (kDebugMode) {
+        print('🛒 [DatabaseService] 已清除 ${selectedItems.length} 個已結帳的購物車項目');
       }
     });
 

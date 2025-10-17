@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../providers/cart_provider.dart';
+import '../../services/database_service.dart';
 import '../../models/cart_item.dart';
 import '../../models/coupon.dart';
 import '../../models/shipping_method.dart';
 import '../../models/payment_method.dart';
+import '../../models/order.dart';
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 /// 結帳主頁面
@@ -791,7 +793,7 @@ class _Step4SelectPayment extends StatelessWidget {
 }
 
 /// 步驟5: 結帳完成
-class _Step5Complete extends StatelessWidget {
+class _Step5Complete extends StatefulWidget {
   final List<CartItem> items;
   final Coupon? selectedCoupon;
   final ShippingMethod? selectedShipping;
@@ -805,18 +807,99 @@ class _Step5Complete extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final subtotal = items.fold<double>(
-      0.0,
-      (sum, item) => sum + (item.unitPrice * item.quantity),
-    );
-    final discount = selectedCoupon?.discount ?? 0.0;
-    final shippingFee = selectedShipping?.fee ?? 0.0;
-    final total = subtotal - discount + shippingFee;
+  State<_Step5Complete> createState() => _Step5CompleteState();
+}
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ttsHelper.speak('結帳完成，感謝您的購買');
-    });
+class _Step5CompleteState extends State<_Step5Complete> {
+  Order? _createdOrder;
+  bool _isCreatingOrder = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _createOrder();
+  }
+
+  /// 建立訂單
+  Future<void> _createOrder() async {
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final cartProvider = Provider.of<ShoppingCartData>(context, listen: false);
+
+      final subtotal = widget.items.fold<double>(
+        0.0,
+        (sum, item) => sum + (item.unitPrice * item.quantity),
+      );
+      final discount = widget.selectedCoupon?.discount ?? 0.0;
+      final shippingFee = widget.selectedShipping?.fee ?? 0.0;
+
+      // 建立訂單
+      final order = await db.createOrder(
+        cartItems: widget.items,
+        couponId: widget.selectedCoupon?.id,
+        couponName: widget.selectedCoupon?.name,
+        discount: discount,
+        shippingMethodId: widget.selectedShipping!.id,
+        shippingMethodName: widget.selectedShipping!.name,
+        shippingFee: shippingFee,
+        paymentMethodId: widget.selectedPayment!.id,
+        paymentMethodName: widget.selectedPayment!.name,
+      );
+
+      // 清除購物車中已結帳的項目
+      await db.clearSelectedCartItems();
+
+      // 重新載入購物車
+      await cartProvider.reload();
+
+      setState(() {
+        _createdOrder = order;
+        _isCreatingOrder = false;
+      });
+
+      // 朗讀結帳完成訊息
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ttsHelper.speak('結帳完成，訂單編號 ${order.orderNumber}，感謝您的購買');
+      });
+    } catch (e) {
+      setState(() {
+        _isCreatingOrder = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('建立訂單失敗: $e', style: const TextStyle(fontSize: 24)),
+            backgroundColor: Colors.red,
+          ),
+        );
+        ttsHelper.speak('建立訂單失敗');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isCreatingOrder) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: AppSpacing.lg),
+            Text('正在建立訂單...', style: AppTextStyles.subtitle),
+          ],
+        ),
+      );
+    }
+
+    if (_createdOrder == null) {
+      return const Center(
+        child: Text('建立訂單失敗', style: AppTextStyles.title),
+      );
+    }
+
+    final order = _createdOrder!;
 
     return PopScope(
       canPop: false,
@@ -840,6 +923,18 @@ class _Step5Complete extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            GestureDetector(
+              onTap: () => ttsHelper.speak('訂單編號 ${order.orderNumber}'),
+              child: Text(
+                '訂單編號: ${order.orderNumber}',
+                style: const TextStyle(
+                  fontSize: AppFontSizes.subtitle,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             Card(
               child: Padding(
@@ -852,7 +947,7 @@ class _Step5Complete extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('商品數量'),
-                        Text('${items.length} 項'),
+                        Text('${widget.items.length} 項'),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -860,7 +955,7 @@ class _Step5Complete extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('付款方式'),
-                        Text(selectedPayment?.name ?? '未選擇'),
+                        Text(widget.selectedPayment?.name ?? '未選擇'),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -868,7 +963,7 @@ class _Step5Complete extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('配送方式'),
-                        Text(selectedShipping?.name ?? '未選擇'),
+                        Text(widget.selectedShipping?.name ?? '未選擇'),
                       ],
                     ),
                     const Divider(),
@@ -883,7 +978,7 @@ class _Step5Complete extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '\$${total.toStringAsFixed(0)}',
+                          '\$${order.total.toStringAsFixed(0)}',
                           style: const TextStyle(
                             fontSize: AppFontSizes.subtitle,
                             fontWeight: FontWeight.bold,

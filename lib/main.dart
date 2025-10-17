@@ -9,6 +9,7 @@ import 'pages/product/product_detail_page.dart';
 import 'pages/cart/cart_page.dart';
 import 'pages/checkout/checkout_page.dart';
 import 'pages/orders/order_history_page.dart';
+import 'pages/orders/order_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/search/search_page.dart';
 import 'pages/auth/accessible_auth_page.dart';
@@ -274,6 +275,7 @@ class AppRouter extends StatelessWidget {
         '/cart': (context) => const ShoppingCartPage(),
         '/checkout': (context) => const CheckoutPage(),
         '/orders': (context) => const OrderHistoryPage(),
+        '/order-detail': (context) => const OrderDetailPage(),
         '/settings': (context) => const SettingsPage(),
         '/search': (context) => const SearchPage(),
         '/dev-tools': (context) => const DevToolsPage(),

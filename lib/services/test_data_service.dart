@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
+import '../models/order.dart';
 
 /// 測試資料服務
 /// 用於初始化和管理測試資料
@@ -24,6 +25,8 @@ class TestDataService {
       await isar.products.clear();
       await isar.cartItems.clear();
       await isar.userSettings.clear();
+      await isar.orders.clear();
+      await isar.orderItems.clear();
     });
     print('🗑️  已清空所有資料');
   }
@@ -245,16 +248,125 @@ class TestDataService {
     ];
   }
 
+  /// 初始化訂單測試資料
+  Future<void> initializeOrders() async {
+    final orders = _getSampleOrders();
+    final orderItems = _getSampleOrderItems();
+
+    await isar.writeTxn(() async {
+      await isar.orders.putAll(orders);
+      await isar.orderItems.putAll(orderItems);
+    });
+
+    print('✅ 已新增 ${orders.length} 筆訂單資料和 ${orderItems.length} 筆訂單項目');
+  }
+
+  /// 取得範例訂單資料
+  List<Order> _getSampleOrders() {
+    final now = DateTime.now();
+
+    return [
+      Order()
+        ..orderNumber = '20250117-0001'
+        ..createdAt = now.subtract(const Duration(days: 2))
+        ..status = 'completed'
+        ..subtotal = 5400
+        ..discount = 100
+        ..shippingFee = 60
+        ..total = 5360
+        ..couponId = 1
+        ..couponName = '新會員優惠'
+        ..shippingMethodId = 1
+        ..shippingMethodName = '超商取貨'
+        ..paymentMethodId = 1
+        ..paymentMethodName = '信用卡',
+
+      Order()
+        ..orderNumber = '20250115-0001'
+        ..createdAt = now.subtract(const Duration(days: 5))
+        ..status = 'processing'
+        ..subtotal = 1200
+        ..discount = 0
+        ..shippingFee = 100
+        ..total = 1300
+        ..shippingMethodId = 2
+        ..shippingMethodName = '宅配'
+        ..paymentMethodId = 2
+        ..paymentMethodName = '貨到付款',
+
+      Order()
+        ..orderNumber = '20250110-0001'
+        ..createdAt = now.subtract(const Duration(days: 10))
+        ..status = 'completed'
+        ..subtotal = 3500
+        ..discount = 0
+        ..shippingFee = 80
+        ..total = 3580
+        ..shippingMethodId = 3
+        ..shippingMethodName = '郵局'
+        ..paymentMethodId = 3
+        ..paymentMethodName = 'ATM轉帳',
+    ];
+  }
+
+  /// 取得範例訂單項目資料
+  List<OrderItem> _getSampleOrderItems() {
+    return [
+      // 訂單 1 的項目
+      OrderItem()
+        ..orderId = 1
+        ..productId = 1
+        ..productName = 'Nike Air Max 270'
+        ..specification = '尺寸: L / 顏色: 黑色'
+        ..unitPrice = 4500
+        ..quantity = 1
+        ..subtotal = 4500,
+
+      OrderItem()
+        ..orderId = 1
+        ..productId = 10
+        ..productName = '運動水壺'
+        ..specification = '尺寸: 通用尺寸 / 顏色: 藍色'
+        ..unitPrice = 450
+        ..quantity = 2
+        ..subtotal = 900,
+
+      // 訂單 2 的項目
+      OrderItem()
+        ..orderId = 2
+        ..productId = 5
+        ..productName = 'Under Armour 運動上衣'
+        ..specification = '尺寸: M / 顏色: 黑色'
+        ..unitPrice = 1200
+        ..quantity = 1
+        ..subtotal = 1200,
+
+      // 訂單 3 的項目
+      OrderItem()
+        ..orderId = 3
+        ..productId = 12
+        ..productName = '啞鈴組合 (2-10kg)'
+        ..specification = '尺寸: 通用尺寸 / 顏色: 預設顏色'
+        ..unitPrice = 3500
+        ..quantity = 1
+        ..subtotal = 3500,
+    ];
+  }
+
   /// 取得資料庫統計資訊
   Future<Map<String, int>> getDatabaseStats() async {
     final productCount = await isar.products.count();
     final cartItemCount = await isar.cartItems.count();
     final userSettingsCount = await isar.userSettings.count();
+    final orderCount = await isar.orders.count();
+    final orderItemCount = await isar.orderItems.count();
 
     return {
       'products': productCount,
       'cartItems': cartItemCount,
       'userSettings': userSettingsCount,
+      'orders': orderCount,
+      'orderItems': orderItemCount,
     };
   }
 
@@ -265,5 +377,7 @@ class TestDataService {
     print('   - 商品數量: ${stats['products']}');
     print('   - 購物車項目: ${stats['cartItems']}');
     print('   - 用戶設定: ${stats['userSettings']}');
+    print('   - 訂單數量: ${stats['orders']}');
+    print('   - 訂單項目: ${stats['orderItems']}');
   }
 }
