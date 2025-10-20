@@ -27,12 +27,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
   ShippingMethod? _selectedShipping;
   PaymentMethod? _selectedPayment;
 
+  // 在進入結帳頁面時複製選取的商品列表，避免受購物車更新影響
+  List<CartItem>? _checkoutItems;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ttsHelper.speak("進入結帳頁面");
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 只在第一次進入時複製商品列表
+    if (_checkoutItems == null) {
+      final cartData = Provider.of<ShoppingCartData>(context, listen: false);
+      _checkoutItems = List.from(cartData.selectedItems);
+    }
   }
 
   void _nextStep() {
@@ -72,8 +85,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cartData = Provider.of<ShoppingCartData>(context);
-    final selectedItems = cartData.selectedItems;
+    // 使用複製的商品列表，不監聽購物車變化
+    final selectedItems = _checkoutItems ?? [];
 
     if (selectedItems.isEmpty) {
       return GlobalGestureScaffold(
@@ -498,7 +511,7 @@ class _Step3SelectShipping extends StatelessWidget {
                   ttsHelper.speak('已選擇${method.name}');
                 },
                 child: Card(
-                  color: isSelected ? AppColors.primary.withOpacity(0.2) : null,
+                  color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
@@ -824,7 +837,6 @@ class _Step5CompleteState extends State<_Step5Complete> {
   Future<void> _createOrder() async {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
-      final cartProvider = Provider.of<ShoppingCartData>(context, listen: false);
 
       final subtotal = widget.items.fold<double>(
         0.0,
@@ -847,10 +859,8 @@ class _Step5CompleteState extends State<_Step5Complete> {
       );
 
       // 清除購物車中已結帳的項目
+      // 購物車 Provider 會自動監聽資料庫變化並重新載入
       await db.clearSelectedCartItems();
-
-      // 重新載入購物車
-      await cartProvider.reload();
 
       setState(() {
         _createdOrder = order;

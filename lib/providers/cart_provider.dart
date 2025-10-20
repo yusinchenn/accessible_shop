@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
 import '../services/database_service.dart';
@@ -10,21 +11,44 @@ class ShoppingCartData extends ChangeNotifier {
 
   ShoppingCartData(this._databaseService) {
     _loadCartItems();
+    // 監聽 DatabaseService 的變化，當資料庫有更新時自動重新載入
+    _databaseService.addListener(_onDatabaseChanged);
   }
+
+  /// 當資料庫變化時重新載入購物車
+  void _onDatabaseChanged() {
+    _loadCartItems();
+  }
+
+  @override
+  void dispose() {
+    _databaseService.removeListener(_onDatabaseChanged);
+    super.dispose();
+  }
+
+  bool _isReloading = false;
 
   /// 載入購物車項目
   Future<void> _loadCartItems() async {
+    // 防止同時執行多個載入操作
+    if (_isReloading) return;
+
+    _isReloading = true;
     _isLoading = true;
     notifyListeners();
 
     try {
       _items = await _databaseService.getCartItems();
+      if (kDebugMode) {
+        print('🛒 [ShoppingCartData] 已載入 ${_items.length} 個購物車項目');
+      }
     } catch (e) {
       debugPrint('載入購物車失敗: $e');
       _items = [];
     }
 
     _isLoading = false;
+    _isReloading = false;
     notifyListeners();
   }
 
