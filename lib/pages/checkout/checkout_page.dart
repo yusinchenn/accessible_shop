@@ -4,12 +4,14 @@ import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/database_service.dart';
+import '../../services/accessibility_service.dart';
 import '../../models/cart_item.dart';
 import '../../models/coupon.dart';
 import '../../models/shipping_method.dart';
 import '../../models/payment_method.dart';
 import '../../models/order.dart';
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
+import '../../widgets/accessible_gesture_wrapper.dart'; // 匯入無障礙手勢包裝器
 
 /// 結帳主頁面
 class CheckoutPage extends StatefulWidget {
@@ -34,7 +36,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ttsHelper.speak("進入結帳頁面");
+      // 初始化無障礙服務
+      accessibilityService.initialize(context);
+
+      // 只在自訂模式播放歡迎語音
+      if (accessibilityService.shouldUseCustomTTS) {
+        ttsHelper.speak("進入結帳頁面");
+      }
     });
   }
 
@@ -74,7 +82,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   void _announceStep() {
     final steps = ['商品確認', '選擇優惠券', '選擇配送方式', '選擇付款方式', '結帳完成'];
-    ttsHelper.speak(steps[_currentStep]);
+    // 只在自訂模式播放步驟語音
+    if (accessibilityService.shouldUseCustomTTS) {
+      ttsHelper.speak(steps[_currentStep]);
+    }
   }
 
   @override
@@ -194,12 +205,9 @@ class _Step1OrderConfirmation extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return GestureDetector(
-                onTap: () {
-                  ttsHelper.speak(
-                    '${item.name}，${item.specification}，單價${item.unitPrice.toStringAsFixed(0)}元，數量${item.quantity}，小計${(item.unitPrice * item.quantity).toStringAsFixed(0)}元',
-                  );
-                },
+              final itemSubtotal = (item.unitPrice * item.quantity).toStringAsFixed(0);
+              return AccessibleSpeakWrapper(
+                label: '${item.name}，規格 ${item.specification}，單價 ${item.unitPrice.toStringAsFixed(0)} 元，數量 ${item.quantity}，小計 $itemSubtotal 元',
                 child: Card(
                   margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Padding(
@@ -217,7 +225,7 @@ class _Step1OrderConfirmation extends StatelessWidget {
                             Text('單價: \$${item.unitPrice.toStringAsFixed(0)}'),
                             Text('x ${item.quantity}'),
                             Text(
-                              '小計: \$${(item.unitPrice * item.quantity).toStringAsFixed(0)}',
+                              '小計: \$$itemSubtotal',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -235,10 +243,8 @@ class _Step1OrderConfirmation extends StatelessWidget {
           color: AppColors.cardBackground,
           child: Column(
             children: [
-              GestureDetector(
-                onTap: () {
-                  ttsHelper.speak('商品總計${subtotal.toStringAsFixed(0)}元');
-                },
+              AccessibleSpeakWrapper(
+                label: '商品總計 ${subtotal.toStringAsFixed(0)} 元',
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -254,9 +260,10 @@ class _Step1OrderConfirmation extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => ttsHelper.speak('下一步'),
-                      onDoubleTap: onNext,
+                    child: AccessibleGestureWrapper(
+                      label: '下一步',
+                      description: '前往選擇優惠券',
+                      onTap: onNext,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                         decoration: BoxDecoration(
@@ -322,13 +329,14 @@ class _Step2SelectCoupon extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             children: [
-              GestureDetector(
+              AccessibleGestureWrapper(
+                label: '不使用優惠券${selectedCoupon == null ? "，已選擇" : ""}',
+                description: '點擊取消使用優惠券',
                 onTap: () {
-                  ttsHelper.speak('不使用優惠券');
-                },
-                onDoubleTap: () {
                   onCouponSelected(null);
-                  ttsHelper.speak('已取消選擇優惠券');
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    ttsHelper.speak('已取消選擇優惠券');
+                  }
                 },
                 child: Card(
                   color: selectedCoupon == null ? AppColors.primary.withValues(alpha: 0.2) : null,
@@ -351,16 +359,16 @@ class _Step2SelectCoupon extends StatelessWidget {
                 final isAvailable = subtotal >= coupon.minAmount;
                 final isSelected = selectedCoupon?.id == coupon.id;
 
-                return GestureDetector(
-                  onTap: () {
-                    ttsHelper.speak(
-                      '${coupon.name}，${coupon.description}，${isAvailable ? "可使用" : "未達最低消費金額"}',
-                    );
-                  },
-                  onDoubleTap: isAvailable
+                return AccessibleGestureWrapper(
+                  label: '${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}${!isAvailable ? "，未達最低消費金額" : ""}',
+                  description: isAvailable ? '點擊選擇此優惠券' : '此優惠券未達使用門檻',
+                  enabled: isAvailable,
+                  onTap: isAvailable
                       ? () {
                           onCouponSelected(coupon);
-                          ttsHelper.speak('已選擇${coupon.name}');
+                          if (accessibilityService.shouldUseCustomTTS) {
+                            ttsHelper.speak('已選擇 ${coupon.name}');
+                          }
                         }
                       : null,
                   child: Card(
@@ -415,9 +423,10 @@ class _Step2SelectCoupon extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('上一步'),
-                  onDoubleTap: onPrevious,
+                child: AccessibleGestureWrapper(
+                  label: '上一步',
+                  description: '返回商品確認步驟',
+                  onTap: onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -438,9 +447,10 @@ class _Step2SelectCoupon extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('下一步'),
-                  onDoubleTap: onNext,
+                child: AccessibleGestureWrapper(
+                  label: '下一步',
+                  description: '前往選擇配送方式',
+                  onTap: onNext,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -500,15 +510,14 @@ class _Step3SelectShipping extends StatelessWidget {
             children: shippingMethods.map((method) {
               final isSelected = selectedShipping?.id == method.id;
 
-              return GestureDetector(
+              return AccessibleGestureWrapper(
+                label: '${method.name}，${method.description}，運費 ${method.fee.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
+                description: '點擊選擇此配送方式',
                 onTap: () {
-                  ttsHelper.speak(
-                    '${method.name}，${method.description}，運費${method.fee.toStringAsFixed(0)}元',
-                  );
-                },
-                onDoubleTap: () {
                   onShippingSelected(method);
-                  ttsHelper.speak('已選擇${method.name}');
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    ttsHelper.speak('已選擇 ${method.name}');
+                  }
                 },
                 child: Card(
                   color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
@@ -548,9 +557,10 @@ class _Step3SelectShipping extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('上一步'),
-                  onDoubleTap: onPrevious,
+                child: AccessibleGestureWrapper(
+                  label: '上一步',
+                  description: '返回選擇優惠券步驟',
+                  onTap: onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -571,9 +581,11 @@ class _Step3SelectShipping extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('下一步'),
-                  onDoubleTap: selectedShipping != null ? onNext : null,
+                child: AccessibleGestureWrapper(
+                  label: '下一步${selectedShipping == null ? "，請先選擇配送方式" : ""}',
+                  description: '前往選擇付款方式',
+                  enabled: selectedShipping != null,
+                  onTap: selectedShipping != null ? onNext : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -710,13 +722,14 @@ class _Step4SelectPayment extends StatelessWidget {
               ...paymentMethods.map((method) {
                 final isSelected = selectedPayment?.id == method.id;
 
-                return GestureDetector(
+                return AccessibleGestureWrapper(
+                  label: '${method.name}，${method.description}${isSelected ? "，已選擇" : ""}',
+                  description: '點擊選擇此付款方式',
                   onTap: () {
-                    ttsHelper.speak('${method.name}，${method.description}');
-                  },
-                  onDoubleTap: () {
                     onPaymentSelected(method);
-                    ttsHelper.speak('已選擇${method.name}');
+                    if (accessibilityService.shouldUseCustomTTS) {
+                      ttsHelper.speak('已選擇 ${method.name}');
+                    }
                   },
                   child: Card(
                     color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
@@ -753,9 +766,10 @@ class _Step4SelectPayment extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('上一步'),
-                  onDoubleTap: onPrevious,
+                child: AccessibleGestureWrapper(
+                  label: '上一步',
+                  description: '返回選擇配送方式步驟',
+                  onTap: onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -776,9 +790,11 @@ class _Step4SelectPayment extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak('確認結帳'),
-                  onDoubleTap: selectedPayment != null ? onNext : null,
+                child: AccessibleGestureWrapper(
+                  label: '確認結帳${selectedPayment == null ? "，請先選擇付款方式" : ""}',
+                  description: '完成付款並送出訂單',
+                  enabled: selectedPayment != null,
+                  onTap: selectedPayment != null ? onNext : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -867,9 +883,11 @@ class _Step5CompleteState extends State<_Step5Complete> {
         _isCreatingOrder = false;
       });
 
-      // 朗讀結帳完成訊息
+      // 朗讀結帳完成訊息（只在自訂模式）
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ttsHelper.speak('結帳完成，訂單編號 ${order.orderNumber}，感謝您的購買');
+        if (accessibilityService.shouldUseCustomTTS) {
+          ttsHelper.speak('結帳完成，訂單編號 ${order.orderNumber}，感謝您的購買');
+        }
       });
     } catch (e) {
       setState(() {
@@ -883,7 +901,9 @@ class _Step5CompleteState extends State<_Step5Complete> {
             backgroundColor: Colors.red,
           ),
         );
-        ttsHelper.speak('建立訂單失敗');
+        if (accessibilityService.shouldUseCustomTTS) {
+          ttsHelper.speak('建立訂單失敗');
+        }
       }
     }
   }
@@ -934,8 +954,8 @@ class _Step5CompleteState extends State<_Step5Complete> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            GestureDetector(
-              onTap: () => ttsHelper.speak('訂單編號 ${order.orderNumber}'),
+            AccessibleSpeakWrapper(
+              label: '訂單編號 ${order.orderNumber}',
               child: Text(
                 '訂單編號: ${order.orderNumber}',
                 style: const TextStyle(
@@ -1002,10 +1022,10 @@ class _Step5CompleteState extends State<_Step5Complete> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            GestureDetector(
-              onTap: () => ttsHelper.speak('查看訂單'),
-              onDoubleTap: () {
-                ttsHelper.speak('前往歷史訂單頁面');
+            AccessibleGestureWrapper(
+              label: '查看訂單',
+              description: '前往歷史訂單頁面',
+              onTap: () {
                 Navigator.pushReplacementNamed(context, '/orders');
               },
               child: Container(
@@ -1027,10 +1047,10 @@ class _Step5CompleteState extends State<_Step5Complete> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            GestureDetector(
-              onTap: () => ttsHelper.speak('回首頁'),
-              onDoubleTap: () {
-                ttsHelper.speak('返回首頁');
+            AccessibleGestureWrapper(
+              label: '回首頁',
+              description: '返回首頁',
+              onTap: () {
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
               },
               child: Container(
