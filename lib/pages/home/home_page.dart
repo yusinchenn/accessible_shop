@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 import '../../utils/app_constants.dart'; // 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
+import '../../services/accessibility_service.dart'; // 匯入無障礙服務
 
 /// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
@@ -108,6 +109,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // 初始化無障礙服務
+    accessibilityService.initialize(context);
+
     final routeIsCurrent =
         ModalRoute.of(context)?.isCurrent ?? false; // 檢查當前頁面是否為活躍路由
     if (routeIsCurrent && !_announceScheduled) {
@@ -124,6 +128,9 @@ class _HomePageState extends State<HomePage> {
   /// 執行首頁進入的語音播報，播報「進入首頁」和當前卡片標題
   Future<void> _announceEnter() async {
     if (_isAnnouncingHome) return; // 如果正在播報首頁，則跳過
+
+    // 只在自訂模式播放語音
+    if (!accessibilityService.shouldUseCustomTTS) return;
 
     await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
 
@@ -153,7 +160,10 @@ class _HomePageState extends State<HomePage> {
     // 如果正在進行系統播報或語音播報，則不進行新播報
     if (_isAnnouncingHome || _speaking) return;
 
-    ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報新卡片的標題
+    // 只在自訂模式播放語音
+    if (accessibilityService.shouldUseCustomTTS) {
+      ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報新卡片的標題
+    }
   }
 
   /// 清理資源，釋放 PageController 和搜尋相關控制器
@@ -170,15 +180,28 @@ class _HomePageState extends State<HomePage> {
   /// 處理單次點擊事件，播報當前卡片的標題
   void _onSingleTap(int index) {
     if (_isAnnouncingHome || _speaking) return; // 如果正在播報，則跳過
-    ttsHelper.speak(_entryItems[index].title); // 播報點擊的卡片標題
+    // 只在自訂模式播放語音
+    if (accessibilityService.shouldUseCustomTTS) {
+      ttsHelper.speak(_entryItems[index].title); // 播報點擊的卡片標題
+    }
   }
 
   /// 處理雙擊事件，導航到指定路由或開啟搜尋輸入
   void _onDoubleTap(String route, int actualIndex) {
     // 如果是搜尋卡片，開啟鍵盤輸入
     if (actualIndex == 0) {
-      _searchFocusNode.requestFocus();
-      ttsHelper.speak('請輸入商品名稱');
+      // 使用更穩健的方式請求焦點
+      // 先取消焦點，再在下一幀重新請求，確保焦點狀態正確
+      _searchFocusNode.unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _searchFocusNode.requestFocus();
+          // 只在自訂模式播放語音
+          if (accessibilityService.shouldUseCustomTTS) {
+            ttsHelper.speak('請輸入商品名稱');
+          }
+        }
+      });
     } else {
       Navigator.pushNamed(context, route).then((_) {
         // 導航返回後，didChangeDependencies 會觸發 _announceEnter
@@ -234,8 +257,8 @@ class _HomePageState extends State<HomePage> {
                 alignment: Alignment.center, // 卡片居中對齊
                 child: Transform(
                   transform: Matrix4.identity()
-                    ..scale(scale) // 應用縮放效果
-                    ..translate(translate, 0.0), // 應用水平位移
+                    ..scale(scale, scale, 1.0) // 應用縮放效果（使用新的 API）
+                    ..translate(translate, 0.0, 0.0), // 應用水平位移（使用新的 API）
                   alignment: Alignment.center, // 變形效果以中心為基準
                   child: GestureDetector(
                     onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
