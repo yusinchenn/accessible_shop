@@ -7,6 +7,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 import '../models/order.dart';
+import '../models/user_profile.dart';
 
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
@@ -24,6 +25,7 @@ class DatabaseService extends ChangeNotifier {
       UserSettingsSchema,
       OrderSchema,
       OrderItemSchema,
+      UserProfileSchema,
     ], directory: dir.path);
   }
 
@@ -411,6 +413,110 @@ class DatabaseService extends ChangeNotifier {
     });
 
     notifyListeners();
+  }
+
+  // ==================== 使用者資料相關方法 ====================
+
+  /// 取得使用者資料（根據 Firebase Auth UID）
+  Future<UserProfile?> getUserProfile(String userId) async {
+    final isar = await _isarFuture;
+    return await isar.userProfiles
+        .filter()
+        .userIdEqualTo(userId)
+        .findFirst();
+  }
+
+  /// 建立或更新使用者資料
+  Future<UserProfile> saveUserProfile({
+    required String userId,
+    String? displayName,
+    String? email,
+    DateTime? birthday,
+    String? phoneNumber,
+  }) async {
+    final isar = await _isarFuture;
+
+    // 先查詢是否已存在
+    var profile = await getUserProfile(userId);
+
+    if (profile == null) {
+      // 建立新資料
+      profile = UserProfile()
+        ..userId = userId
+        ..email = email
+        ..displayName = displayName
+        ..birthday = birthday
+        ..phoneNumber = phoneNumber
+        ..createdAt = DateTime.now()
+        ..updatedAt = DateTime.now()
+        ..membershipLevel = 'regular'
+        ..membershipPoints = 0
+        ..walletBalance = 0.0;
+
+      if (kDebugMode) {
+        print('👤 [DatabaseService] 建立使用者資料: $userId');
+      }
+    } else {
+      // 更新現有資料
+      profile.email = email ?? profile.email;
+      profile.displayName = displayName ?? profile.displayName;
+      profile.birthday = birthday ?? profile.birthday;
+      profile.phoneNumber = phoneNumber ?? profile.phoneNumber;
+      profile.updatedAt = DateTime.now();
+
+      if (kDebugMode) {
+        print('👤 [DatabaseService] 更新使用者資料: $userId');
+      }
+    }
+
+    await isar.writeTxn(() async {
+      await isar.userProfiles.put(profile!);
+    });
+
+    notifyListeners();
+    return profile;
+  }
+
+  /// 更新使用者名稱
+  Future<void> updateDisplayName(String userId, String displayName) async {
+    final profile = await getUserProfile(userId);
+    if (profile != null) {
+      await saveUserProfile(
+        userId: userId,
+        displayName: displayName,
+        email: profile.email,
+        birthday: profile.birthday,
+        phoneNumber: profile.phoneNumber,
+      );
+    }
+  }
+
+  /// 更新生日
+  Future<void> updateBirthday(String userId, DateTime birthday) async {
+    final profile = await getUserProfile(userId);
+    if (profile != null) {
+      await saveUserProfile(
+        userId: userId,
+        displayName: profile.displayName,
+        email: profile.email,
+        birthday: birthday,
+        phoneNumber: profile.phoneNumber,
+      );
+    }
+  }
+
+  /// 更新手機號碼
+  Future<void> updatePhoneNumber(String userId, String phoneNumber) async {
+    final profile = await getUserProfile(userId);
+    if (profile != null) {
+      await saveUserProfile(
+        userId: userId,
+        displayName: profile.displayName,
+        email: profile.email,
+        birthday: profile.birthday,
+        phoneNumber: phoneNumber,
+      );
+    }
   }
 
   // 這裡還可以擴充其他 CRUD 方法...

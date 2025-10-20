@@ -241,32 +241,31 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (context, index) {
               final actualIndex = index % _entryItems.length; // 計算實際卡片索引
 
-              // 計算卡片的縮放和位移效果，營造視覺動態
-              double value = 0.0;
+              // 計算卡片的透明度，營造淡出淡入效果
+              double opacity = 1.0;
               if (_pageController.hasClients &&
                   _pageController.position.haveDimensions) {
-                value =
-                    index.toDouble() - (_pageController.page ?? 0); // 計算相對頁面位置
-                value = value.clamp(-1.0, 1.0); // 限制範圍在 -1.0 到 1.0
+                final double value =
+                    (index.toDouble() - (_pageController.page ?? 0)).abs(); // 計算與當前頁面的距離
+                // 當前卡片 (value < 0.5) 完全不透明(1.0)，旁邊的卡片半透明(0.3)
+                opacity = value < 0.5 ? 1.0 : 0.3;
               }
-              final double scale = 1.0 - (value.abs() * 0.1); // 計算縮放比例
-              final double translate =
-                  value * MediaQuery.of(context).size.width * 0.05; // 計算水平位移
 
               return Align(
                 alignment: Alignment.center, // 卡片居中對齊
-                child: Transform(
-                  transform: Matrix4.identity()
-                    ..scale(scale, scale, 1.0) // 應用縮放效果（使用新的 API）
-                    ..translate(translate, 0.0, 0.0), // 應用水平位移（使用新的 API）
-                  alignment: Alignment.center, // 變形效果以中心為基準
-                  child: GestureDetector(
-                    onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
-                    onDoubleTap: () => _onDoubleTap(
-                      _entryItems[actualIndex].route,
-                      actualIndex,
-                    ), // 雙擊導航到對應路由或開啟搜尋輸入
-                    child: Card(
+                child: Opacity(
+                  opacity: opacity, // 應用淡出淡入效果
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0), // 增加卡片間距
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.85, // 設定卡片寬度為螢幕寬度的 85%
+                      child: GestureDetector(
+                      onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
+                      onDoubleTap: () => _onDoubleTap(
+                        _entryItems[actualIndex].route,
+                        actualIndex,
+                      ), // 雙擊導航到對應路由或開啟搜尋輸入
+                      child: Card(
                       elevation: 8, // 卡片陰影效果
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16), // 圓角邊框
@@ -296,6 +295,8 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
+                    ),
+                    ),
                     ),
                   ),
                 ),
