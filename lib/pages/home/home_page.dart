@@ -4,10 +4,15 @@
 // 注意此檔案使用相對路徑 import，確保位置為 lib/pages/home/home_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 import '../../utils/app_constants.dart'; // 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 import '../../services/accessibility_service.dart'; // 匯入無障礙服務
+import '../../services/database_service.dart'; // 匯入資料庫服務
+import '../../models/order.dart'; // 匯入訂單模型
+import '../../models/notification.dart'; // 匯入通知模型
+import '../../models/cart_item.dart'; // 匯入購物車項目模型
 
 /// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
@@ -37,11 +42,26 @@ class _HomePageState extends State<HomePage> {
   late final PageController _pageController; // 控制 PageView 的滾動控制器，延遲初始化
   final TextEditingController _searchController = TextEditingController(); // 搜尋輸入控制器
   final FocusNode _searchFocusNode = FocusNode(); // 搜尋輸入框焦點節點
+  late final Widget _searchTextField; // 預構建的搜尋輸入框，避免每次重建
 
   int _currentPageIndex = 0; // 當前顯示的卡片索引（對應 _entryItems 的實際索引）
   bool _isAnnouncingHome = false; // 標記是否正在進行首頁進入的語音播報
   bool _speaking = false; // 標記是否正在進行語音播報
   bool _announceScheduled = false; // 標記是否已排程首頁進入的播報
+  bool _isSearchFocused = false; // 追蹤搜尋輸入框是否有焦點（鍵盤是否開啟）
+
+  // 訂單統計數據
+  int _pendingPaymentCount = 0; // 待付款訂單數量
+  int _pendingShipmentCount = 0; // 待出貨訂單數量
+  int _pendingReceiptCount = 0; // 待收貨訂單數量
+
+  // 通知數據
+  List<NotificationModel> _notifications = []; // 所有通知列表
+  int _totalNotificationCount = 0; // 通知總數
+
+  // 購物車數據
+  List<CartItem> _cartItems = []; // 購物車商品列表
+  int _totalCartItemCount = 0; // 購物車商品總數
 
   /// 取得首頁的卡片清單，包含搜尋、購物車、訂單、帳號、短影音和通知六個入口
   List<ShopEntryItem> get _entryItems => <ShopEntryItem>[
@@ -52,22 +72,7 @@ class _HomePageState extends State<HomePage> {
       contentBuilder: (context) => Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: TextField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            style: const TextStyle(fontSize: 28),
-            decoration: const InputDecoration(
-              hintText: '輸入商品名稱...',
-              hintStyle: TextStyle(fontSize: 28),
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(AppSpacing.md),
-            ),
-            onSubmitted: (value) {
-              if (value.trim().isNotEmpty) {
-                _onSearchSubmit(value.trim());
-              }
-            },
-          ),
+          child: _searchTextField, // 使用預構建的 TextField，提升響應速度
         ),
       ),
     ),
@@ -75,19 +80,61 @@ class _HomePageState extends State<HomePage> {
       title: '購物車',
       icon: Icons.shopping_cart,
       route: '/cart',
-      contentBuilder: (context) => const Center(child: Text('購物車入口')),
+      contentBuilder: (context) => Center(
+        child: _buildCartSummary(),
+      ),
     ),
     ShopEntryItem(
       title: '訂單',
       icon: Icons.list_alt,
       route: '/orders',
-      contentBuilder: (context) => const Center(child: Text('訂單入口')),
+      contentBuilder: (context) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '待付款：$_pendingPaymentCount',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '待出貨：$_pendingShipmentCount',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '待收貨：$_pendingReceiptCount',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
     ),
     ShopEntryItem(
       title: '帳號',
       icon: Icons.person,
       route: '/settings',
-      contentBuilder: (context) => const Center(child: Text('帳號入口')),
+      contentBuilder: (context) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              '帳號資訊',
+              style: TextStyle(fontSize: 20),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'APP設定',
+              style: TextStyle(fontSize: 20),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              '幫助與客服',
+              style: TextStyle(fontSize: 20),
+            ),
+          ],
+        ),
+      ),
     ),
     ShopEntryItem(
       title: '短影音',
@@ -99,7 +146,9 @@ class _HomePageState extends State<HomePage> {
       title: '通知',
       icon: Icons.notifications,
       route: '/notifications',
-      contentBuilder: (context) => const Center(child: Text('通知入口')),
+      contentBuilder: (context) => Center(
+        child: _buildNotificationSummary(),
+      ),
     ),
   ];
 
@@ -107,6 +156,28 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    // 監聽搜尋輸入框焦點變化，追蹤鍵盤開關狀態
+    _searchFocusNode.addListener(_onSearchFocusChanged);
+
+    // 預先構建搜尋輸入框，避免第一次雙擊時才創建造成延遲
+    _searchTextField = TextField(
+      controller: _searchController,
+      focusNode: _searchFocusNode,
+      style: const TextStyle(fontSize: 28),
+      decoration: const InputDecoration(
+        hintText: '輸入商品名稱...',
+        hintStyle: TextStyle(fontSize: 28),
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.all(AppSpacing.md),
+      ),
+      onSubmitted: (value) {
+        if (value.trim().isNotEmpty) {
+          _onSearchSubmit(value.trim());
+        }
+      },
+    );
+
     final int initialPageOffset =
         _entryItems.length * 1000; // 設置初始頁面偏移，實現無限滾動效果
     _pageController = PageController(
@@ -115,6 +186,238 @@ class _HomePageState extends State<HomePage> {
     );
     _currentPageIndex = initialPageOffset % _entryItems.length; // 計算實際的卡片索引
     _pageController.addListener(_onPageChanged); // 監聽頁面變化事件
+  }
+
+  /// 監聽搜尋輸入框焦點變化
+  void _onSearchFocusChanged() {
+    setState(() {
+      _isSearchFocused = _searchFocusNode.hasFocus;
+    });
+  }
+
+  /// 構建購物車摘要 Widget
+  Widget _buildCartSummary() {
+    if (_cartItems.isEmpty) {
+      return const Text(
+        '購物車是空的',
+        style: TextStyle(fontSize: 20, color: AppColors.subtitle),
+      );
+    }
+
+    // 如果購物車商品數量 <= 3，顯示所有商品
+    if (_totalCartItemCount <= 3) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _cartItems.map((cartItem) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              cartItem.name,
+              style: const TextStyle(fontSize: 20),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    // 如果購物車商品數量 > 3，顯示前兩筆 + 剩餘數量
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _cartItems[0].name,
+            style: const TextStyle(fontSize: 20),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _cartItems[1].name,
+            style: const TextStyle(fontSize: 20),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            '+${_totalCartItemCount - 2}',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 構建通知摘要 Widget
+  Widget _buildNotificationSummary() {
+    if (_notifications.isEmpty) {
+      return const Text(
+        '目前沒有通知',
+        style: TextStyle(fontSize: 20, color: AppColors.subtitle),
+      );
+    }
+
+    // 如果通知數量 <= 3，顯示所有通知
+    if (_totalNotificationCount <= 3) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _notifications.map((notification) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              notification.title,
+              style: const TextStyle(fontSize: 20),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    // 如果通知數量 > 3，顯示前兩筆 + 剩餘數量
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _notifications[0].title,
+            style: const TextStyle(fontSize: 20),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            _notifications[1].title,
+            style: const TextStyle(fontSize: 20),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            '+${_totalNotificationCount - 2}',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 加載訂單統計數據
+  Future<void> _loadOrderStats() async {
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final orders = await db.getOrders();
+
+      int pendingPayment = 0;
+      int pendingShipment = 0;
+      int pendingReceipt = 0;
+
+      for (var order in orders) {
+        // 根據訂單狀態分類統計
+        // pending (待處理) -> 待付款
+        // processing (處理中) -> 待出貨
+        // 其他自定義狀態可以在這裡擴展
+        switch (order.status) {
+          case 'pending':
+            pendingPayment++;
+            break;
+          case 'processing':
+            pendingShipment++;
+            break;
+          case 'shipped': // 如果有已出貨狀態
+            pendingReceipt++;
+            break;
+        }
+      }
+
+      setState(() {
+        _pendingPaymentCount = pendingPayment;
+        _pendingShipmentCount = pendingShipment;
+        _pendingReceiptCount = pendingReceipt;
+      });
+    } catch (e) {
+      // 載入失敗時保持預設值 0
+      if (mounted) {
+        setState(() {
+          _pendingPaymentCount = 0;
+          _pendingShipmentCount = 0;
+          _pendingReceiptCount = 0;
+        });
+      }
+    }
+  }
+
+  /// 加載通知數據
+  Future<void> _loadNotifications() async {
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final notifications = await db.getNotifications();
+
+      setState(() {
+        _totalNotificationCount = notifications.length;
+        // 只取前三筆用於顯示
+        _notifications = notifications.take(3).toList();
+      });
+    } catch (e) {
+      // 載入失敗時保持預設值
+      if (mounted) {
+        setState(() {
+          _notifications = [];
+          _totalNotificationCount = 0;
+        });
+      }
+    }
+  }
+
+  /// 加載購物車數據
+  Future<void> _loadCartItems() async {
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final cartItems = await db.getCartItems();
+
+      setState(() {
+        _totalCartItemCount = cartItems.length;
+        // 只取前三筆用於顯示
+        _cartItems = cartItems.take(3).toList();
+      });
+    } catch (e) {
+      // 載入失敗時保持預設值
+      if (mounted) {
+        setState(() {
+          _cartItems = [];
+          _totalCartItemCount = 0;
+        });
+      }
+    }
   }
 
   /// 當依賴項變更時（例如導航狀態變化），檢查是否需要播報首頁進入語音
@@ -133,6 +436,9 @@ class _HomePageState extends State<HomePage> {
         // 在框架繪製完成後執行
         _announceScheduled = false; // 重置排程標記
         _announceEnter(); // 執行首頁進入語音播報
+        _loadOrderStats(); // 加載訂單統計數據
+        _loadNotifications(); // 加載通知數據
+        _loadCartItems(); // 加載購物車數據
       });
     }
   }
@@ -183,6 +489,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _pageController.removeListener(_onPageChanged); // 移除頁面變化監聽器
     _pageController.dispose(); // 釋放 PageController
+    _searchFocusNode.removeListener(_onSearchFocusChanged); // 移除焦點變化監聽器
     _searchController.dispose(); // 釋放搜尋輸入控制器
     _searchFocusNode.dispose(); // 釋放搜尋輸入框焦點節點
     // 不要 dispose 全域 ttsHelper，因為它是全域資源
@@ -198,22 +505,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 處理雙擊事件，導航到指定路由或開啟搜尋輸入
+  /// 處理雙擊事件，導航到指定路由或開啟/關閉搜尋輸入
   void _onDoubleTap(String route, int actualIndex) {
-    // 如果是搜尋卡片，開啟鍵盤輸入
+    // 如果是搜尋卡片，切換鍵盤開關狀態
     if (actualIndex == 0) {
-      // 使用更穩健的方式請求焦點
-      // 先取消焦點，再在下一幀重新請求，確保焦點狀態正確
-      _searchFocusNode.unfocus();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _searchFocusNode.requestFocus();
-          // 只在自訂模式播放語音
-          if (accessibilityService.shouldUseCustomTTS) {
-            ttsHelper.speak('請輸入商品名稱');
-          }
+      if (_isSearchFocused) {
+        // 如果鍵盤已開啟，則關閉鍵盤
+        _searchFocusNode.unfocus();
+        // 只在自訂模式播放語音
+        if (accessibilityService.shouldUseCustomTTS) {
+          ttsHelper.speak('關閉鍵盤');
         }
-      });
+      } else {
+        // 如果鍵盤未開啟，則開啟鍵盤
+        _searchFocusNode.requestFocus();
+        // 只在自訂模式播放語音
+        if (accessibilityService.shouldUseCustomTTS) {
+          ttsHelper.speak('請輸入商品名稱');
+        }
+      }
     } else {
       Navigator.pushNamed(context, route).then((_) {
         // 導航返回後，didChangeDependencies 會觸發 _announceEnter
@@ -250,6 +560,9 @@ class _HomePageState extends State<HomePage> {
           height: MediaQuery.of(context).size.height * 0.75, // 卡片區域高度為螢幕高度的 75%
           child: PageView.builder(
             controller: _pageController, // 使用 PageController 控制滾動
+            physics: _isSearchFocused
+                ? const NeverScrollableScrollPhysics() // 鍵盤開啟時禁止滑動
+                : null, // 鍵盤關閉時允許滑動
             itemCount: 999999, // 設置大量項目數以實現無限滾動
             itemBuilder: (context, index) {
               final actualIndex = index % _entryItems.length; // 計算實際卡片索引
