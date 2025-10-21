@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   bool _speaking = false; // 標記是否正在進行語音播報
   bool _announceScheduled = false; // 標記是否已排程首頁進入的播報
 
-  /// 取得首頁的卡片清單，包含搜尋、購物車、訂單和帳號四個入口
+  /// 取得首頁的卡片清單，包含搜尋、購物車、訂單、帳號、短影音和通知六個入口
   List<ShopEntryItem> get _entryItems => <ShopEntryItem>[
     ShopEntryItem(
       title: '搜尋', // 卡片標題
@@ -88,6 +88,18 @@ class _HomePageState extends State<HomePage> {
       icon: Icons.person,
       route: '/settings',
       contentBuilder: (context) => const Center(child: Text('帳號入口')),
+    ),
+    ShopEntryItem(
+      title: '短影音',
+      icon: Icons.video_library,
+      route: '/short_videos',
+      contentBuilder: (context) => const Center(child: Text('短影音入口')),
+    ),
+    ShopEntryItem(
+      title: '通知',
+      icon: Icons.notifications,
+      route: '/notifications',
+      contentBuilder: (context) => const Center(child: Text('通知入口')),
     ),
   ];
 

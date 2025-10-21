@@ -8,6 +8,7 @@ import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 import '../models/order.dart';
 import '../models/user_profile.dart';
+import '../models/notification.dart';
 
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
@@ -26,6 +27,7 @@ class DatabaseService extends ChangeNotifier {
       OrderSchema,
       OrderItemSchema,
       UserProfileSchema,
+      NotificationModelSchema,
     ], directory: dir.path);
   }
 
@@ -347,6 +349,14 @@ class DatabaseService extends ChangeNotifier {
       }
     });
 
+    // 創建訂單成立通知
+    await createOrderNotification(
+      title: '訂單成立',
+      content: '您的訂單 #$orderNumber 已成立，總金額 \$${total.toStringAsFixed(0)} 元',
+      orderId: order.id,
+      orderNumber: orderNumber,
+    );
+
     notifyListeners();
     return order;
   }
@@ -516,6 +526,173 @@ class DatabaseService extends ChangeNotifier {
         birthday: profile.birthday,
         phoneNumber: phoneNumber,
       );
+    }
+  }
+
+  // ==================== 通知相關方法 ====================
+
+  /// 創建通知
+  Future<NotificationModel> createNotification({
+    required String title,
+    required String content,
+    required NotificationType type,
+    int? orderId,
+    String? orderNumber,
+  }) async {
+    final isar = await _isarFuture;
+
+    final notification = NotificationModel()
+      ..title = title
+      ..content = content
+      ..type = type
+      ..timestamp = DateTime.now()
+      ..isRead = false
+      ..orderId = orderId
+      ..orderNumber = orderNumber;
+
+    await isar.writeTxn(() async {
+      await isar.notificationModels.put(notification);
+
+      if (kDebugMode) {
+        print('🔔 [DatabaseService] 創建通知: $title');
+      }
+    });
+
+    notifyListeners();
+    return notification;
+  }
+
+  /// 創建訂單通知
+  Future<NotificationModel> createOrderNotification({
+    required String title,
+    required String content,
+    required int orderId,
+    required String orderNumber,
+  }) async {
+    return await createNotification(
+      title: title,
+      content: content,
+      type: NotificationType.order,
+      orderId: orderId,
+      orderNumber: orderNumber,
+    );
+  }
+
+  /// 獲取所有通知（按時間倒序）
+  Future<List<NotificationModel>> getNotifications() async {
+    final isar = await _isarFuture;
+    return await isar.notificationModels
+        .where()
+        .sortByTimestampDesc()
+        .findAll();
+  }
+
+  /// 獲取未讀通知數量
+  Future<int> getUnreadNotificationCount() async {
+    final isar = await _isarFuture;
+    return await isar.notificationModels
+        .filter()
+        .isReadEqualTo(false)
+        .count();
+  }
+
+  /// 標記通知為已讀
+  Future<void> markNotificationAsRead(int notificationId) async {
+    final isar = await _isarFuture;
+    final notification = await isar.notificationModels.get(notificationId);
+
+    if (notification != null && !notification.isRead) {
+      await isar.writeTxn(() async {
+        notification.isRead = true;
+        await isar.notificationModels.put(notification);
+      });
+
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('🔔 [DatabaseService] 通知已標記為已讀: ${notification.title}');
+      }
+    }
+  }
+
+  /// 切換通知已讀狀態
+  Future<void> toggleNotificationReadStatus(int notificationId) async {
+    final isar = await _isarFuture;
+    final notification = await isar.notificationModels.get(notificationId);
+
+    if (notification != null) {
+      await isar.writeTxn(() async {
+        notification.isRead = !notification.isRead;
+        await isar.notificationModels.put(notification);
+      });
+
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('🔔 [DatabaseService] 通知狀態切換: ${notification.title} -> ${notification.isRead ? "已讀" : "未讀"}');
+      }
+    }
+  }
+
+  /// 標記所有通知為已讀
+  Future<void> markAllNotificationsAsRead() async {
+    final isar = await _isarFuture;
+    final unreadNotifications = await isar.notificationModels
+        .filter()
+        .isReadEqualTo(false)
+        .findAll();
+
+    if (unreadNotifications.isNotEmpty) {
+      await isar.writeTxn(() async {
+        for (var notification in unreadNotifications) {
+          notification.isRead = true;
+          await isar.notificationModels.put(notification);
+        }
+      });
+
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('🔔 [DatabaseService] 所有通知已標記為已讀 (${unreadNotifications.length} 則)');
+      }
+    }
+  }
+
+  /// 刪除通知
+  Future<void> deleteNotification(int notificationId) async {
+    final isar = await _isarFuture;
+
+    await isar.writeTxn(() async {
+      await isar.notificationModels.delete(notificationId);
+    });
+
+    notifyListeners();
+
+    if (kDebugMode) {
+      print('🔔 [DatabaseService] 通知已刪除: ID=$notificationId');
+    }
+  }
+
+  /// 清除所有已讀通知
+  Future<void> clearReadNotifications() async {
+    final isar = await _isarFuture;
+    final readNotifications = await isar.notificationModels
+        .filter()
+        .isReadEqualTo(true)
+        .findAll();
+
+    if (readNotifications.isNotEmpty) {
+      await isar.writeTxn(() async {
+        for (var notification in readNotifications) {
+          await isar.notificationModels.delete(notification.id);
+        }
+      });
+
+      notifyListeners();
+
+      if (kDebugMode) {
+        print('🔔 [DatabaseService] 已清除所有已讀通知 (${readNotifications.length} 則)');
+      }
     }
   }
 

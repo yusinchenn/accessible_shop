@@ -15,6 +15,8 @@ import 'pages/search/search_page.dart';
 import 'pages/auth/accessible_auth_page.dart';
 import 'pages/dev/dev_tools_page.dart';
 import 'pages/gesture_demo_page.dart';
+import 'pages/short_videos/short_videos_page.dart';
+import 'pages/notifications/notifications_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -281,6 +283,8 @@ class AppRouter extends StatelessWidget {
         '/search': (context) => const SearchPage(),
         '/dev-tools': (context) => const DevToolsPage(),
         '/gesture-demo': (context) => const GestureDemoPage(),
+        '/short_videos': (context) => const ShortVideosPage(),
+        '/notifications': (context) => const NotificationsPage(),
       },
     );
   }
