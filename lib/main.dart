@@ -17,6 +17,7 @@ import 'pages/dev/dev_tools_page.dart';
 import 'pages/gesture_demo_page.dart';
 import 'pages/short_videos/short_videos_page.dart';
 import 'pages/notifications/notifications_page.dart';
+import 'pages/comparison/comparison_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -24,6 +25,7 @@ import 'services/database_service.dart';
 // 匯入 Providers
 import 'providers/cart_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/comparison_provider.dart';
 
 // 匯入常數
 import 'utils/app_constants.dart';
@@ -175,6 +177,9 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
                 update: (context, dbService, previous) =>
                   previous ?? ShoppingCartData(dbService),
               ),
+
+              /// 商品比較
+              ChangeNotifierProvider(create: (_) => ComparisonProvider()),
             ],
             child: const AppRouter(),
           );
@@ -275,7 +280,9 @@ class AppRouter extends StatelessWidget {
         '/auth': (context) => const AccessibleAuthPage(),
         '/home': (context) => const HomePage(),
         '/product': (context) => const ProductDetailPage(),
+        '/product_detail': (context) => const ProductDetailPage(),
         '/cart': (context) => const ShoppingCartPage(),
+        '/comparison': (context) => const ComparisonPage(),
         '/checkout': (context) => const CheckoutPage(),
         '/orders': (context) => const OrderHistoryPage(),
         '/order-detail': (context) => const OrderDetailPage(),
