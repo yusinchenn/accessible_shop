@@ -327,6 +327,28 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
                   const SizedBox(height: AppSpacing.lg),
 
+                  // 測試與示範
+                  Text(
+                    '測試與示範',
+                    style: AppTextStyles.subtitle,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/gesture-demo');
+                    },
+                    icon: const Icon(Icons.touch_app),
+                    label: const Text('手勢系統示範'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
                   // 說明文字
                   Card(
                     color: Colors.blue.shade50,

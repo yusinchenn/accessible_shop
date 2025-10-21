@@ -14,6 +14,7 @@ import 'pages/settings/settings_page.dart';
 import 'pages/search/search_page.dart';
 import 'pages/auth/accessible_auth_page.dart';
 import 'pages/dev/dev_tools_page.dart';
+import 'pages/gesture_demo_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -279,6 +280,7 @@ class AppRouter extends StatelessWidget {
         '/settings': (context) => const SettingsPage(),
         '/search': (context) => const SearchPage(),
         '/dev-tools': (context) => const DevToolsPage(),
+        '/gesture-demo': (context) => const GestureDemoPage(),
       },
     );
   }
