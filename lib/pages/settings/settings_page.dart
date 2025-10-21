@@ -183,6 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: const Text('帳號'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SizedBox(

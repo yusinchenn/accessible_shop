@@ -201,6 +201,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       appBar: AppBar(
         title: const Text('通知'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
         actions: [
           // 全部標記為已讀按鈕
           IconButton(

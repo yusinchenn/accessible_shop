@@ -87,6 +87,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('歷史訂單'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

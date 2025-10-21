@@ -94,6 +94,7 @@ class _GestureDemoPageState extends State<GestureDemoPage> {
       appBar: AppBar(
         title: const Text('手勢系統示範'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [

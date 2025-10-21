@@ -68,6 +68,7 @@ class _AuthPageState extends State<AuthPage> {
         ),
         backgroundColor: AppColors.primary,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: Center(

@@ -81,6 +81,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
         title: const Text('App 設定'),
         centerTitle: true,
         backgroundColor: AppColors.primary,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.md),

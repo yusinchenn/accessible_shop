@@ -87,7 +87,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (selectedItems.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(title: const Text('結帳')),
+        appBar: AppBar(
+          title: const Text('結帳'),
+          automaticallyImplyLeading: false,
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -109,6 +112,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       appBar: AppBar(
         title: Text('結帳 - 步驟 ${_currentStep + 1}/5'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: PageView(
         controller: _pageController,

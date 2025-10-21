@@ -217,6 +217,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
       appBar: AppBar(
         title: const Text('帳號資訊'),
         backgroundColor: AppColors.primary,
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(

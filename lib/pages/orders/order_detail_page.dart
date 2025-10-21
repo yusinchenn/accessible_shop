@@ -103,6 +103,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       appBar: AppBar(
         title: Text(_order?.orderNumber ?? '訂單詳情'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

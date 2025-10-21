@@ -137,7 +137,11 @@ class _SearchPageState extends State<SearchPage> {
     final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text('搜尋 $keyword'), centerTitle: true),
+      appBar: AppBar(
+        title: Text('搜尋 $keyword'),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(),

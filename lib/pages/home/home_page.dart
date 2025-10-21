@@ -243,6 +243,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('首頁'), // 顯示固定文字「首頁」
         centerTitle: true, // 標題居中
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SizedBox(

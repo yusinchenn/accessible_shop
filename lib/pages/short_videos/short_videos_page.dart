@@ -141,6 +141,7 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
       appBar: AppBar(
         title: const Text('短影音'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: _videos.isEmpty
           ? const Center(

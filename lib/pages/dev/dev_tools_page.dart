@@ -199,6 +199,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
       appBar: AppBar(
         title: const Text('開發工具'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -352,6 +352,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       appBar: AppBar(
         title: Text(_product?.name ?? '商品詳情'),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

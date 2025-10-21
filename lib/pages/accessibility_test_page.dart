@@ -41,6 +41,7 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
       appBar: AppBar(
         title: const Text('無障礙測試'),
         backgroundColor: AppColors.primary,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),

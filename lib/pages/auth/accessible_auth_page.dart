@@ -128,20 +128,6 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     }
   }
 
-  void _goBack() {
-    if (_currentStep == 1) {
-      setState(() => _currentStep = 0);
-      _pageController.animateToPage(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      Future.delayed(const Duration(milliseconds: 400), () {
-        ttsHelper.speak('返回電子郵件輸入頁面');
-      });
-    }
-  }
-
   void _toggleMode() {
     setState(() {
       _isLoginMode = !_isLoginMode;
@@ -167,13 +153,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
           style: AppTextStyles.title.copyWith(color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
-        leading: _currentStep == 1
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, size: 32),
-                onPressed: _goBack,
-                tooltip: '返回',
-              )
-            : null,
+        automaticallyImplyLeading: false,
       ),
       body: PageView(
         controller: _pageController,

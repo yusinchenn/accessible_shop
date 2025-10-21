@@ -46,7 +46,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background, // 套用背景色
-      appBar: AppBar(title: const Text('購物車')),
+      appBar: AppBar(
+        title: const Text('購物車'),
+        automaticallyImplyLeading: false,
+      ),
       body: Consumer<ShoppingCartData>(
         builder: (context, cartData, _) {
           final items = cartData.items;
