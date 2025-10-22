@@ -21,6 +21,7 @@ import 'pages/comparison/comparison_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
+import 'services/order_automation_service.dart';
 
 // 匯入 Providers
 import 'providers/cart_provider.dart';
@@ -168,6 +169,20 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
 
               /// DatabaseService 在背景初始化 Isar
               ChangeNotifierProvider(create: (_) => DatabaseService()),
+
+              /// 訂單自動化服務 (依賴 DatabaseService)
+              ProxyProvider<DatabaseService, OrderAutomationService>(
+                create: (context) {
+                  final db = Provider.of<DatabaseService>(context, listen: false);
+                  final service = OrderAutomationService(db);
+                  // 初始化自動化服務（掃描現有訂單）
+                  service.initialize();
+                  return service;
+                },
+                update: (context, dbService, previous) =>
+                  previous ?? OrderAutomationService(dbService),
+                dispose: (context, service) => service.dispose(),
+              ),
 
               /// 購物車資料 (依賴 DatabaseService)
               ChangeNotifierProxyProvider<DatabaseService, ShoppingCartData>(

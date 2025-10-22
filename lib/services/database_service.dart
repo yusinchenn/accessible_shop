@@ -7,6 +7,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 import '../models/order.dart';
+import '../models/order_status.dart';
 import '../models/user_profile.dart';
 import '../models/notification.dart';
 
@@ -26,6 +27,8 @@ class DatabaseService extends ChangeNotifier {
       UserSettingsSchema,
       OrderSchema,
       OrderItemSchema,
+      OrderStatusHistorySchema,
+      OrderStatusTimestampsSchema,
       UserProfileSchema,
       NotificationModelSchema,
     ], directory: dir.path);
@@ -287,6 +290,7 @@ class DatabaseService extends ChangeNotifier {
 
   /// 建立訂單
   /// 從購物車選取項目和結帳選項建立訂單
+  /// isCashOnDelivery: true 表示貨到付款，false 表示線上付款
   Future<Order> createOrder({
     required List<CartItem> cartItems,
     int? couponId,
@@ -297,6 +301,8 @@ class DatabaseService extends ChangeNotifier {
     required double shippingFee,
     required int paymentMethodId,
     required String paymentMethodName,
+    required bool isCashOnDelivery,
+    String? deliveryType, // 'convenience_store' 或 'home_delivery'
   }) async {
     final isar = await _isarFuture;
 
@@ -310,11 +316,20 @@ class DatabaseService extends ChangeNotifier {
     // 生成訂單編號
     final orderNumber = await generateOrderNumber();
 
+    // 根據付款方式設定訂單狀態
+    // 貨到付款：待付款
+    // 線上付款：待出貨（假設已完成付款）
+    final OrderMainStatus initialStatus = isCashOnDelivery
+        ? OrderMainStatus.pendingPayment
+        : OrderMainStatus.pendingShipment;
+
     // 建立訂單
     final order = Order()
       ..orderNumber = orderNumber
       ..createdAt = DateTime.now()
-      ..status = 'pending'
+      ..status = 'pending' // 舊版狀態，保留兼容性
+      ..mainStatus = initialStatus
+      ..logisticsStatus = LogisticsStatus.none
       ..subtotal = subtotal
       ..discount = discount
       ..shippingFee = shippingFee
@@ -324,7 +339,8 @@ class DatabaseService extends ChangeNotifier {
       ..shippingMethodId = shippingMethodId
       ..shippingMethodName = shippingMethodName
       ..paymentMethodId = paymentMethodId
-      ..paymentMethodName = paymentMethodName;
+      ..paymentMethodName = paymentMethodName
+      ..deliveryType = deliveryType;
 
     await isar.writeTxn(() async {
       // 儲存訂單
@@ -345,8 +361,36 @@ class DatabaseService extends ChangeNotifier {
       }
 
       if (kDebugMode) {
-        print('📦 [DatabaseService] 建立訂單: $orderNumber, 共 ${cartItems.length} 項商品, 總金額: \$${total.toStringAsFixed(0)}');
+        print('📦 [DatabaseService] 建立訂單: $orderNumber, 共 ${cartItems.length} 項商品, 總金額: \$${total.toStringAsFixed(0)}, 狀態: ${initialStatus.name}');
       }
+    });
+
+    // 創建訂單狀態時間戳記錄
+    final timestamps = OrderStatusTimestamps()
+      ..orderId = order.id
+      ..createdAt = DateTime.now();
+
+    if (isCashOnDelivery) {
+      timestamps.pendingPaymentAt = DateTime.now();
+    } else {
+      timestamps.paidAt = DateTime.now();
+      timestamps.pendingShipmentAt = DateTime.now();
+    }
+
+    await isar.writeTxn(() async {
+      await isar.orderStatusTimestamps.put(timestamps);
+    });
+
+    // 創建訂單狀態歷史記錄
+    final history = OrderStatusHistory()
+      ..orderId = order.id
+      ..mainStatus = initialStatus
+      ..logisticsStatus = LogisticsStatus.none
+      ..description = isCashOnDelivery ? '訂單成立（貨到付款）' : '訂單成立（線上付款已完成）'
+      ..timestamp = DateTime.now();
+
+    await isar.writeTxn(() async {
+      await isar.orderStatusHistorys.put(history);
     });
 
     // 創建訂單成立通知

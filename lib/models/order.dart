@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'order_status.dart';
 
 part 'order.g.dart';
 
@@ -13,12 +14,20 @@ class Order {
   /// 訂單建立時間
   late DateTime createdAt;
 
-  /// 訂單狀態
+  /// 訂單狀態（舊版，保留以便兼容）
   /// pending - 待處理
   /// processing - 處理中
   /// completed - 已完成
   /// cancelled - 已取消
   late String status;
+
+  /// 訂單主要狀態（新版）
+  @Enumerated(EnumType.name)
+  late OrderMainStatus mainStatus;
+
+  /// 物流狀態（新版）
+  @Enumerated(EnumType.name)
+  late LogisticsStatus logisticsStatus;
 
   /// 商品小計
   late double subtotal;
@@ -49,6 +58,11 @@ class Order {
 
   /// 付款方式名稱
   late String paymentMethodName;
+
+  /// 配送方式類型（用於判斷超商取貨或宅配）
+  /// 'convenience_store' - 超商取貨
+  /// 'home_delivery' - 宅配
+  String? deliveryType;
 
   Order();
 }

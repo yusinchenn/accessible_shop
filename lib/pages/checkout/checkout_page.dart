@@ -4,6 +4,7 @@ import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/database_service.dart';
+import '../../services/order_automation_service.dart';
 import '../../services/accessibility_service.dart';
 import '../../models/cart_item.dart';
 import '../../models/coupon.dart';
@@ -857,13 +858,21 @@ class _Step5CompleteState extends State<_Step5Complete> {
   Future<void> _createOrder() async {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
+      final automationService = Provider.of<OrderAutomationService>(context, listen: false);
 
-      final subtotal = widget.items.fold<double>(
-        0.0,
-        (sum, item) => sum + (item.unitPrice * item.quantity),
-      );
       final discount = widget.selectedCoupon?.discount ?? 0.0;
       final shippingFee = widget.selectedShipping?.fee ?? 0.0;
+
+      // 判斷是否為貨到付款
+      final isCashOnDelivery = widget.selectedPayment!.id == 2;
+
+      // 判斷配送方式類型
+      String? deliveryType;
+      if (widget.selectedShipping!.id == 1) {
+        deliveryType = 'convenience_store'; // 超商取貨
+      } else if (widget.selectedShipping!.id == 2) {
+        deliveryType = 'home_delivery'; // 宅配
+      }
 
       // 建立訂單
       final order = await db.createOrder(
@@ -876,11 +885,16 @@ class _Step5CompleteState extends State<_Step5Complete> {
         shippingFee: shippingFee,
         paymentMethodId: widget.selectedPayment!.id,
         paymentMethodName: widget.selectedPayment!.name,
+        isCashOnDelivery: isCashOnDelivery,
+        deliveryType: deliveryType,
       );
 
       // 清除購物車中已結帳的項目
       // 購物車 Provider 會自動監聽資料庫變化並重新載入
       await db.clearSelectedCartItems();
+
+      // 觸發訂單自動化服務
+      await automationService.onOrderCreated(order);
 
       setState(() {
         _createdOrder = order;
