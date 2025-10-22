@@ -11,6 +11,7 @@ import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝�
 import '../../services/accessibility_service.dart'; // 匯入無障礙服務
 import '../../services/database_service.dart'; // 匯入資料庫服務
 import '../../models/order.dart'; // 匯入訂單模型
+import '../../models/order_status.dart'; // 匯入訂單狀態枚舉
 import '../../models/notification.dart'; // 匯入通知模型
 import '../../models/cart_item.dart'; // 匯入購物車項目模型
 
@@ -310,19 +311,21 @@ class _HomePageState extends State<HomePage> {
       int pendingReceipt = 0;
 
       for (var order in orders) {
-        // 根據訂單狀態分類統計
-        // pending (待處理) -> 待付款
-        // processing (處理中) -> 待出貨
-        // 其他自定義狀態可以在這裡擴展
-        switch (order.status) {
-          case 'pending':
+        // 根據訂單的 mainStatus 分類統計
+        switch (order.mainStatus) {
+          case OrderMainStatus.pendingPayment:
             pendingPayment++;
             break;
-          case 'processing':
+          case OrderMainStatus.pendingShipment:
             pendingShipment++;
             break;
-          case 'shipped': // 如果有已出貨狀態
+          case OrderMainStatus.pendingDelivery:
             pendingReceipt++;
+            break;
+          case OrderMainStatus.completed:
+          case OrderMainStatus.returnRefund:
+          case OrderMainStatus.invalid:
+            // 不計入統計
             break;
         }
       }
