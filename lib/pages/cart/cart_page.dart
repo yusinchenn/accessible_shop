@@ -44,6 +44,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Future<void> _announceEnter() async {
     final cartData = Provider.of<ShoppingCartData>(context, listen: false);
 
+    // 等待購物車資料載入完成
+    if (cartData.isLoading) {
+      await cartData.reload();
+    }
+
     if (cartData.items.isEmpty) {
       // 使用 speakQueue 確保依序播放，不會打斷
       await ttsHelper.speakQueue(["進入購物車", "目前無商品"]);
