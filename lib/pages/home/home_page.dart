@@ -40,15 +40,11 @@ class HomePage extends StatefulWidget {
 /// HomePage 的狀態類，管理頁面的動態行為和狀態
 class _HomePageState extends State<HomePage> {
   late final PageController _pageController; // 控制 PageView 的滾動控制器，延遲初始化
-  final TextEditingController _searchController = TextEditingController(); // 搜尋輸入控制器
-  final FocusNode _searchFocusNode = FocusNode(); // 搜尋輸入框焦點節點
-  late final Widget _searchTextField; // 預構建的搜尋輸入框，避免每次重建
 
   int _currentPageIndex = 0; // 當前顯示的卡片索引（對應 _entryItems 的實際索引）
   bool _isAnnouncingHome = false; // 標記是否正在進行首頁進入的語音播報
   bool _speaking = false; // 標記是否正在進行語音播報
   bool _announceScheduled = false; // 標記是否已排程首頁進入的播報
-  bool _isSearchFocused = false; // 追蹤搜尋輸入框是否有焦點（鍵盤是否開啟）
 
   // 訂單統計數據
   int _pendingPaymentCount = 0; // 待付款訂單數量
@@ -68,11 +64,11 @@ class _HomePageState extends State<HomePage> {
     ShopEntryItem(
       title: '搜尋', // 卡片標題
       icon: Icons.search, // 搜尋圖示
-      route: '/search', // 導航路由
-      contentBuilder: (context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: _searchTextField, // 使用預構建的 TextField，提升響應速度
+      route: '/search_input', // 導航到搜尋輸入頁面
+      contentBuilder: (context) => const Center(
+        child: Text(
+          '搜尋商品',
+          style: TextStyle(fontSize: 24, color: AppColors.subtitle),
         ),
       ),
     ),
@@ -157,27 +153,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    // 監聽搜尋輸入框焦點變化，追蹤鍵盤開關狀態
-    _searchFocusNode.addListener(_onSearchFocusChanged);
-
-    // 預先構建搜尋輸入框，避免第一次雙擊時才創建造成延遲
-    _searchTextField = TextField(
-      controller: _searchController,
-      focusNode: _searchFocusNode,
-      style: const TextStyle(fontSize: 28),
-      decoration: const InputDecoration(
-        hintText: '輸入商品名稱...',
-        hintStyle: TextStyle(fontSize: 28),
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.all(AppSpacing.md),
-      ),
-      onSubmitted: (value) {
-        if (value.trim().isNotEmpty) {
-          _onSearchSubmit(value.trim());
-        }
-      },
-    );
-
     final int initialPageOffset =
         _entryItems.length * 1000; // 設置初始頁面偏移，實現無限滾動效果
     _pageController = PageController(
@@ -186,13 +161,6 @@ class _HomePageState extends State<HomePage> {
     );
     _currentPageIndex = initialPageOffset % _entryItems.length; // 計算實際的卡片索引
     _pageController.addListener(_onPageChanged); // 監聽頁面變化事件
-  }
-
-  /// 監聽搜尋輸入框焦點變化
-  void _onSearchFocusChanged() {
-    setState(() {
-      _isSearchFocused = _searchFocusNode.hasFocus;
-    });
   }
 
   /// 構建購物車摘要 Widget
@@ -488,14 +456,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 清理資源，釋放 PageController 和搜尋相關控制器
+  /// 清理資源，釋放 PageController
   @override
   void dispose() {
     _pageController.removeListener(_onPageChanged); // 移除頁面變化監聽器
     _pageController.dispose(); // 釋放 PageController
-    _searchFocusNode.removeListener(_onSearchFocusChanged); // 移除焦點變化監聽器
-    _searchController.dispose(); // 釋放搜尋輸入控制器
-    _searchFocusNode.dispose(); // 釋放搜尋輸入框焦點節點
     // 不要 dispose 全域 ttsHelper，因為它是全域資源
     super.dispose();
   }
@@ -509,48 +474,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 處理雙擊事件，導航到指定路由或開啟/關閉搜尋輸入
-  Future<void> _onDoubleTap(String route, int actualIndex) async {
-    // 如果是搜尋卡片，切換鍵盤開關狀態
-    if (actualIndex == 0) {
-      if (_isSearchFocused) {
-        // 如果鍵盤已開啟，則關閉鍵盤
-        _searchFocusNode.unfocus();
-        // 只在自訂模式播放語音
-        if (accessibilityService.shouldUseCustomTTS) {
-          ttsHelper.speak('關閉鍵盤');
-        }
-      } else {
-        // 如果鍵盤未開啟，則開啟鍵盤
-        // 先中斷首頁進入的播報流程
-        _isAnnouncingHome = false;
-        _speaking = false;
-
-        // 只在自訂模式播放語音
-        if (accessibilityService.shouldUseCustomTTS) {
-          await ttsHelper.stop(); // 停止之前的語音
-          await Future.delayed(const Duration(milliseconds: 100)); // 確保停止生效
-          await ttsHelper.speak('進入搜尋，請輸入商品名稱');
-        }
-        _searchFocusNode.requestFocus();
-      }
-    } else {
-      Navigator.pushNamed(context, route).then((_) {
-        // 導航返回後，didChangeDependencies 會觸發 _announceEnter
-      });
-    }
-  }
-
-  /// 處理搜尋提交事件
-  void _onSearchSubmit(String keyword) {
-    _searchFocusNode.unfocus(); // 關閉鍵盤
-    Navigator.pushNamed(
-      context,
-      '/search',
-      arguments: keyword,
-    ).then((_) {
-      // 清空搜尋框
-      _searchController.clear();
+  /// 處理雙擊事件，導航到指定路由
+  void _onDoubleTap(String route) {
+    Navigator.pushNamed(context, route).then((_) {
       // 導航返回後，didChangeDependencies 會觸發 _announceEnter
     });
   }
@@ -570,9 +496,6 @@ class _HomePageState extends State<HomePage> {
           height: MediaQuery.of(context).size.height * 0.75, // 卡片區域高度為螢幕高度的 75%
           child: PageView.builder(
             controller: _pageController, // 使用 PageController 控制滾動
-            physics: _isSearchFocused
-                ? const NeverScrollableScrollPhysics() // 鍵盤開啟時禁止滑動
-                : null, // 鍵盤關閉時允許滑動
             itemCount: 999999, // 設置大量項目數以實現無限滾動
             itemBuilder: (context, index) {
               final actualIndex = index % _entryItems.length; // 計算實際卡片索引
@@ -599,8 +522,7 @@ class _HomePageState extends State<HomePage> {
                       onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
                       onDoubleTap: () => _onDoubleTap(
                         _entryItems[actualIndex].route,
-                        actualIndex,
-                      ), // 雙擊導航到對應路由或開啟搜尋輸入
+                      ), // 雙擊導航到對應路由
                       child: Card(
                       elevation: 8, // 卡片陰影效果
                       shape: RoundedRectangleBorder(

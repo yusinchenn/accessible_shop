@@ -12,6 +12,7 @@ import 'pages/orders/order_history_page.dart';
 import 'pages/orders/order_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/search/search_page.dart';
+import 'pages/search/search_input_page.dart';
 import 'pages/auth/accessible_auth_page.dart';
 import 'pages/dev/dev_tools_page.dart';
 import 'pages/gesture_demo_page.dart';
@@ -303,6 +304,7 @@ class AppRouter extends StatelessWidget {
         '/order-detail': (context) => const OrderDetailPage(),
         '/settings': (context) => const SettingsPage(),
         '/search': (context) => const SearchPage(),
+        '/search_input': (context) => const SearchInputPage(),
         '/dev-tools': (context) => const DevToolsPage(),
         '/gesture-demo': (context) => const GestureDemoPage(),
         '/short_videos': (context) => const ShortVideosPage(),

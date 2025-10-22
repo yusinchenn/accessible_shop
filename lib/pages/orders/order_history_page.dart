@@ -32,19 +32,25 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
     OrderMainStatus.invalid,
   ];
 
+  bool _isInitialized = false;
+  bool _hasSpokenInitialMessage = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _statusTabs.length, vsync: this);
     _tabController.addListener(_onTabChanged);
-    _loadOrders();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final db = Provider.of<DatabaseService>(context, listen: false);
-    _orderStatusService = OrderStatusService(db);
+    if (!_isInitialized) {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      _orderStatusService = OrderStatusService(db);
+      _isInitialized = true;
+      _loadOrders();
+    }
   }
 
   @override
@@ -73,14 +79,12 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       });
 
       // 朗讀進入頁面訊息
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final statusName = currentStatus.displayName;
-        if (_orders.isEmpty) {
-          ttsHelper.speak('進入 $statusName 頁面，目前沒有訂單');
-        } else {
-          ttsHelper.speak('進入 $statusName 頁面，共有 ${_orders.length} 筆訂單');
-        }
-      });
+      if (_isInitialized && !_hasSpokenInitialMessage) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ttsHelper.speak('進入訂單頁面');
+        });
+        _hasSpokenInitialMessage = true;
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       ttsHelper.speak('載入訂單失敗');
@@ -159,6 +163,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       ),
       body: TabBarView(
         controller: _tabController,
+        physics: const NeverScrollableScrollPhysics(), // 禁用左右滑動
         children: _statusTabs.map((status) {
           return _buildOrderList();
         }).toList(),
