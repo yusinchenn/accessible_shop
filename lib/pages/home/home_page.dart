@@ -456,7 +456,11 @@ class _HomePageState extends State<HomePage> {
     _speaking = true; // 標記正在語音播報
     try {
       await ttsHelper.speak('進入首頁'); // 播報「進入首頁」
+      if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
+
       await Future.delayed(const Duration(seconds: 1)); // 等待 1 秒
+      if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
+
       await ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報當前卡片標題
     } finally {
       _isAnnouncingHome = false; // 重置首頁播報標記
@@ -506,7 +510,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// 處理雙擊事件，導航到指定路由或開啟/關閉搜尋輸入
-  void _onDoubleTap(String route, int actualIndex) {
+  Future<void> _onDoubleTap(String route, int actualIndex) async {
     // 如果是搜尋卡片，切換鍵盤開關狀態
     if (actualIndex == 0) {
       if (_isSearchFocused) {
@@ -518,11 +522,17 @@ class _HomePageState extends State<HomePage> {
         }
       } else {
         // 如果鍵盤未開啟，則開啟鍵盤
-        _searchFocusNode.requestFocus();
+        // 先中斷首頁進入的播報流程
+        _isAnnouncingHome = false;
+        _speaking = false;
+
         // 只在自訂模式播放語音
         if (accessibilityService.shouldUseCustomTTS) {
-          ttsHelper.speak('請輸入商品名稱');
+          await ttsHelper.stop(); // 停止之前的語音
+          await Future.delayed(const Duration(milliseconds: 100)); // 確保停止生效
+          await ttsHelper.speak('進入搜尋，請輸入商品名稱');
         }
+        _searchFocusNode.requestFocus();
       }
     } else {
       Navigator.pushNamed(context, route).then((_) {
