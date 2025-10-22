@@ -39,6 +39,7 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
   bool _isAnnouncingEnter = false;
   bool _announceScheduled = false;
   int _selectedIndex = 0;
+  late PageController _pageController;
 
   // 測試用的短影音資料
   final List<ShortVideo> _videos = const [
@@ -69,6 +70,18 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // 初始化無障礙服務
@@ -95,23 +108,24 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
 
     _isAnnouncingEnter = true;
     try {
-      await ttsHelper.speak('進入短影音頁面');
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (_videos.isNotEmpty) {
-        await ttsHelper.speak('當前有 ${_videos.length} 個影片');
-      }
+      await ttsHelper.speak('進入短影音介面');
     } finally {
       _isAnnouncingEnter = false;
     }
   }
 
-  /// 處理單擊事件 - 播報影片資訊
-  void _onVideoTap(ShortVideo video, int index) {
+  /// 處理頁面變化
+  void _onPageChanged(int index) {
     if (_isAnnouncingEnter) return;
 
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  /// 處理單擊事件 - 播報影片資訊
+  void _onVideoTap(ShortVideo video) {
+    if (_isAnnouncingEnter) return;
 
     // 只在自訂模式播放語音
     if (accessibilityService.shouldUseCustomTTS) {
@@ -150,88 +164,94 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
                 style: AppTextStyles.body,
               ),
             )
-          : ListView.builder(
+          : PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
               itemCount: _videos.length,
-              padding: const EdgeInsets.all(AppSpacing.md),
               itemBuilder: (context, index) {
                 final video = _videos[index];
                 final isSelected = index == _selectedIndex;
 
-                return GestureDetector(
-                  onTap: () => _onVideoTap(video, index),
-                  onDoubleTap: () => _onVideoDoubleTap(video),
-                  child: Card(
-                    elevation: isSelected ? 8 : 2,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: isSelected
-                          ? const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            )
-                          : BorderSide.none,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Row(
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: GestureDetector(
+                    onTap: () => _onVideoTap(video),
+                    onDoubleTap: () => _onVideoDoubleTap(video),
+                    child: Card(
+                      elevation: isSelected ? 8 : 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // 影片縮圖佔位符
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.play_circle_outline,
-                              size: 48,
-                              color: Colors.grey,
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                              margin: const EdgeInsets.all(AppSpacing.lg),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.play_circle_outline,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
                           // 影片資訊
-                          Expanded(
+                          Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
                                   video.title,
-                                  style: AppTextStyles.subtitle,
+                                  style: AppTextStyles.title,
+                                  textAlign: TextAlign.center,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.md),
                                 Text(
                                   video.author,
-                                  style: AppTextStyles.body.copyWith(
+                                  style: AppTextStyles.subtitle.copyWith(
                                     color: Colors.grey[600],
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.md),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
                                       Icons.thumb_up_outlined,
-                                      size: 16,
+                                      size: 20,
                                       color: Colors.grey,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${video.likes}',
-                                      style: AppTextStyles.small,
+                                      style: AppTextStyles.body,
                                     ),
-                                    const SizedBox(width: AppSpacing.md),
+                                    const SizedBox(width: AppSpacing.lg),
                                     const Icon(
                                       Icons.visibility_outlined,
-                                      size: 16,
+                                      size: 20,
                                       color: Colors.grey,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${video.views}',
-                                      style: AppTextStyles.small,
+                                      style: AppTextStyles.body,
                                     ),
                                   ],
                                 ),
