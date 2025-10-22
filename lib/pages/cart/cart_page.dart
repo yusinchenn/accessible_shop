@@ -19,13 +19,38 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   final PageController _pageController = PageController();
   bool _showMoreActionsOverlay = false;
   CartItem? _overlayTargetItem;
+  bool _announceScheduled = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
-      ttsHelper.speak("進入購物車頁面");
-    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    if (routeIsCurrent && !_announceScheduled) {
+      _announceScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _announceScheduled = false;
+        _announceEnter();
+      });
+    }
+  }
+
+  /// 執行進入頁面的語音播報
+  Future<void> _announceEnter() async {
+    final cartData = Provider.of<ShoppingCartData>(context, listen: false);
+
+    if (cartData.items.isEmpty) {
+      // 使用 speakQueue 確保依序播放，不會打斷
+      await ttsHelper.speakQueue(["進入購物車", "目前無商品"]);
+    } else {
+      // 有商品時播報商品數量
+      await ttsHelper.speakQueue(["進入購物車", "有${cartData.items.length}項商品"]);
+    }
   }
 
   void _showMoreActions(CartItem item) {
@@ -249,8 +274,9 @@ class ShoppingCartItemCard extends StatelessWidget {
         "${item.name}，${item.specification}，單價${item.unitPrice.toStringAsFixed(0)}元，數量${item.quantity}",
       ),
       onDoubleTap: () async {
+        final wasSelected = item.isSelected; // 記錄切換前的狀態
         await cartData.toggleSelection(item.id);
-        ttsHelper.speak("${item.isSelected ? '選取' : '取消選取'}${item.name}");
+        ttsHelper.speak("${wasSelected ? '取消選取' : '選取'}${item.name}");
       },
       onLongPress: () => onShowMoreActions(item),
       child: Card(
