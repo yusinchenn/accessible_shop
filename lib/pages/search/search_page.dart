@@ -123,7 +123,10 @@ class _SearchPageState extends State<SearchPage> {
     final category = product.category != null ? '，分類${product.category}' : '';
     final storeName = _storesMap[product.storeId]?.name;
     final storeInfo = storeName != null ? '，商家$storeName' : '';
-    return '${product.name}，價格${product.price.toStringAsFixed(0)}元$storeInfo，${product.description ?? "無描述"}$category';
+    final ratingInfo = product.reviewCount > 0
+        ? '，評分${product.averageRating.toStringAsFixed(1)}顆星，共${product.reviewCount}則評論'
+        : '';
+    return '${product.name}，價格${product.price.toStringAsFixed(0)}元$ratingInfo$storeInfo，${product.description ?? "無描述"}$category';
   }
 
   /// 導航到商品詳情頁面

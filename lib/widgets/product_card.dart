@@ -56,6 +56,36 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
 
+            // 評分顯示
+            if (product.reviewCount > 0)
+              Row(
+                children: [
+                  const Icon(
+                    Icons.star,
+                    size: 24,
+                    color: Colors.amber,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    product.averageRating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '(${product.reviewCount}則評論)',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            if (product.reviewCount > 0) const SizedBox(height: AppSpacing.sm),
+
             // 商家名稱（如果有）
             if (storeName != null)
               GestureDetector(

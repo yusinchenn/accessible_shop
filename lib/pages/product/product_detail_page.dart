@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../widgets/global_gesture_wrapper.dart';
 import '../../models/product.dart';
 import '../../models/store.dart';
+import '../../models/product_review.dart';
 import '../../services/database_service.dart';
 import '../store/store_page.dart';
 
@@ -18,6 +20,7 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   Product? _product;
   Store? _store;
+  List<ProductReview> _reviews = [];
   bool _loading = true;
   final TtsHelper _ttsHelper = TtsHelper();
 
@@ -59,13 +62,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
         // 載入商家資料
         Store? store;
+        List<ProductReview> reviews = [];
         if (product != null) {
           store = await db.getStoreById(product.storeId);
+          reviews = await db.getProductReviews(product.id);
         }
 
         setState(() {
           _product = product;
           _store = store;
+          _reviews = reviews;
           _loading = false;
         });
 
@@ -89,7 +95,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final category = _product!.category != null ? '，分類${_product!.category}' : '';
     final storeName = _store?.name;
     final storeInfo = storeName != null ? '，商家$storeName' : '';
-    final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$storeInfo$category';
+    final ratingInfo = _product!.reviewCount > 0
+        ? '，評分${_product!.averageRating.toStringAsFixed(1)}顆星，共${_product!.reviewCount}則評論'
+        : '';
+    final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$ratingInfo$storeInfo$category';
     await _ttsHelper.speak(text);
   }
 
@@ -458,31 +467,35 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 children: [
                                   const Icon(
                                     Icons.store,
-                                    size: 24,
+                                    size: 20,
                                     color: Colors.blue,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    _store!.name,
-                                    style: const TextStyle(
-                                      fontSize: 28,
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                      fontWeight: FontWeight.w500,
+                                  Flexible(
+                                    child: Text(
+                                      _store!.name,
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   if (_store!.rating > 0) ...[
                                     const Icon(
                                       Icons.star,
-                                      size: 20,
+                                      size: 18,
                                       color: Colors.amber,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       _store!.rating.toStringAsFixed(1),
                                       style: const TextStyle(
-                                        fontSize: 24,
+                                        fontSize: 20,
                                         color: Colors.grey,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -491,7 +504,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   const SizedBox(width: 8),
                                   const Icon(
                                     Icons.chevron_right,
-                                    size: 24,
+                                    size: 20,
                                     color: Colors.blue,
                                   ),
                                 ],
@@ -606,10 +619,176 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // 評分與評論區域
+                        _buildReviewsSection(),
                       ],
                     ),
                   ),
                 ),
+    );
+  }
+
+  /// 建立評論區域
+  Widget _buildReviewsSection() {
+    if (_reviews.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 分隔線
+        const Divider(thickness: 1),
+        const SizedBox(height: AppSpacing.md),
+
+        // 評論標題與統計
+        GestureDetector(
+          onTap: () => _ttsHelper.speak('商品評價，平均${_product!.averageRating.toStringAsFixed(1)}顆星，共${_reviews.length}則評論'),
+          child: Row(
+            children: [
+              const Text(
+                '商品評價',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.text,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Icon(Icons.star, color: Colors.amber, size: 28),
+              const SizedBox(width: 4),
+              Text(
+                _product!.averageRating.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.text,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '(${_reviews.length}則評論)',
+                style: const TextStyle(
+                  fontSize: 24,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // 評論列表
+        ..._reviews.map((review) => _buildReviewCard(review)),
+      ],
+    );
+  }
+
+  /// 建立單則評論卡片
+  Widget _buildReviewCard(ProductReview review) {
+    final dateFormat = DateFormat('yyyy/MM/dd');
+    final formattedDate = dateFormat.format(review.createdAt);
+
+    return GestureDetector(
+      onTap: () {
+        final reviewText = '${review.userName}，評分${review.rating.toStringAsFixed(1)}顆星，${review.comment}';
+        _ttsHelper.speak(reviewText);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 評論者資訊與評分
+            Row(
+              children: [
+                // 使用者頭像
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.primary,
+                  child: Text(
+                    review.userName.isNotEmpty ? review.userName[0] : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+
+                // 使用者名稱和評分
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        review.userName,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.text,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          ...List.generate(5, (index) {
+                            if (index < review.rating.floor()) {
+                              return const Icon(Icons.star, color: Colors.amber, size: 18);
+                            } else if (index < review.rating) {
+                              return const Icon(Icons.star_half, color: Colors.amber, size: 18);
+                            } else {
+                              return const Icon(Icons.star_border, color: Colors.amber, size: 18);
+                            }
+                          }),
+                          const SizedBox(width: 8),
+                          Text(
+                            review.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 評論日期
+                Text(
+                  formattedDate,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // 評論內容
+            Text(
+              review.comment,
+              style: const TextStyle(
+                fontSize: 24,
+                color: AppColors.text,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

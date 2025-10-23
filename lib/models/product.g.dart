@@ -17,33 +17,43 @@ const ProductSchema = CollectionSchema(
   name: r'Product',
   id: -6222113721139403729,
   properties: {
-    r'category': PropertySchema(
+    r'averageRating': PropertySchema(
       id: 0,
+      name: r'averageRating',
+      type: IsarType.double,
+    ),
+    r'category': PropertySchema(
+      id: 1,
       name: r'category',
       type: IsarType.string,
     ),
     r'description': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'description',
       type: IsarType.string,
     ),
     r'imageUrl': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'imageUrl',
       type: IsarType.string,
     ),
     r'name': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'name',
       type: IsarType.string,
     ),
     r'price': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'price',
       type: IsarType.double,
     ),
+    r'reviewCount': PropertySchema(
+      id: 6,
+      name: r'reviewCount',
+      type: IsarType.long,
+    ),
     r'storeId': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'storeId',
       type: IsarType.long,
     )
@@ -96,12 +106,14 @@ void _productSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.category);
-  writer.writeString(offsets[1], object.description);
-  writer.writeString(offsets[2], object.imageUrl);
-  writer.writeString(offsets[3], object.name);
-  writer.writeDouble(offsets[4], object.price);
-  writer.writeLong(offsets[5], object.storeId);
+  writer.writeDouble(offsets[0], object.averageRating);
+  writer.writeString(offsets[1], object.category);
+  writer.writeString(offsets[2], object.description);
+  writer.writeString(offsets[3], object.imageUrl);
+  writer.writeString(offsets[4], object.name);
+  writer.writeDouble(offsets[5], object.price);
+  writer.writeLong(offsets[6], object.reviewCount);
+  writer.writeLong(offsets[7], object.storeId);
 }
 
 Product _productDeserialize(
@@ -111,13 +123,15 @@ Product _productDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Product();
-  object.category = reader.readStringOrNull(offsets[0]);
-  object.description = reader.readStringOrNull(offsets[1]);
+  object.averageRating = reader.readDouble(offsets[0]);
+  object.category = reader.readStringOrNull(offsets[1]);
+  object.description = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.imageUrl = reader.readStringOrNull(offsets[2]);
-  object.name = reader.readString(offsets[3]);
-  object.price = reader.readDouble(offsets[4]);
-  object.storeId = reader.readLong(offsets[5]);
+  object.imageUrl = reader.readStringOrNull(offsets[3]);
+  object.name = reader.readString(offsets[4]);
+  object.price = reader.readDouble(offsets[5]);
+  object.reviewCount = reader.readLong(offsets[6]);
+  object.storeId = reader.readLong(offsets[7]);
   return object;
 }
 
@@ -129,16 +143,20 @@ P _productDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 1:
       return (reader.readStringOrNull(offset)) as P;
     case 2:
       return (reader.readStringOrNull(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readDouble(offset)) as P;
+    case 6:
+      return (reader.readLong(offset)) as P;
+    case 7:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -234,6 +252,69 @@ extension ProductQueryWhere on QueryBuilder<Product, Product, QWhereClause> {
 
 extension ProductQueryFilter
     on QueryBuilder<Product, Product, QFilterCondition> {
+  QueryBuilder<Product, Product, QAfterFilterCondition> averageRatingEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'averageRating',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition>
+      averageRatingGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'averageRating',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> averageRatingLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'averageRating',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> averageRatingBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'averageRating',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterFilterCondition> categoryIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -917,6 +998,59 @@ extension ProductQueryFilter
     });
   }
 
+  QueryBuilder<Product, Product, QAfterFilterCondition> reviewCountEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reviewCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> reviewCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'reviewCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> reviewCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'reviewCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> reviewCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'reviewCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterFilterCondition> storeIdEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -978,6 +1112,18 @@ extension ProductQueryLinks
     on QueryBuilder<Product, Product, QFilterCondition> {}
 
 extension ProductQuerySortBy on QueryBuilder<Product, Product, QSortBy> {
+  QueryBuilder<Product, Product, QAfterSortBy> sortByAverageRating() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'averageRating', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> sortByAverageRatingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'averageRating', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> sortByCategory() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'category', Sort.asc);
@@ -1038,6 +1184,18 @@ extension ProductQuerySortBy on QueryBuilder<Product, Product, QSortBy> {
     });
   }
 
+  QueryBuilder<Product, Product, QAfterSortBy> sortByReviewCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reviewCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> sortByReviewCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reviewCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> sortByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'storeId', Sort.asc);
@@ -1053,6 +1211,18 @@ extension ProductQuerySortBy on QueryBuilder<Product, Product, QSortBy> {
 
 extension ProductQuerySortThenBy
     on QueryBuilder<Product, Product, QSortThenBy> {
+  QueryBuilder<Product, Product, QAfterSortBy> thenByAverageRating() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'averageRating', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> thenByAverageRatingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'averageRating', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> thenByCategory() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'category', Sort.asc);
@@ -1125,6 +1295,18 @@ extension ProductQuerySortThenBy
     });
   }
 
+  QueryBuilder<Product, Product, QAfterSortBy> thenByReviewCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reviewCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> thenByReviewCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reviewCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> thenByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'storeId', Sort.asc);
@@ -1140,6 +1322,12 @@ extension ProductQuerySortThenBy
 
 extension ProductQueryWhereDistinct
     on QueryBuilder<Product, Product, QDistinct> {
+  QueryBuilder<Product, Product, QDistinct> distinctByAverageRating() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'averageRating');
+    });
+  }
+
   QueryBuilder<Product, Product, QDistinct> distinctByCategory(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1174,6 +1362,12 @@ extension ProductQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Product, Product, QDistinct> distinctByReviewCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'reviewCount');
+    });
+  }
+
   QueryBuilder<Product, Product, QDistinct> distinctByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'storeId');
@@ -1186,6 +1380,12 @@ extension ProductQueryProperty
   QueryBuilder<Product, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Product, double, QQueryOperations> averageRatingProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'averageRating');
     });
   }
 
@@ -1216,6 +1416,12 @@ extension ProductQueryProperty
   QueryBuilder<Product, double, QQueryOperations> priceProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'price');
+    });
+  }
+
+  QueryBuilder<Product, int, QQueryOperations> reviewCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'reviewCount');
     });
   }
 

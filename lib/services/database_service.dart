@@ -11,6 +11,7 @@ import '../models/order.dart';
 import '../models/order_status.dart';
 import '../models/user_profile.dart';
 import '../models/notification.dart';
+import '../models/product_review.dart';
 
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
@@ -33,6 +34,7 @@ class DatabaseService extends ChangeNotifier {
       OrderStatusTimestampsSchema,
       UserProfileSchema,
       NotificationModelSchema,
+      ProductReviewSchema,
     ], directory: dir.path);
   }
 
@@ -759,6 +761,75 @@ class DatabaseService extends ChangeNotifier {
 
       if (kDebugMode) {
         print('🔔 [DatabaseService] 已清除所有已讀通知 (${readNotifications.length} 則)');
+      }
+    }
+  }
+
+  // ==================== 商品評論相關方法 ====================
+
+  /// 取得商品的所有評論（按時間倒序）
+  Future<List<ProductReview>> getProductReviews(int productId) async {
+    final isar = await _isarFuture;
+    return await isar.productReviews
+        .filter()
+        .productIdEqualTo(productId)
+        .sortByCreatedAtDesc()
+        .findAll();
+  }
+
+  /// 新增商品評論
+  Future<void> addProductReview({
+    required int productId,
+    required String userName,
+    required double rating,
+    required String comment,
+    String? userAvatar,
+  }) async {
+    final isar = await _isarFuture;
+
+    final review = ProductReview()
+      ..productId = productId
+      ..userName = userName
+      ..rating = rating
+      ..comment = comment
+      ..userAvatar = userAvatar
+      ..createdAt = DateTime.now();
+
+    await isar.writeTxn(() async {
+      await isar.productReviews.put(review);
+    });
+
+    // 更新商品的平均評分和評論數量
+    await _updateProductRating(productId);
+
+    if (kDebugMode) {
+      print('⭐ [DatabaseService] 新增評論: $userName 對商品 $productId 評分 $rating 分');
+    }
+
+    notifyListeners();
+  }
+
+  /// 更新商品的平均評分和評論數量
+  Future<void> _updateProductRating(int productId) async {
+    final isar = await _isarFuture;
+    final product = await isar.products.get(productId);
+
+    if (product != null) {
+      final reviews = await getProductReviews(productId);
+
+      if (reviews.isNotEmpty) {
+        final totalRating = reviews.fold<double>(0.0, (sum, review) => sum + review.rating);
+        final averageRating = totalRating / reviews.length;
+
+        await isar.writeTxn(() async {
+          product.averageRating = averageRating;
+          product.reviewCount = reviews.length;
+          await isar.products.put(product);
+        });
+
+        if (kDebugMode) {
+          print('⭐ [DatabaseService] 更新商品 $productId 評分: ${averageRating.toStringAsFixed(1)} (${reviews.length} 則評論)');
+        }
       }
     }
   }

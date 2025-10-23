@@ -4,6 +4,7 @@ import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 import '../models/order.dart';
 import '../models/store.dart';
+import '../models/product_review.dart';
 
 /// 測試資料服務
 /// 用於初始化和管理測試資料
@@ -17,6 +18,7 @@ class TestDataService {
     await clearAllData();
     await initializeStores();
     await initializeProducts();
+    await initializeProductReviews();
     await initializeUserSettings();
     print('✅ 所有測試資料已初始化完成');
   }
@@ -26,6 +28,7 @@ class TestDataService {
     await isar.writeTxn(() async {
       await isar.stores.clear();
       await isar.products.clear();
+      await isar.productReviews.clear();
       await isar.cartItems.clear();
       await isar.userSettings.clear();
       await isar.orders.clear();
@@ -410,6 +413,126 @@ class TestDataService {
     ];
   }
 
+  /// 初始化商品評論測試資料
+  Future<void> initializeProductReviews() async {
+    final reviews = _getSampleProductReviews();
+
+    await isar.writeTxn(() async {
+      await isar.productReviews.putAll(reviews);
+    });
+
+    // 更新每個商品的平均評分和評論數量
+    await _updateAllProductRatings();
+
+    print('✅ 已新增 ${reviews.length} 筆商品評論資料');
+  }
+
+  /// 更新所有商品的評分統計
+  Future<void> _updateAllProductRatings() async {
+    final products = await isar.products.where().findAll();
+
+    for (var product in products) {
+      final reviews = await isar.productReviews
+          .filter()
+          .productIdEqualTo(product.id)
+          .findAll();
+
+      if (reviews.isNotEmpty) {
+        final totalRating = reviews.fold<double>(0.0, (sum, review) => sum + review.rating);
+        final averageRating = totalRating / reviews.length;
+
+        await isar.writeTxn(() async {
+          product.averageRating = averageRating;
+          product.reviewCount = reviews.length;
+          await isar.products.put(product);
+        });
+      }
+    }
+  }
+
+  /// 取得範例商品評論資料（每個商品 3-5 則評論）
+  List<ProductReview> _getSampleProductReviews() {
+    final now = DateTime.now();
+    final reviews = <ProductReview>[];
+
+    // 定義評論者名稱和評論範本
+    final reviewers = ['王小明', '李小華', '張大同', '陳美玲', '林志明', '黃淑芬', '吳建宏', '劉雅婷', '鄭國強', '謝佳玲'];
+
+    final positiveComments = [
+      '商品品質很好，非常滿意！',
+      '使用起來非常舒適，值得推薦',
+      '質感很棒，符合期待',
+      '物超所值，cp值很高',
+      '收到貨很驚艷，比照片還好看',
+      '做工精細，使用體驗很好',
+      '賣家服務很好，商品也很棒',
+      '功能齊全，使用方便',
+      '非常實用的商品，推薦購買',
+      '品質優良，會再回購',
+    ];
+
+    final neutralComments = [
+      '整體還不錯，符合價格',
+      '商品普通，但還算可以接受',
+      '使用上沒什麼問題，算是中規中矩',
+      '跟描述差不多，還可以',
+      '價格合理，品質也還行',
+    ];
+
+    final criticalComments = [
+      '商品還不錯，但配送時間有點久',
+      '質感可以，但有一點小瑕疵',
+      '使用上沒問題，但包裝可以再改進',
+      '整體還好，但顏色跟照片有點色差',
+      '功能正常，但說明書不太清楚',
+    ];
+
+    // 為前 20 個商品添加評論（可根據需要調整）
+    for (int productId = 1; productId <= 20; productId++) {
+      // 每個商品隨機 3-5 則評論
+      final reviewCount = 3 + (productId % 3); // 3, 4 或 5 則
+
+      for (int i = 0; i < reviewCount; i++) {
+        final reviewerIndex = (productId * 3 + i) % reviewers.length;
+        final reviewer = reviewers[reviewerIndex];
+
+        // 根據評論順序決定評分和內容
+        double rating;
+        String comment;
+
+        if (i == 0) {
+          // 第一則評論：高分 (4.5-5.0)
+          rating = 4.5 + (productId % 6) * 0.1;
+          if (rating > 5.0) rating = 5.0;
+          comment = positiveComments[(productId + i) % positiveComments.length];
+        } else if (i == reviewCount - 1 && reviewCount > 3) {
+          // 最後一則（如果有4則以上）：中低分 (3.0-4.0)
+          rating = 3.0 + (productId % 11) * 0.1;
+          comment = criticalComments[(productId + i) % criticalComments.length];
+        } else if (i == 1) {
+          // 第二則：高分 (4.0-5.0)
+          rating = 4.0 + (productId % 11) * 0.1;
+          comment = positiveComments[(productId + i + 3) % positiveComments.length];
+        } else {
+          // 其他：中等分數 (3.5-4.5)
+          rating = 3.5 + (productId % 11) * 0.1;
+          comment = neutralComments[(productId + i) % neutralComments.length];
+        }
+
+        reviews.add(
+          ProductReview()
+            ..productId = productId
+            ..userName = reviewer
+            ..rating = rating
+            ..comment = comment
+            ..createdAt = now.subtract(Duration(days: (i + 1) * 5)),
+        );
+      }
+    }
+
+    return reviews;
+  }
+
   /// 取得資料庫統計資訊
   Future<Map<String, int>> getDatabaseStats() async {
     final storeCount = await isar.stores.count();
@@ -418,6 +541,7 @@ class TestDataService {
     final userSettingsCount = await isar.userSettings.count();
     final orderCount = await isar.orders.count();
     final orderItemCount = await isar.orderItems.count();
+    final reviewCount = await isar.productReviews.count();
 
     return {
       'stores': storeCount,
@@ -426,6 +550,7 @@ class TestDataService {
       'userSettings': userSettingsCount,
       'orders': orderCount,
       'orderItems': orderItemCount,
+      'reviews': reviewCount,
     };
   }
 
@@ -435,6 +560,7 @@ class TestDataService {
     print('📊 資料庫統計：');
     print('   - 商家數量: ${stats['stores']}');
     print('   - 商品數量: ${stats['products']}');
+    print('   - 商品評論: ${stats['reviews']}');
     print('   - 購物車項目: ${stats['cartItems']}');
     print('   - 用戶設定: ${stats['userSettings']}');
     print('   - 訂單數量: ${stats['orders']}');
