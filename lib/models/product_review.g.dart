@@ -27,23 +27,33 @@ const ProductReviewSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'productId': PropertySchema(
+    r'orderId': PropertySchema(
       id: 2,
+      name: r'orderId',
+      type: IsarType.long,
+    ),
+    r'productId': PropertySchema(
+      id: 3,
       name: r'productId',
       type: IsarType.long,
     ),
     r'rating': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'rating',
       type: IsarType.double,
     ),
+    r'updatedAt': PropertySchema(
+      id: 5,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
+    ),
     r'userAvatar': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'userAvatar',
       type: IsarType.string,
     ),
     r'userName': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'userName',
       type: IsarType.string,
     )
@@ -87,10 +97,12 @@ void _productReviewSerialize(
 ) {
   writer.writeString(offsets[0], object.comment);
   writer.writeDateTime(offsets[1], object.createdAt);
-  writer.writeLong(offsets[2], object.productId);
-  writer.writeDouble(offsets[3], object.rating);
-  writer.writeString(offsets[4], object.userAvatar);
-  writer.writeString(offsets[5], object.userName);
+  writer.writeLong(offsets[2], object.orderId);
+  writer.writeLong(offsets[3], object.productId);
+  writer.writeDouble(offsets[4], object.rating);
+  writer.writeDateTime(offsets[5], object.updatedAt);
+  writer.writeString(offsets[6], object.userAvatar);
+  writer.writeString(offsets[7], object.userName);
 }
 
 ProductReview _productReviewDeserialize(
@@ -103,10 +115,12 @@ ProductReview _productReviewDeserialize(
   object.comment = reader.readString(offsets[0]);
   object.createdAt = reader.readDateTime(offsets[1]);
   object.id = id;
-  object.productId = reader.readLong(offsets[2]);
-  object.rating = reader.readDouble(offsets[3]);
-  object.userAvatar = reader.readStringOrNull(offsets[4]);
-  object.userName = reader.readString(offsets[5]);
+  object.orderId = reader.readLong(offsets[2]);
+  object.productId = reader.readLong(offsets[3]);
+  object.rating = reader.readDouble(offsets[4]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[5]);
+  object.userAvatar = reader.readStringOrNull(offsets[6]);
+  object.userName = reader.readString(offsets[7]);
   return object;
 }
 
@@ -124,10 +138,14 @@ P _productReviewDeserializeProp<P>(
     case 2:
       return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
+    case 7:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -477,6 +495,62 @@ extension ProductReviewQueryFilter
   }
 
   QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      orderIdEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'orderId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      orderIdGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'orderId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      orderIdLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'orderId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      orderIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'orderId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
       productIdEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -594,6 +668,80 @@ extension ProductReviewQueryFilter
         upper: upper,
         includeUpper: includeUpper,
         epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'updatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'updatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterFilterCondition>
+      updatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -922,6 +1070,18 @@ extension ProductReviewQuerySortBy
     });
   }
 
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> sortByOrderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'orderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> sortByOrderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'orderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ProductReview, ProductReview, QAfterSortBy> sortByProductId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'productId', Sort.asc);
@@ -944,6 +1104,19 @@ extension ProductReviewQuerySortBy
   QueryBuilder<ProductReview, ProductReview, QAfterSortBy> sortByRatingDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rating', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy>
+      sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
@@ -1013,6 +1186,18 @@ extension ProductReviewQuerySortThenBy
     });
   }
 
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> thenByOrderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'orderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> thenByOrderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'orderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ProductReview, ProductReview, QAfterSortBy> thenByProductId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'productId', Sort.asc);
@@ -1035,6 +1220,19 @@ extension ProductReviewQuerySortThenBy
   QueryBuilder<ProductReview, ProductReview, QAfterSortBy> thenByRatingDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rating', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QAfterSortBy>
+      thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
@@ -1080,6 +1278,12 @@ extension ProductReviewQueryWhereDistinct
     });
   }
 
+  QueryBuilder<ProductReview, ProductReview, QDistinct> distinctByOrderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'orderId');
+    });
+  }
+
   QueryBuilder<ProductReview, ProductReview, QDistinct> distinctByProductId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'productId');
@@ -1089,6 +1293,12 @@ extension ProductReviewQueryWhereDistinct
   QueryBuilder<ProductReview, ProductReview, QDistinct> distinctByRating() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'rating');
+    });
+  }
+
+  QueryBuilder<ProductReview, ProductReview, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
     });
   }
 
@@ -1127,6 +1337,12 @@ extension ProductReviewQueryProperty
     });
   }
 
+  QueryBuilder<ProductReview, int, QQueryOperations> orderIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'orderId');
+    });
+  }
+
   QueryBuilder<ProductReview, int, QQueryOperations> productIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'productId');
@@ -1136,6 +1352,12 @@ extension ProductReviewQueryProperty
   QueryBuilder<ProductReview, double, QQueryOperations> ratingProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'rating');
+    });
+  }
+
+  QueryBuilder<ProductReview, DateTime?, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
     });
   }
 

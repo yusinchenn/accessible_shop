@@ -71,7 +71,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
 
     try {
       final currentStatus = _statusTabs[_tabController.index];
-      final orders = await _orderStatusService.getOrdersByMainStatus(currentStatus);
+      final orders = await _orderStatusService.getOrdersByMainStatus(
+        currentStatus,
+      );
 
       setState(() {
         _orders = orders;
@@ -173,9 +175,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
 
   Widget _buildOrderList() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_orders.isEmpty) {
@@ -185,15 +185,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
           children: const [
             Icon(Icons.list_alt, size: 80, color: AppColors.primary),
             SizedBox(height: AppSpacing.md),
-            Text(
-              '目前沒有訂單',
-              style: AppTextStyles.subtitle,
-            ),
+            Text('目前沒有訂單', style: AppTextStyles.subtitle),
             SizedBox(height: AppSpacing.sm),
-            Text(
-              '此狀態的訂單會出現在這裡。',
-              style: TextStyle(color: AppColors.subtitle),
-            ),
+            Text('此狀態的訂單會出現在這裡。', style: TextStyle(color: AppColors.subtitle)),
           ],
         ),
       );
@@ -206,32 +200,33 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
         final order = _orders[index];
         final statusText = _getDetailedStatusText(order);
         final statusColor = _getStatusColor(order.mainStatus);
-        final dateStr = '${order.createdAt.year}-'
+        final dateStr =
+            '${order.createdAt.year}-'
             '${order.createdAt.month.toString().padLeft(2, '0')}-'
             '${order.createdAt.day.toString().padLeft(2, '0')} '
             '${order.createdAt.hour.toString().padLeft(2, '0')}:'
             '${order.createdAt.minute.toString().padLeft(2, '0')}';
         final canComplete = _canCompleteOrder(order);
 
-        return GestureDetector(
-          onTap: () {
-            ttsHelper.speak(
-              '訂單編號 ${order.orderNumber}，'
-              '日期 $dateStr，'
-              '金額 ${order.total.toStringAsFixed(0)} 元，'
-              '狀態 $statusText',
-            );
-          },
-          onDoubleTap: () {
-            ttsHelper.speak('查看訂單詳情');
-            Navigator.pushNamed(
-              context,
-              '/order-detail',
-              arguments: order.id,
-            );
-          },
-          child: Card(
-            margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        return Card(
+          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: InkWell(
+            onTap: () {
+              ttsHelper.speak(
+                '訂單編號 ${order.orderNumber}，'
+                '日期 $dateStr，'
+                '金額 ${order.total.toStringAsFixed(0)} 元，'
+                '狀態 $statusText',
+              );
+            },
+            onDoubleTap: () {
+              ttsHelper.speak('查看訂單詳情');
+              Navigator.pushNamed(
+                context,
+                '/order-detail',
+                arguments: order.id,
+              );
+            },
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -256,10 +251,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: statusColor,
-                            width: 1,
-                          ),
+                          border: Border.all(color: statusColor, width: 1),
                         ),
                         child: Text(
                           statusText,
@@ -286,10 +278,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '訂單金額',
-                        style: AppTextStyles.body,
-                      ),
+                      const Text('訂單金額', style: AppTextStyles.body),
                       Text(
                         '\$${order.total.toStringAsFixed(0)}',
                         style: const TextStyle(
@@ -300,7 +289,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                       ),
                     ],
                   ),
-                  // 顯示完成訂單按鈕（僅限已簽收的待收貨訂單）
+                  // 操作按鈕
                   if (canComplete) ...[
                     const SizedBox(height: AppSpacing.sm),
                     SizedBox(

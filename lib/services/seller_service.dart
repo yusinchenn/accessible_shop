@@ -15,7 +15,7 @@ class SellerService {
 
   SellerService(this._db, this._orderStatusService);
 
-  /// 開始監控待付款訂單（一分鐘後自動確認）
+  /// 開始監控待付款訂單（5分鐘後自動確認）
   void startMonitoringPendingPaymentOrder(Order order) {
     if (order.mainStatus != OrderMainStatus.pendingPayment) {
       return;
@@ -24,14 +24,14 @@ class SellerService {
     // 取消已存在的計時器
     _pendingTimers[order.id]?.cancel();
 
-    // 創建新的計時器：1 分鐘後自動確認訂單
-    _pendingTimers[order.id] = Timer(const Duration(minutes: 1), () async {
+    // 創建新的計時器：5 分鐘後自動確認訂單
+    _pendingTimers[order.id] = Timer(const Duration(minutes: 5), () async {
       await _confirmOrder(order.id);
       _pendingTimers.remove(order.id);
     });
 
     if (kDebugMode) {
-      print('🏪 [SellerService] 開始監控待付款訂單: #${order.orderNumber} (1分鐘後自動確認)');
+      print('🏪 [SellerService] 開始監控待付款訂單: #${order.orderNumber} (5分鐘後自動確認)');
     }
   }
 
@@ -69,7 +69,7 @@ class SellerService {
     }
   }
 
-  /// 開始監控待出貨訂單（一小時後自動出貨）
+  /// 開始監控待出貨訂單（5分鐘後自動出貨）
   void startMonitoringPendingShipmentOrder(Order order) {
     if (order.mainStatus != OrderMainStatus.pendingShipment) {
       return;
@@ -78,14 +78,14 @@ class SellerService {
     // 取消已存在的計時器
     _shipmentTimers[order.id]?.cancel();
 
-    // 創建新的計時器：1 小時後自動出貨
-    _shipmentTimers[order.id] = Timer(const Duration(hours: 1), () async {
+    // 創建新的計時器：5 分鐘後自動出貨
+    _shipmentTimers[order.id] = Timer(const Duration(minutes: 5), () async {
       await _shipOrder(order.id);
       _shipmentTimers.remove(order.id);
     });
 
     if (kDebugMode) {
-      print('🏪 [SellerService] 開始監控待出貨訂單: #${order.orderNumber} (1小時後自動出貨)');
+      print('🏪 [SellerService] 開始監控待出貨訂單: #${order.orderNumber} (5分鐘後自動出貨)');
     }
   }
 

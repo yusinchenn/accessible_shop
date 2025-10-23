@@ -60,9 +60,15 @@ class OrderStatusService {
         .findFirst();
 
     if (timestamps == null) {
+      // 如果時間戳記錄不存在，創建一個新的
+      // 這通常發生在舊訂單或資料遷移時
       timestamps = OrderStatusTimestamps()
         ..orderId = orderId
         ..createdAt = DateTime.now();
+
+      if (kDebugMode) {
+        print('⚠️ [OrderStatusService] 為訂單 #$orderId 創建時間戳記錄（補救措施）');
+      }
     }
 
     // 更新時間戳（只更新非 null 的值）

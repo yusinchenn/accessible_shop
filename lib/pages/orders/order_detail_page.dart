@@ -4,7 +4,10 @@ import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
 import '../../services/database_service.dart';
+import '../../services/order_review_service.dart';
 import '../../models/order.dart';
+import '../../models/order_status.dart';
+import '../../widgets/product_review_dialog.dart';
 
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({super.key});
@@ -17,6 +20,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Order? _order;
   List<OrderItem> _orderItems = [];
   bool _isLoading = true;
+  OrderReviewService? _reviewService;
+  bool _canReview = false;
+  int? _remainingDays;
 
   @override
   void didChangeDependencies() {
@@ -40,20 +46,33 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         final order = await db.getOrderById(orderId);
         final items = await db.getOrderItems(orderId);
 
+        // 初始化評論服務
+        _reviewService = OrderReviewService(db);
+
+        // 檢查是否可以評論
+        final canReview = await _reviewService!.canReviewOrder(orderId);
+        final remainingDays = await _reviewService!.getRemainingDaysToReview(orderId);
+
         setState(() {
           _order = order;
           _orderItems = items;
+          _canReview = canReview;
+          _remainingDays = remainingDays;
           _isLoading = false;
         });
 
         // 朗讀訂單資訊
         if (_order != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ttsHelper.speak(
-              '訂單詳情，訂單編號 ${_order!.orderNumber}，'
+            String message = '訂單詳情，訂單編號 ${_order!.orderNumber}，'
               '共 ${_orderItems.length} 項商品，'
-              '總金額 ${_order!.total.toStringAsFixed(0)} 元',
-            );
+              '總金額 ${_order!.total.toStringAsFixed(0)} 元';
+
+            if (_canReview && _remainingDays != null) {
+              message += '，可評論，剩餘 $_remainingDays 天';
+            }
+
+            ttsHelper.speak(message);
           });
         }
       } catch (e) {
@@ -64,34 +83,57 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
-  /// 取得訂單狀態的顯示文字
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'pending':
-        return '待處理';
-      case 'processing':
-        return '處理中';
-      case 'completed':
-        return '已完成';
-      case 'cancelled':
-        return '已取消';
-      default:
-        return status;
+  /// 顯示商品評論對話框
+  Future<void> _showReviewDialog(OrderItem item) async {
+    if (_reviewService == null || _order == null || !mounted) return;
+
+    // 檢查是否已有評論
+    final existingReview = await _reviewService!.getProductReview(
+      _order!.id,
+      item.productId,
+    );
+
+    if (!mounted) return;
+
+    final result = await showProductReviewDialog(
+      context: context,
+      orderItem: item,
+      reviewService: _reviewService!,
+      existingReview: existingReview,
+    );
+
+    if (result == true && mounted) {
+      // 評論成功後重新載入訂單資訊
+      setState(() {});
     }
   }
 
+  /// 取得訂單狀態的詳細文字（包含物流狀態）
+  String _getDetailedStatusText(Order order) {
+    final mainStatus = order.mainStatus.displayName;
+
+    if (order.mainStatus == OrderMainStatus.pendingDelivery &&
+        order.logisticsStatus != LogisticsStatus.none) {
+      return '$mainStatus - ${order.logisticsStatus.displayName}';
+    }
+
+    return mainStatus;
+  }
+
   /// 取得訂單狀態的顏色
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(OrderMainStatus status) {
     switch (status) {
-      case 'pending':
+      case OrderMainStatus.pendingPayment:
         return Colors.orange;
-      case 'processing':
+      case OrderMainStatus.pendingShipment:
         return Colors.blue;
-      case 'completed':
+      case OrderMainStatus.pendingDelivery:
+        return Colors.purple;
+      case OrderMainStatus.completed:
         return Colors.green;
-      case 'cancelled':
+      case OrderMainStatus.returnRefund:
         return Colors.red;
-      default:
+      case OrderMainStatus.invalid:
         return Colors.grey;
     }
   }
@@ -140,19 +182,20 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                         vertical: AppSpacing.xs,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(_order!.status)
+                                        color: _getStatusColor(_order!.mainStatus)
                                             .withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(4),
                                         border: Border.all(
-                                          color: _getStatusColor(_order!.status),
+                                          color: _getStatusColor(_order!.mainStatus),
                                           width: 1,
                                         ),
                                       ),
                                       child: Text(
-                                        _getStatusText(_order!.status),
+                                        _getDetailedStatusText(_order!),
                                         style: TextStyle(
-                                          color: _getStatusColor(_order!.status),
+                                          color: _getStatusColor(_order!.mainStatus),
                                           fontWeight: FontWeight.bold,
+                                          fontSize: AppFontSizes.small,
                                         ),
                                       ),
                                     ),
@@ -186,6 +229,34 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         ),
 
                         const SizedBox(height: AppSpacing.md),
+
+                        // 評論提示（僅限可評論的訂單）
+                        if (_canReview && _remainingDays != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber, width: 1),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline, color: Colors.amber),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    '訂單已完成！您可以在 $_remainingDays 天內評論商品',
+                                    style: const TextStyle(
+                                      fontSize: AppFontSizes.body,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
 
                         // 商品列表
                         Card(
@@ -254,6 +325,35 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                               ),
                                             ],
                                           ),
+                                          // 評論按鈕（僅限已完成的訂單且在30天內）
+                                          if (_canReview) ...[
+                                            const SizedBox(height: AppSpacing.sm),
+                                            FutureBuilder<bool>(
+                                              future: _reviewService!.hasReviewedProduct(
+                                                _order!.id,
+                                                item.productId,
+                                              ),
+                                              builder: (context, snapshot) {
+                                                final hasReviewed = snapshot.data ?? false;
+                                                return OutlinedButton.icon(
+                                                  onPressed: () => _showReviewDialog(item),
+                                                  icon: Icon(
+                                                    hasReviewed ? Icons.edit : Icons.rate_review,
+                                                    size: 18,
+                                                  ),
+                                                  label: Text(hasReviewed ? '編輯評論' : '評論此商品'),
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor: AppColors.primary,
+                                                    side: const BorderSide(color: AppColors.primary),
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: AppSpacing.sm,
+                                                      vertical: AppSpacing.xs,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),

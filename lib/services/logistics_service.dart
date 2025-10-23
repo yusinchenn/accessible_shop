@@ -29,24 +29,24 @@ class LogisticsService {
     final isConvenienceStore = order.deliveryType == 'convenience_store';
 
     if (isConvenienceStore) {
-      // 超商取貨：1 小時後抵達收貨地點
-      _inTransitTimers[order.id] = Timer(const Duration(hours: 1), () async {
+      // 超商取貨：5 分鐘後抵達收貨地點
+      _inTransitTimers[order.id] = Timer(const Duration(minutes: 5), () async {
         await _arriveAtPickupPoint(order.id);
         _inTransitTimers.remove(order.id);
       });
 
       if (kDebugMode) {
-        print('🚚 [LogisticsService] 開始監控超商取貨訂單: #${order.orderNumber} (1小時後抵達超商)');
+        print('🚚 [LogisticsService] 開始監控超商取貨訂單: #${order.orderNumber} (5分鐘後抵達超商)');
       }
     } else {
-      // 宅配：1 小時後直接簽收
-      _inTransitTimers[order.id] = Timer(const Duration(hours: 1), () async {
+      // 宅配：5 分鐘後直接簽收
+      _inTransitTimers[order.id] = Timer(const Duration(minutes: 5), () async {
         await _signOrder(order.id);
         _inTransitTimers.remove(order.id);
       });
 
       if (kDebugMode) {
-        print('🚚 [LogisticsService] 開始監控宅配訂單: #${order.orderNumber} (1小時後簽收)');
+        print('🚚 [LogisticsService] 開始監控宅配訂單: #${order.orderNumber} (5分鐘後簽收)');
       }
     }
   }
@@ -87,7 +87,7 @@ class LogisticsService {
     }
   }
 
-  /// 開始監控已抵達超商的訂單（1 小時後自動簽收）
+  /// 開始監控已抵達超商的訂單（5 分鐘後自動簽收）
   void startMonitoringArrivedOrder(Order order) {
     if (order.mainStatus != OrderMainStatus.pendingDelivery ||
         order.logisticsStatus != LogisticsStatus.arrivedAtPickupPoint) {
@@ -97,14 +97,14 @@ class LogisticsService {
     // 取消已存在的計時器
     _arrivedTimers[order.id]?.cancel();
 
-    // 創建新的計時器：1 小時後自動簽收
-    _arrivedTimers[order.id] = Timer(const Duration(hours: 1), () async {
+    // 創建新的計時器：5 分鐘後自動簽收
+    _arrivedTimers[order.id] = Timer(const Duration(minutes: 5), () async {
       await _signOrder(order.id);
       _arrivedTimers.remove(order.id);
     });
 
     if (kDebugMode) {
-      print('🚚 [LogisticsService] 開始監控已抵達訂單: #${order.orderNumber} (1小時後簽收)');
+      print('🚚 [LogisticsService] 開始監控已抵達訂單: #${order.orderNumber} (5分鐘後簽收)');
     }
   }
 

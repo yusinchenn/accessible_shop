@@ -3,33 +3,40 @@ import 'database_service.dart';
 import 'order_status_service.dart';
 import 'seller_service.dart';
 import 'logistics_service.dart';
+import 'order_check_service.dart';
 import '../models/order.dart';
 import '../models/order_status.dart';
 
-/// 訂單自動化服務 - 統一管理賣家和物流服務
+/// 訂單自動化服務 - 統一管理賣家、物流和訂單檢查服務
 class OrderAutomationService {
   final DatabaseService _db;
   late final OrderStatusService _orderStatusService;
   late final SellerService _sellerService;
   late final LogisticsService _logisticsService;
+  late final OrderCheckService _orderCheckService;
 
   OrderAutomationService(this._db) {
     _orderStatusService = OrderStatusService(_db);
     _sellerService = SellerService(_db, _orderStatusService);
     _logisticsService = LogisticsService(_db, _orderStatusService);
+    _orderCheckService = OrderCheckService(_db, _orderStatusService);
   }
 
-  /// 初始化服務 - 掃描並開始監控所有現有訂單
+  /// 初始化服務 - 啟動訂單檢查服務（每分鐘自動檢查）
   Future<void> initialize() async {
     if (kDebugMode) {
       print('🤖 [OrderAutomationService] 初始化自動化服務...');
     }
 
+    // 啟動定期檢查服務（每分鐘檢查一次）
+    _orderCheckService.startPeriodicCheck();
+
+    // 保留舊的服務以支援手動操作
     await _sellerService.rescanAndMonitorOrders();
     await _logisticsService.rescanAndMonitorOrders();
 
     if (kDebugMode) {
-      print('✅ [OrderAutomationService] 自動化服務已啟動');
+      print('✅ [OrderAutomationService] 自動化服務已啟動（每分鐘自動檢查訂單狀態）');
     }
   }
 
@@ -126,6 +133,7 @@ class OrderAutomationService {
 
   /// 清理所有服務
   void dispose() {
+    _orderCheckService.dispose();
     _sellerService.dispose();
     _logisticsService.dispose();
 
@@ -138,4 +146,5 @@ class OrderAutomationService {
   OrderStatusService get orderStatusService => _orderStatusService;
   SellerService get sellerService => _sellerService;
   LogisticsService get logisticsService => _logisticsService;
+  OrderCheckService get orderCheckService => _orderCheckService;
 }

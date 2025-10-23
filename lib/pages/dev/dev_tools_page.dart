@@ -49,18 +49,18 @@ class _DevToolsPageState extends State<DevToolsPage> {
     }
   }
 
-  /// 初始化所有測試資料
-  Future<void> _initializeAllData() async {
+  /// 重置到乾淨狀態
+  Future<void> _resetToCleanState() async {
     final confirmed = await _showConfirmDialog(
-      '確定要初始化所有測試資料嗎？',
-      '這將清空現有資料並建立新的測試資料。',
+      '確定要重置測試資料嗎？',
+      '這將清除訂單、購物車和用戶評論，但保留基礎商家和商品資料。',
     );
 
     if (!confirmed) return;
 
     setState(() {
       _isLoading = true;
-      _message = '正在初始化...';
+      _message = '正在重置...';
     });
 
     try {
@@ -68,70 +68,16 @@ class _DevToolsPageState extends State<DevToolsPage> {
       final isar = await dbService.isar;
       final testDataService = TestDataService(isar);
 
-      await testDataService.initializeAllTestData();
+      await testDataService.resetToCleanState();
 
       setState(() {
-        _message = '✅ 測試資料初始化成功！';
+        _message = '✅ 測試資料已重置到乾淨狀態！';
       });
 
       await _loadStats();
     } catch (e) {
       setState(() {
-        _message = '❌ 初始化失敗: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  /// 只初始化商品資料
-  Future<void> _initializeProducts() async {
-    setState(() {
-      _isLoading = true;
-      _message = '正在初始化商品資料...';
-    });
-
-    try {
-      final dbService = Provider.of<DatabaseService>(context, listen: false);
-      final isar = await dbService.isar;
-      final testDataService = TestDataService(isar);
-
-      await testDataService.initializeProducts();
-
-      setState(() {
-        _message = '✅ 商品資料初始化成功！';
-      });
-
-      await _loadStats();
-    } catch (e) {
-      setState(() {
-        _message = '❌ 初始化失敗: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  /// 初始化購物車測試資料
-  Future<void> _initializeCartItems() async {
-    setState(() {
-      _isLoading = true;
-      _message = '正在初始化購物車資料...';
-    });
-
-    try {
-      final dbService = Provider.of<DatabaseService>(context, listen: false);
-      final isar = await dbService.isar;
-      final testDataService = TestDataService(isar);
-
-      await testDataService.initializeCartItems();
-
-      setState(() {
-        _message = '✅ 購物車資料初始化成功！';
-      });
-
-      await _loadStats();
-    } catch (e) {
-      setState(() {
-        _message = '❌ 初始化失敗: $e';
+        _message = '❌ 重置失敗: $e';
         _isLoading = false;
       });
     }
@@ -231,7 +177,11 @@ class _DevToolsPageState extends State<DevToolsPage> {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           if (_stats != null) ...[
+                            _buildStatRow('商家數量', _stats!['stores']!),
                             _buildStatRow('商品數量', _stats!['products']!),
+                            _buildStatRow('商品評論', _stats!['reviews']!),
+                            _buildStatRow('訂單數量', _stats!['orders']!),
+                            _buildStatRow('訂單項目', _stats!['orderItems']!),
                             _buildStatRow('購物車項目', _stats!['cartItems']!),
                             _buildStatRow('用戶設定', _stats!['userSettings']!),
                           ],
@@ -265,15 +215,15 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
                   // 操作按鈕
                   Text(
-                    '資料初始化',
+                    '資料管理',
                     style: AppTextStyles.subtitle,
                   ),
                   const SizedBox(height: AppSpacing.md),
 
                   ElevatedButton.icon(
-                    onPressed: _initializeAllData,
-                    icon: const Icon(Icons.all_inclusive),
-                    label: const Text('初始化所有測試資料'),
+                    onPressed: _resetToCleanState,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('重置測試資料'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -282,38 +232,6 @@ class _DevToolsPageState extends State<DevToolsPage> {
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
-
-                  ElevatedButton.icon(
-                    onPressed: _initializeProducts,
-                    icon: const Icon(Icons.shopping_bag),
-                    label: const Text('只初始化商品資料'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  ElevatedButton.icon(
-                    onPressed: _initializeCartItems,
-                    icon: const Icon(Icons.shopping_cart),
-                    label: const Text('初始化購物車測試資料'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSpacing.lg),
-
-                  Text(
-                    '資料管理',
-                    style: AppTextStyles.subtitle,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
 
                   ElevatedButton.icon(
                     onPressed: _clearAllData,
@@ -373,10 +291,8 @@ class _DevToolsPageState extends State<DevToolsPage> {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
-                            '• 初始化所有測試資料：清空並建立完整的測試資料\n'
-                            '• 只初始化商品資料：保留其他資料，僅更新商品\n'
-                            '• 初始化購物車：建立範例購物車項目\n'
-                            '• 清空所有資料：刪除資料庫中的所有記錄',
+                            '• 重置測試資料：清除訂單、購物車和用戶評論，重置商家(3個)、商品(20個)和測試評論。適合重新開始測試。\n'
+                            '• 清空所有資料：完全清空資料庫，刪除所有記錄（包括基礎測試資料）。',
                             style: AppTextStyles.small.copyWith(
                               color: Colors.blue.shade900,
                             ),

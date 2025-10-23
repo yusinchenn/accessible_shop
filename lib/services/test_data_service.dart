@@ -3,6 +3,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
 import '../models/order.dart';
+import '../models/order_status.dart';
 import '../models/store.dart';
 import '../models/product_review.dart';
 
@@ -19,8 +20,38 @@ class TestDataService {
     await initializeStores();
     await initializeProducts();
     await initializeProductReviews();
+    await initializeOrders();
     await initializeUserSettings();
     print('✅ 所有測試資料已初始化完成');
+  }
+
+  /// 重置到乾淨狀態
+  /// 清除用戶操作產生的資料（訂單、購物車、用戶評論）
+  /// 保持基礎測試資料（商家、商品、測試評論）
+  Future<void> resetToCleanState() async {
+    await isar.writeTxn(() async {
+      // 清空用戶操作產生的資料
+      await isar.orders.clear();
+      await isar.orderItems.clear();
+      await isar.orderStatusTimestamps.clear();
+      await isar.orderStatusHistorys.clear();
+      await isar.cartItems.clear();
+      await isar.productReviews.clear();
+
+      // 清空並重新插入基礎資料
+      await isar.stores.clear();
+      await isar.products.clear();
+    });
+
+    print('🗑️  已清空用戶資料');
+
+    // 重新初始化基礎測試資料
+    await initializeStores();
+    await initializeProducts();
+    await initializeProductReviews();
+    await initializeUserSettings();
+
+    print('✅ 已重置到乾淨狀態');
   }
 
   /// 清空所有資料
@@ -292,7 +323,62 @@ class TestDataService {
       await isar.orderItems.putAll(orderItems);
     });
 
+    // 為每個訂單建立時間戳記錄
+    for (var order in orders) {
+      await _initializeOrderTimestamps(order);
+    }
+
     print('✅ 已新增 ${orders.length} 筆訂單資料和 ${orderItems.length} 筆訂單項目');
+  }
+
+  /// 為訂單初始化時間戳記錄
+  Future<void> _initializeOrderTimestamps(Order order) async {
+    final timestamps = OrderStatusTimestamps()
+      ..orderId = order.id
+      ..createdAt = order.createdAt;
+
+    // 根據訂單狀態設定對應的時間戳
+    switch (order.mainStatus) {
+      case OrderMainStatus.pendingPayment:
+        timestamps.pendingPaymentAt = order.createdAt;
+        break;
+      case OrderMainStatus.pendingShipment:
+        timestamps.pendingPaymentAt = order.createdAt;
+        timestamps.pendingShipmentAt = order.createdAt;
+        break;
+      case OrderMainStatus.pendingDelivery:
+        timestamps.pendingPaymentAt = order.createdAt;
+        timestamps.pendingShipmentAt = order.createdAt;
+        timestamps.pendingDeliveryAt = order.createdAt;
+        if (order.logisticsStatus == LogisticsStatus.inTransit) {
+          timestamps.inTransitAt = order.createdAt;
+        } else if (order.logisticsStatus == LogisticsStatus.arrivedAtPickupPoint) {
+          timestamps.inTransitAt = order.createdAt;
+          timestamps.arrivedAtPickupPointAt = order.createdAt;
+        } else if (order.logisticsStatus == LogisticsStatus.signed) {
+          timestamps.inTransitAt = order.createdAt;
+          timestamps.signedAt = order.createdAt;
+        }
+        break;
+      case OrderMainStatus.completed:
+        timestamps.pendingPaymentAt = order.createdAt;
+        timestamps.pendingShipmentAt = order.createdAt;
+        timestamps.pendingDeliveryAt = order.createdAt;
+        timestamps.inTransitAt = order.createdAt;
+        timestamps.signedAt = order.createdAt;
+        timestamps.completedAt = order.createdAt;
+        break;
+      case OrderMainStatus.returnRefund:
+        timestamps.returnRefundAt = order.createdAt;
+        break;
+      case OrderMainStatus.invalid:
+        timestamps.invalidAt = order.createdAt;
+        break;
+    }
+
+    await isar.writeTxn(() async {
+      await isar.orderStatusTimestamps.put(timestamps);
+    });
   }
 
   /// 取得範例訂單資料
@@ -522,6 +608,7 @@ class TestDataService {
         reviews.add(
           ProductReview()
             ..productId = productId
+            ..orderId = 0  // 測試評論不關聯訂單，使用 0 表示
             ..userName = reviewer
             ..rating = rating
             ..comment = comment

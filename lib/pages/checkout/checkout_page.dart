@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_constants.dart';
@@ -907,10 +908,16 @@ class _Step5CompleteState extends State<_Step5Complete> {
           ttsHelper.speak('結帳完成，訂單編號 ${order.orderNumber}，感謝您的購買');
         }
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
       setState(() {
         _isCreatingOrder = false;
       });
+
+      // 印出完整的錯誤信息和堆疊追蹤
+      if (kDebugMode) {
+        print('❌ [CheckoutPage] 建立訂單失敗: $e');
+        print('📍 [CheckoutPage] 堆疊追蹤: $stackTrace');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

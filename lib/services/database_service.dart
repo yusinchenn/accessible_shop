@@ -390,16 +390,18 @@ class DatabaseService extends ChangeNotifier {
       }
     });
 
-    // 創建訂單狀態時間戳記錄
+    // 創建訂單狀態時間戳記錄（在創建歷史記錄之前）
+    final now = DateTime.now();
     final timestamps = OrderStatusTimestamps()
       ..orderId = order.id
-      ..createdAt = DateTime.now();
+      ..createdAt = now;
 
+    // 根據付款方式設定對應的時間戳
     if (isCashOnDelivery) {
-      timestamps.pendingPaymentAt = DateTime.now();
+      timestamps.pendingPaymentAt = now;
     } else {
-      timestamps.paidAt = DateTime.now();
-      timestamps.pendingShipmentAt = DateTime.now();
+      timestamps.paidAt = now;
+      timestamps.pendingShipmentAt = now;
     }
 
     await isar.writeTxn(() async {
@@ -412,7 +414,7 @@ class DatabaseService extends ChangeNotifier {
       ..mainStatus = initialStatus
       ..logisticsStatus = LogisticsStatus.none
       ..description = isCashOnDelivery ? '訂單成立（貨到付款）' : '訂單成立（線上付款已完成）'
-      ..timestamp = DateTime.now();
+      ..timestamp = now;
 
     await isar.writeTxn(() async {
       await isar.orderStatusHistorys.put(history);
@@ -784,11 +786,13 @@ class DatabaseService extends ChangeNotifier {
     required double rating,
     required String comment,
     String? userAvatar,
+    int orderId = 0,  // 默認 0 表示不關聯訂單的評論
   }) async {
     final isar = await _isarFuture;
 
     final review = ProductReview()
       ..productId = productId
+      ..orderId = orderId
       ..userName = userName
       ..rating = rating
       ..comment = comment
