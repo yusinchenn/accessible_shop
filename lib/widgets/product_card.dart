@@ -7,11 +7,15 @@ import '../utils/app_constants.dart';
 class ProductCard extends StatelessWidget {
   final Product product;
   final String? tag; // 可選的標籤（例如：隔日到貨）
+  final String? storeName; // 商家名稱
+  final VoidCallback? onStoreDoubleTap; // 雙擊商家時的回調
 
   const ProductCard({
     super.key,
     required this.product,
     this.tag,
+    this.storeName,
+    this.onStoreDoubleTap,
   });
 
   @override
@@ -52,17 +56,42 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // 商品描述
-            Expanded(
-              child: Text(
-                product.description ?? '無描述',
-                style: const TextStyle(
-                  fontSize: 30,
-                  color: AppColors.text,
+            // 商家名稱（如果有）
+            if (storeName != null)
+              GestureDetector(
+                onDoubleTap: onStoreDoubleTap,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.store,
+                      size: 22,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      storeName!,
+                      style: TextStyle(
+                        fontSize: 26,
+                        color: Colors.grey,
+                        decoration: onStoreDoubleTap != null
+                          ? TextDecoration.underline
+                          : null,
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
               ),
+            if (storeName != null) const SizedBox(height: AppSpacing.sm),
+
+            // 商品描述
+            Text(
+              product.description ?? '無描述',
+              style: const TextStyle(
+                fontSize: 30,
+                color: AppColors.text,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppSpacing.sm),
 

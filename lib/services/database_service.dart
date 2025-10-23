@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 // 匯入模型
+import '../models/store.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../models/user_settings.dart';
@@ -22,6 +23,7 @@ class DatabaseService extends ChangeNotifier {
   Future<Isar> _initIsar() async {
     final dir = await getApplicationDocumentsDirectory();
     return await Isar.open([
+      StoreSchema,
       ProductSchema,
       CartItemSchema,
       UserSettingsSchema,
@@ -32,6 +34,27 @@ class DatabaseService extends ChangeNotifier {
       UserProfileSchema,
       NotificationModelSchema,
     ], directory: dir.path);
+  }
+
+  // ==================== 商家相關方法 ====================
+
+  /// 取得所有商家
+  Future<List<Store>> getStores() async {
+    final isar = await _isarFuture;
+    return await isar.stores.where().findAll();
+  }
+
+  /// 用 id 查詢商家
+  Future<Store?> getStoreById(int id) async {
+    final isar = await _isarFuture;
+    return await isar.stores.get(id);
+  }
+
+  /// 取得商家的所有商品
+  Future<List<Product>> getProductsByStoreId(int storeId) async {
+    final isar = await _isarFuture;
+    final allProducts = await isar.products.where().findAll();
+    return allProducts.where((product) => product.storeId == storeId).toList();
   }
 
   /// 外部存取 Isar 實例

@@ -4,7 +4,9 @@ import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../widgets/global_gesture_wrapper.dart';
 import '../../models/product.dart';
+import '../../models/store.dart';
 import '../../services/database_service.dart';
+import '../store/store_page.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key});
@@ -15,6 +17,7 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   Product? _product;
+  Store? _store;
   bool _loading = true;
   final TtsHelper _ttsHelper = TtsHelper();
 
@@ -54,8 +57,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         final db = Provider.of<DatabaseService>(context, listen: false);
         final product = await db.getProductById(productId);
 
+        // 載入商家資料
+        Store? store;
+        if (product != null) {
+          store = await db.getStoreById(product.storeId);
+        }
+
         setState(() {
           _product = product;
+          _store = store;
           _loading = false;
         });
 
@@ -77,7 +87,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Future<void> _speakProductDetail() async {
     if (_product == null) return;
     final category = _product!.category != null ? '，分類${_product!.category}' : '';
-    final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$category';
+    final storeName = _store?.name;
+    final storeInfo = storeName != null ? '，商家$storeName' : '';
+    final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$storeInfo$category';
     await _ttsHelper.speak(text);
   }
 
@@ -411,7 +423,82 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.md),
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // 商家名稱
+                        if (_store != null)
+                          GestureDetector(
+                            onTap: () {
+                              _ttsHelper.speak('商家，${_store!.name}，評分${_store!.rating.toStringAsFixed(1)}顆星。雙擊可進入商家頁面。');
+                            },
+                            onDoubleTap: () {
+                              // 語音提示導航
+                              _ttsHelper.speak('前往${_store!.name}商家頁面');
+
+                              // 導航到商家頁面（使用直接導航）
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StorePage(storeId: _store!.id),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.store,
+                                    size: 24,
+                                    color: Colors.blue,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _store!.name,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      color: Colors.blue,
+                                      decoration: TextDecoration.underline,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  if (_store!.rating > 0) ...[
+                                    const Icon(
+                                      Icons.star,
+                                      size: 20,
+                                      color: Colors.amber,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _store!.rating.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    size: 24,
+                                    color: Colors.blue,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (_store != null) const SizedBox(height: AppSpacing.md),
 
                         // 價格和分類標籤
                         Row(

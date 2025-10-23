@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 // 匯入頁面
 import 'pages/home/home_page.dart';
 import 'pages/product/product_detail_page.dart';
+import 'pages/store/store_page.dart';
 import 'pages/cart/cart_page.dart';
 import 'pages/checkout/checkout_page.dart';
 import 'pages/orders/order_history_page.dart';
@@ -309,6 +310,21 @@ class AppRouter extends StatelessWidget {
         '/gesture-demo': (context) => const GestureDemoPage(),
         '/short_videos': (context) => const ShortVideosPage(),
         '/notifications': (context) => const NotificationsPage(),
+      },
+
+      /// 動態路由（需要參數的頁面）
+      onGenerateRoute: (settings) {
+        // 商家頁面路由
+        if (settings.name == '/store') {
+          final storeId = settings.arguments as int?;
+          if (storeId != null) {
+            return MaterialPageRoute(
+              builder: (context) => StorePage(storeId: storeId),
+              settings: settings,
+            );
+          }
+        }
+        return null;
       },
     );
   }

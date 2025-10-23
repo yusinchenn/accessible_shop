@@ -6,6 +6,7 @@ import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
 import '../../widgets/product_card.dart';
 import '../../models/product.dart';
+import '../../models/store.dart';
 import '../../services/database_service.dart';
 
 /// 搜尋頁面
@@ -19,6 +20,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late final PageController _pageController;
   List<Product> _products = [];
+  Map<int, Store> _storesMap = {}; // 商家資料 Map (storeId -> Store)
   String _searchKeyword = ''; // 用戶搜尋關鍵字
   int _currentPageIndex = 0; // 當前頁面索引
   bool _loading = true;
@@ -55,18 +57,25 @@ class _SearchPageState extends State<SearchPage> {
       // 使用智能搜尋方法（支援模糊搜尋與優先級排序）
       List<Product> searchResults = await db.searchProducts(_searchKeyword);
 
+      // 載入所有商家資料
+      final stores = await db.getStores();
+      final storesMap = {for (var store in stores) store.id: store};
+
       if (kDebugMode) {
         print('🔍 [SearchPage] 搜尋結果數量: ${searchResults.length}');
+        print('🔍 [SearchPage] 載入商家數量: ${stores.length}');
         if (searchResults.isNotEmpty) {
           print('🔍 [SearchPage] 前 3 筆結果:');
           for (var i = 0; i < searchResults.length && i < 3; i++) {
-            print('   ${i + 1}. ${searchResults[i].name} (分類: ${searchResults[i].category})');
+            final storeName = storesMap[searchResults[i].storeId]?.name ?? '未知商家';
+            print('   ${i + 1}. ${searchResults[i].name} (分類: ${searchResults[i].category}, 商家: $storeName)');
           }
         }
       }
 
       setState(() {
         _products = searchResults;
+        _storesMap = storesMap;
         _loading = false;
       });
 
@@ -112,7 +121,9 @@ class _SearchPageState extends State<SearchPage> {
 
   String _getProductCardText(Product product) {
     final category = product.category != null ? '，分類${product.category}' : '';
-    return '${product.name}，價格${product.price.toStringAsFixed(0)}元，${product.description ?? "無描述"}$category';
+    final storeName = _storesMap[product.storeId]?.name;
+    final storeInfo = storeName != null ? '，商家$storeName' : '';
+    return '${product.name}，價格${product.price.toStringAsFixed(0)}元$storeInfo，${product.description ?? "無描述"}$category';
   }
 
   /// 導航到商品詳情頁面
@@ -186,12 +197,16 @@ class _SearchPageState extends State<SearchPage> {
                     itemCount: _products.length,
                     itemBuilder: (context, index) {
                       final product = _products[index];
+                      final storeName = _storesMap[product.storeId]?.name;
                       return GestureDetector(
                         onTap: () => _speakProductCard(index),
                         onDoubleTap: () => _navigateToProductDetail(product),
                         child: ProductCard(
                           product: product,
                           tag: '隔日到貨', // 固定標籤
+                          storeName: storeName,
+                          // 移除商家連結，只顯示商家名稱
+                          onStoreDoubleTap: null,
                         ),
                       );
                     },
