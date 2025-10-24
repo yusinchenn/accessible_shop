@@ -19,13 +19,11 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
   final _passwordController = TextEditingController();
   bool _isLoginMode = true;
   int _currentStep = 0; // 0: 電子郵件, 1: 密碼
+  bool _hasAnnounced = false; // 標記是否已經播報過
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () {
-      _announceCurrentPage();
-    });
   }
 
   @override
@@ -34,6 +32,29 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     _passwordController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 只在頁面真正顯示時播報，避免在登入狀態切換時誤播
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+    if (routeIsCurrent && !_hasAnnounced) {
+      _hasAnnounced = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+          return;
+        }
+
+        // 延遲 300ms 後再次確認頁面仍然是當前路由
+        // 這樣可以避免在 AuthProvider 初始化期間的短暫顯示
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          _announceCurrentPage();
+        }
+      });
+    }
   }
 
   void _announceCurrentPage() {
@@ -139,7 +160,9 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     _pageController.jumpToPage(0);
 
     Future.delayed(const Duration(milliseconds: 200), () {
-      _announceCurrentPage();
+      if (mounted) {
+        _announceCurrentPage();
+      }
     });
   }
 

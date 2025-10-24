@@ -131,6 +131,14 @@ class TtsHelper {
   /// 執行單個任務（播放所有文字）
   Future<void> _executeTask(_SpeechTask task) async {
     for (final text in task.texts) {
+      // 只有自動播放才檢查任務是否被中斷，手動操作直接執行
+      if (task.type == _SpeechType.automatic) {
+        if (!_isProcessing || _currentTask != task) {
+          print('[TTS] Task interrupted, stopping execution');
+          break;
+        }
+      }
+
       print('[TTS] executing: $text (${task.type})');
 
       final completer = Completer<void>();

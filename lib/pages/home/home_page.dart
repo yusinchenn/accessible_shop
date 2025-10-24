@@ -421,11 +421,13 @@ class _HomePageState extends State<HomePage> {
     // 只在自訂模式播放語音
     if (!accessibilityService.shouldUseCustomTTS) return;
 
-    await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
-
+    // 先設置標記，防止 _onPageChanged 打斷
     _isAnnouncingHome = true; // 標記正在播報首頁
     _speaking = true; // 標記正在語音播報
+
     try {
+      await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
+
       await ttsHelper.speak('進入首頁'); // 播報「進入首頁」
       if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
 
