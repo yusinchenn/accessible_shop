@@ -52,12 +52,18 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     // 確保購物車資料已載入完成
     await cartData.reload();
 
+    // 等待一小段時間確保所有狀態更新完成，避免語音被打斷
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // 確保組件仍然存在
+    if (!mounted) return;
+
     if (cartData.items.isEmpty) {
       // 使用 speakQueue 確保依序播放，不會打斷
-      await ttsHelper.speakQueue(["進入購物車", "目前無商品"]);
+      await ttsHelper.speakQueue(["進入購物車頁面", "目前無商品"]);
     } else {
       // 有商品時播報商品數量
-      await ttsHelper.speakQueue(["進入購物車", "有${cartData.items.length}項商品"]);
+      await ttsHelper.speakQueue(["進入購物車頁面", "有${cartData.items.length}項商品"]);
     }
   }
 
@@ -469,7 +475,7 @@ class MoreActionsOverlay extends StatelessWidget {
                       label: "瀏覽商品頁面",
                       icon: Icons.visibility,
                       color: AppColors.primary,
-                      onTap: () => ttsHelper.speak("瀏覽商品頁面"),
+                      onTap: () => ttsHelper.speak("瀏覽商品頁面按鈕"),
                       onDoubleTap: () {
                         ttsHelper.speak("開啟${item.name}商品頁面");
                         onDismiss();
@@ -492,7 +498,7 @@ class MoreActionsOverlay extends StatelessWidget {
                           label: isInComparison ? "已加入比較" : "加入比較",
                           icon: isInComparison ? Icons.check_circle : Icons.compare_arrows,
                           color: isInComparison ? Colors.green : Colors.orange,
-                          onTap: () => ttsHelper.speak(isInComparison ? "已加入比較" : "加入比較"),
+                          onTap: () => ttsHelper.speak(isInComparison ? "已加入比較按鈕" : "加入比較按鈕"),
                           onDoubleTap: () {
                             if (isInComparison) {
                               // 移除商品比較
@@ -516,7 +522,7 @@ class MoreActionsOverlay extends StatelessWidget {
                       label: "刪除商品",
                       icon: Icons.delete,
                       color: Colors.red,
-                      onTap: () => ttsHelper.speak("刪除商品"),
+                      onTap: () => ttsHelper.speak("刪除商品按鈕"),
                       onDoubleTap: () async {
                         await cartData.removeItem(item.id);
                         ttsHelper.speak("已刪除${item.name}");
@@ -531,7 +537,7 @@ class MoreActionsOverlay extends StatelessWidget {
                       label: "取消",
                       icon: Icons.close,
                       color: Colors.grey,
-                      onTap: () => ttsHelper.speak("取消"),
+                      onTap: () => ttsHelper.speak("取消按鈕"),
                       onDoubleTap: () {
                         ttsHelper.speak("關閉更多操作");
                         onDismiss();
