@@ -12,6 +12,7 @@ class Product {
   String? imageUrl;   // 商品圖片 (未來可擴充)
   String? category;   // 商品分類
   late int storeId;   // 所屬商家 ID
+  int stock = 999;    // 庫存數量，預設999
 
   // 評分相關欄位
   double averageRating = 0.0;  // 平均評分

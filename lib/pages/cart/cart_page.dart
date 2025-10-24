@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/cart_item.dart';
+import '../../models/product.dart';
 import '../../providers/cart_provider.dart'; // Updated import path
 import '../../providers/comparison_provider.dart'; // 匯入比較 Provider
+import '../../services/database_service.dart';
 import '../../utils/tts_helper.dart'; // ✅ 改用全域 ttsHelper
 import '../../utils/app_constants.dart'; // ✅ 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
@@ -44,10 +46,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Future<void> _announceEnter() async {
     final cartData = Provider.of<ShoppingCartData>(context, listen: false);
 
-    // 等待購物車資料載入完成
-    if (cartData.isLoading) {
-      await cartData.reload();
-    }
+    // 先清除所有商品的選取狀態
+    await cartData.clearAllSelections();
+
+    // 確保購物車資料已載入完成
+    await cartData.reload();
 
     if (cartData.items.isEmpty) {
       // 使用 speakQueue 確保依序播放，不會打斷
@@ -103,7 +106,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                         return GestureDetector(
                           onTap: () {
                             ttsHelper.speak(
-                              "查看比較，目前有${comparisonProvider.itemCount}項商品",
+                              "查看比較按鈕，目前有${comparisonProvider.itemCount}項商品",
                             );
                           },
                           onDoubleTap: () {
@@ -171,73 +174,82 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       },
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      ttsHelper.speak(
-                        "選取商品${cartData.totalSelectedCount}項，總價${cartData.totalSelectedPrice.toStringAsFixed(0)}元",
-                      );
-                    },
-                    onDoubleTap: () {
-                      final selected = cartData.selectedItems;
-                      final details = selected.isEmpty
-                          ? "沒有選取商品"
-                          : selected
-                                .map(
-                                  (item) =>
-                                      "${item.name} ${item.specification} ${item.quantity}項",
-                                )
-                                .join("，");
-                      ttsHelper.speak(
-                        "$details，總價${cartData.totalSelectedPrice.toStringAsFixed(0)}元",
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      color: AppColors.background,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "選取商品總數: ${cartData.totalSelectedCount}",
-                            style: AppTextStyles.body,
-                          ),
-                          Text(
-                            "總價: \$${cartData.totalSelectedPrice.toStringAsFixed(0)}",
-                            style: AppTextStyles.body,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    child: GestureDetector(
-                      onTap: () => ttsHelper.speak("結帳"),
-                      onDoubleTap: () {
-                        ttsHelper.speak("轉跳結帳頁面 checkout_page");
-                        Navigator.pushNamed(context, "/checkout");
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(8.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "結帳",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: AppFontSizes.subtitle,
-                            fontWeight: FontWeight.bold,
+                    child: Opacity(
+                      opacity: cartData.totalSelectedCount == 0 ? 0.4 : 1.0,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (cartData.totalSelectedCount == 0) {
+                            ttsHelper.speak("結帳按鈕，尚未選取商品");
+                          } else {
+                            final selectedItems = cartData.selectedItems
+                                .map((item) => "${item.name}數量${item.quantity}")
+                                .join("、");
+                            ttsHelper.speak(
+                              "結帳按鈕，已選取商品：$selectedItems，總價${cartData.totalSelectedPrice.toStringAsFixed(0)}元",
+                            );
+                          }
+                        },
+                        onDoubleTap: () {
+                          if (cartData.totalSelectedCount > 0) {
+                            ttsHelper.speak("轉跳結帳頁面");
+                            Navigator.pushNamed(context, "/checkout");
+                          } else {
+                            ttsHelper.speak("結帳按鈕，尚未選取商品");
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.lg,
+                            horizontal: AppSpacing.md,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cartData.totalSelectedCount == 0
+                                ? Colors.grey
+                                : Colors.green,
+                            borderRadius: BorderRadius.circular(8.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "選取商品總數: ${cartData.totalSelectedCount}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: AppFontSizes.body,
+                                    ),
+                                  ),
+                                  Text(
+                                    "總價: \$${cartData.totalSelectedPrice.toStringAsFixed(0)}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: AppFontSizes.body,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              const Text(
+                                "結帳",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: AppFontSizes.subtitle,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -260,7 +272,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 }
 
 /// 單一商品卡片
-class ShoppingCartItemCard extends StatelessWidget {
+class ShoppingCartItemCard extends StatefulWidget {
   final CartItem item;
   final ShoppingCartData cartData;
   final ValueChanged<CartItem> onShowMoreActions;
@@ -273,7 +285,32 @@ class ShoppingCartItemCard extends StatelessWidget {
   });
 
   @override
+  State<ShoppingCartItemCard> createState() => _ShoppingCartItemCardState();
+}
+
+class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
+  Product? _product;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProduct();
+  }
+
+  Future<void> _loadProduct() async {
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+    final product = await dbService.getProductById(widget.item.productId);
+    if (mounted) {
+      setState(() {
+        _product = product;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
+    final cartData = widget.cartData;
     return GestureDetector(
       onTap: () => ttsHelper.speak(
         "${item.name}，${item.specification}，單價${item.unitPrice.toStringAsFixed(0)}元，數量${item.quantity}",
@@ -281,9 +318,9 @@ class ShoppingCartItemCard extends StatelessWidget {
       onDoubleTap: () async {
         final wasSelected = item.isSelected; // 記錄切換前的狀態
         await cartData.toggleSelection(item.id);
-        ttsHelper.speak("${wasSelected ? '取消選取' : '選取'}${item.name}");
+        ttsHelper.speak("${wasSelected ? '取消選取' : '選取'}${item.name}，數量${item.quantity}");
       },
-      onLongPress: () => onShowMoreActions(item),
+      onLongPress: () => widget.onShowMoreActions(item),
       child: Card(
         elevation: item.isSelected ? 10 : 4,
         shape: RoundedRectangleBorder(
@@ -309,13 +346,18 @@ class ShoppingCartItemCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => ttsHelper.speak("減少商品${item.name}"),
+                      onTap: () => ttsHelper.speak("減少按鈕"),
                       onDoubleTap: () async {
-                        await cartData.decrementQuantity(item.id);
-                        ttsHelper.speak("已減少商品${item.name}");
+                        if (item.quantity <= 1) {
+                          ttsHelper.speak("商品僅剩一件");
+                        } else {
+                          await cartData.decrementQuantity(item.id);
+                          final newQuantity = item.quantity - 1;
+                          ttsHelper.speak("已減少${item.name}，目前數量$newQuantity件");
+                        }
                       },
                       child: Container(
-                        height: 50,
+                        height: 80,
                         decoration: const BoxDecoration(
                           color: Colors.grey,
                           borderRadius: BorderRadius.only(
@@ -324,19 +366,25 @@ class ShoppingCartItemCard extends StatelessWidget {
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.remove),
+                        child: const Icon(Icons.remove, size: 32),
                       ),
                     ),
                   ),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => ttsHelper.speak("增加商品${item.name}"),
+                      onTap: () => ttsHelper.speak("增加按鈕"),
                       onDoubleTap: () async {
-                        await cartData.incrementQuantity(item.id);
-                        ttsHelper.speak("已增加商品${item.name}");
+                        final stock = _product?.stock ?? 999;
+                        if (item.quantity >= stock) {
+                          ttsHelper.speak("商品已達購買上限");
+                        } else {
+                          await cartData.incrementQuantity(item.id);
+                          final newQuantity = item.quantity + 1;
+                          ttsHelper.speak("已增加${item.name}，目前數量$newQuantity件");
+                        }
                       },
                       child: Container(
-                        height: 50,
+                        height: 80,
                         decoration: const BoxDecoration(
                           color: Colors.grey,
                           borderRadius: BorderRadius.only(
@@ -345,7 +393,7 @@ class ShoppingCartItemCard extends StatelessWidget {
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: const Icon(Icons.add),
+                        child: const Icon(Icons.add, size: 32),
                       ),
                     ),
                   ),

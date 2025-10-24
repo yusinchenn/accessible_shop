@@ -96,6 +96,12 @@ class ShoppingCartData extends ChangeNotifier {
     await reload();
   }
 
+  /// 清除所有商品的選取狀態
+  Future<void> clearAllSelections() async {
+    await _databaseService.clearAllCartItemSelections();
+    await reload();
+  }
+
   /// 移除商品
   Future<void> removeItem(int id) async {
     await _databaseService.removeFromCart(id);

@@ -267,6 +267,25 @@ class DatabaseService extends ChangeNotifier {
     }
   }
 
+  /// 清除所有購物車項目的選取狀態
+  Future<void> clearAllCartItemSelections() async {
+    final isar = await _isarFuture;
+    final allItems = await isar.cartItems.where().findAll();
+
+    await isar.writeTxn(() async {
+      for (var item in allItems) {
+        item.isSelected = false;
+        await isar.cartItems.put(item);
+      }
+    });
+
+    if (kDebugMode) {
+      print('🛒 [DatabaseService] 已清除所有購物車項目的選取狀態 (${allItems.length} 項)');
+    }
+
+    notifyListeners();
+  }
+
   /// 從購物車移除項目
   Future<void> removeFromCart(int cartItemId) async {
     final isar = await _isarFuture;
