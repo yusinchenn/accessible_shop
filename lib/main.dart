@@ -20,6 +20,7 @@ import 'pages/gesture_demo_page.dart';
 import 'pages/short_videos/short_videos_page.dart';
 import 'pages/notifications/notifications_page.dart';
 import 'pages/comparison/comparison_page.dart';
+import 'pages/wallet/wallet_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -310,6 +311,7 @@ class AppRouter extends StatelessWidget {
         '/gesture-demo': (context) => const GestureDemoPage(),
         '/short_videos': (context) => const ShortVideosPage(),
         '/notifications': (context) => const NotificationsPage(),
+        '/wallet': (context) => const WalletPage(),
       },
 
       /// 動態路由（需要參數的頁面）

@@ -600,6 +600,149 @@ class DatabaseService extends ChangeNotifier {
     }
   }
 
+  // ==================== 錢包相關方法 ====================
+
+  /// 領取每日登入獎勵
+  /// 回傳值：獎勵金額（0 表示今天已領取過）
+  Future<double> claimDailyReward(String userId) async {
+    final isar = await _isarFuture;
+    var profile = await getUserProfile(userId);
+
+    if (profile == null) {
+      if (kDebugMode) {
+        print('💰 [DatabaseService] 找不到使用者資料: $userId');
+      }
+      return 0.0;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 檢查今天是否已經領取過
+    if (profile.lastDailyRewardDate != null) {
+      final lastRewardDate = DateTime(
+        profile.lastDailyRewardDate!.year,
+        profile.lastDailyRewardDate!.month,
+        profile.lastDailyRewardDate!.day,
+      );
+
+      if (lastRewardDate.isAtSameMomentAs(today)) {
+        if (kDebugMode) {
+          print('💰 [DatabaseService] 今天已經領取過每日獎勵');
+        }
+        return 0.0;
+      }
+    }
+
+    // 每日獎勵金額
+    const double dailyReward = 1.0;
+
+    // 更新錢包餘額和領取日期
+    await isar.writeTxn(() async {
+      profile.walletBalance = (profile.walletBalance ?? 0.0) + dailyReward;
+      profile.lastDailyRewardDate = now;
+      profile.updatedAt = now;
+      await isar.userProfiles.put(profile);
+    });
+
+    if (kDebugMode) {
+      print('💰 [DatabaseService] 領取每日獎勵成功: +$dailyReward 元，當前餘額: ${profile.walletBalance}');
+    }
+
+    notifyListeners();
+    return dailyReward;
+  }
+
+  /// 檢查今天是否已領取每日獎勵
+  Future<bool> hasClaimedDailyReward(String userId) async {
+    var profile = await getUserProfile(userId);
+
+    if (profile == null || profile.lastDailyRewardDate == null) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastRewardDate = DateTime(
+      profile.lastDailyRewardDate!.year,
+      profile.lastDailyRewardDate!.month,
+      profile.lastDailyRewardDate!.day,
+    );
+
+    return lastRewardDate.isAtSameMomentAs(today);
+  }
+
+  /// 取得錢包餘額
+  Future<double> getWalletBalance(String userId) async {
+    var profile = await getUserProfile(userId);
+    return profile?.walletBalance ?? 0.0;
+  }
+
+  /// 使用錢包餘額（扣款）
+  /// 回傳值：是否成功
+  Future<bool> useWalletBalance(String userId, double amount) async {
+    if (amount <= 0) {
+      if (kDebugMode) {
+        print('💰 [DatabaseService] 扣款金額必須大於 0');
+      }
+      return false;
+    }
+
+    final isar = await _isarFuture;
+    var profile = await getUserProfile(userId);
+
+    if (profile == null) {
+      if (kDebugMode) {
+        print('💰 [DatabaseService] 找不到使用者資料: $userId');
+      }
+      return false;
+    }
+
+    final currentBalance = profile.walletBalance ?? 0.0;
+
+    if (currentBalance < amount) {
+      if (kDebugMode) {
+        print('💰 [DatabaseService] 錢包餘額不足: 當前 $currentBalance，需要 $amount');
+      }
+      return false;
+    }
+
+    // 扣除餘額
+    await isar.writeTxn(() async {
+      profile.walletBalance = currentBalance - amount;
+      profile.updatedAt = DateTime.now();
+      await isar.userProfiles.put(profile);
+    });
+
+    if (kDebugMode) {
+      print('💰 [DatabaseService] 使用錢包餘額成功: -$amount 元，剩餘餘額: ${profile.walletBalance}');
+    }
+
+    notifyListeners();
+    return true;
+  }
+
+  /// 重置錢包餘額（開發工具用）
+  Future<void> resetWalletBalance(String userId) async {
+    final isar = await _isarFuture;
+    var profile = await getUserProfile(userId);
+
+    if (profile != null) {
+      await isar.writeTxn(() async {
+        profile.walletBalance = 0.0;
+        profile.lastDailyRewardDate = null;
+        profile.updatedAt = DateTime.now();
+        await isar.userProfiles.put(profile);
+      });
+
+      if (kDebugMode) {
+        print('💰 [DatabaseService] 已重置錢包餘額');
+      }
+
+      notifyListeners();
+    }
+  }
+
   // ==================== 通知相關方法 ====================
 
   /// 創建通知

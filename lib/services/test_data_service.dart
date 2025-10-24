@@ -6,6 +6,7 @@ import '../models/order.dart';
 import '../models/order_status.dart';
 import '../models/store.dart';
 import '../models/product_review.dart';
+import '../models/user_profile.dart';
 
 /// 測試資料服務
 /// 用於初始化和管理測試資料
@@ -38,12 +39,21 @@ class TestDataService {
       await isar.cartItems.clear();
       await isar.productReviews.clear();
 
+      // 重置所有使用者的錢包餘額
+      final allProfiles = await isar.userProfiles.where().findAll();
+      for (var profile in allProfiles) {
+        profile.walletBalance = 0.0;
+        profile.lastDailyRewardDate = null;
+        await isar.userProfiles.put(profile);
+      }
+
       // 清空並重新插入基礎資料
       await isar.stores.clear();
       await isar.products.clear();
     });
 
     print('🗑️  已清空用戶資料');
+    print('💰 已重置所有使用者錢包餘額');
 
     // 重新初始化基礎測試資料
     await initializeStores();

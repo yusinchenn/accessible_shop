@@ -177,6 +177,13 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
     }
   }
 
+  /// 導航到錢包頁面
+  Future<void> _navigateToWallet() async {
+    await Navigator.pushNamed(context, '/wallet');
+    // 從錢包頁面返回後重新載入資料，以更新餘額顯示
+    await _loadUserProfile();
+  }
+
   /// 登出確認對話框
   Future<void> _showLogoutDialog() async {
     final shouldLogout = await showDialog<bool>(
@@ -303,7 +310,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                       '我的錢包',
                       Icons.account_balance_wallet,
                       '\$${_userProfile?.walletBalance?.toStringAsFixed(0) ?? '0'}',
-                      null, // 功能尚未實作
+                      _navigateToWallet, // 導航到錢包頁面
                     ),
                   ]),
 

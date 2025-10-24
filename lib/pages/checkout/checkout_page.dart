@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/database_service.dart';
 import '../../services/order_automation_service.dart';
 import '../../services/accessibility_service.dart';
@@ -30,6 +31,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Coupon? _selectedCoupon;
   ShippingMethod? _selectedShipping;
   PaymentMethod? _selectedPayment;
+  double _walletAmount = 0.0; // 使用的錢包金額
 
   // 在進入結帳頁面時複製選取的商品列表，避免受購物車更新影響
   List<CartItem>? _checkoutItems;
@@ -161,8 +163,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             selectedCoupon: _selectedCoupon,
             selectedShipping: _selectedShipping,
             selectedPayment: _selectedPayment,
+            walletAmount: _walletAmount,
             onPaymentSelected: (payment) {
               setState(() => _selectedPayment = payment);
+            },
+            onWalletAmountChanged: (amount) {
+              setState(() => _walletAmount = amount);
             },
             onNext: _nextStep,
             onPrevious: _previousStep,
@@ -172,6 +178,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             selectedCoupon: _selectedCoupon,
             selectedShipping: _selectedShipping,
             selectedPayment: _selectedPayment,
+            walletAmount: _walletAmount,
           ),
         ],
       ),
@@ -619,12 +626,14 @@ class _Step3SelectShipping extends StatelessWidget {
 }
 
 /// 步驟4: 選擇付款方式
-class _Step4SelectPayment extends StatelessWidget {
+class _Step4SelectPayment extends StatefulWidget {
   final List<CartItem> items;
   final Coupon? selectedCoupon;
   final ShippingMethod? selectedShipping;
   final PaymentMethod? selectedPayment;
+  final double walletAmount;
   final ValueChanged<PaymentMethod> onPaymentSelected;
+  final ValueChanged<double> onWalletAmountChanged;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
 
@@ -633,21 +642,120 @@ class _Step4SelectPayment extends StatelessWidget {
     required this.selectedCoupon,
     required this.selectedShipping,
     required this.selectedPayment,
+    required this.walletAmount,
     required this.onPaymentSelected,
+    required this.onWalletAmountChanged,
     required this.onNext,
     required this.onPrevious,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final paymentMethods = PaymentMethod.getSampleMethods();
-    final subtotal = items.fold<double>(
+  State<_Step4SelectPayment> createState() => _Step4SelectPaymentState();
+}
+
+class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
+  final TextEditingController _walletController = TextEditingController();
+  double _availableBalance = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+    _loadWalletBalance();
+  }
+
+  @override
+  void dispose() {
+    _walletController.dispose();
+    super.dispose();
+  }
+
+  /// 載入錢包餘額
+  Future<void> _loadWalletBalance() async {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.userId;
+
+    if (userId != null) {
+      final databaseService = context.read<DatabaseService>();
+      final balance = await databaseService.getWalletBalance(userId);
+
+      if (mounted) {
+        setState(() {
+          _availableBalance = balance;
+        });
+      }
+    }
+  }
+
+  /// 更新錢包使用金額
+  void _updateWalletAmount(String value) {
+    final subtotal = widget.items.fold<double>(
       0.0,
       (sum, item) => sum + (item.unitPrice * item.quantity),
     );
-    final discount = selectedCoupon?.discount ?? 0.0;
-    final shippingFee = selectedShipping?.fee ?? 0.0;
+    final discount = widget.selectedCoupon?.discount ?? 0.0;
+    final shippingFee = widget.selectedShipping?.fee ?? 0.0;
     final total = subtotal - discount + shippingFee;
+
+    if (value.isEmpty) {
+      widget.onWalletAmountChanged(0.0);
+      return;
+    }
+
+    final amount = double.tryParse(value) ?? 0.0;
+
+    // 檢查金額是否為正整數
+    if (amount != amount.floor() || amount < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('金額必須為正整數', style: TextStyle(fontSize: 18)),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      return;
+    }
+
+    // 檢查是否超過可用餘額
+    if (amount > _availableBalance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('錢包餘額不足，可用 \$${_availableBalance.toStringAsFixed(0)}',
+              style: const TextStyle(fontSize: 18)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      return;
+    }
+
+    // 檢查是否超過訂單總金額
+    if (amount > total) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('折抵金額不可超過訂單總金額 \$${total.toStringAsFixed(0)}',
+              style: const TextStyle(fontSize: 18)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      return;
+    }
+
+    widget.onWalletAmountChanged(amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final paymentMethods = PaymentMethod.getSampleMethods();
+    final subtotal = widget.items.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+    final discount = widget.selectedCoupon?.discount ?? 0.0;
+    final shippingFee = widget.selectedShipping?.fee ?? 0.0;
+    final walletDiscount = widget.walletAmount;
+    final total = subtotal - discount + shippingFee - walletDiscount;
 
     return Column(
       children: [
@@ -679,11 +787,11 @@ class _Step4SelectPayment extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      if (selectedCoupon != null)
+                      if (widget.selectedCoupon != null)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('優惠券 (${selectedCoupon!.name})'),
+                            Text('優惠券 (${widget.selectedCoupon!.name})'),
                             Text(
                               '-\$${discount.toStringAsFixed(0)}',
                               style: const TextStyle(color: Colors.red),
@@ -694,10 +802,54 @@ class _Step4SelectPayment extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('運費 (${selectedShipping?.name ?? ""})'),
+                          Text('運費 (${widget.selectedShipping?.name ?? ""})'),
                           Text('\$${shippingFee.toStringAsFixed(0)}'),
                         ],
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      // 錢包折抵輸入
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text('錢包折抵 (可用 \$${_availableBalance.toStringAsFixed(0)})'),
+                          ),
+                          SizedBox(
+                            width: 100,
+                            child: TextField(
+                              controller: _walletController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: AppFontSizes.body),
+                              decoration: InputDecoration(
+                                hintText: '0',
+                                prefixText: '\$',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.sm,
+                                  vertical: AppSpacing.xs,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onChanged: _updateWalletAmount,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (walletDiscount > 0) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(''),
+                            Text(
+                              '-\$${walletDiscount.toStringAsFixed(0)}',
+                              style: const TextStyle(color: Colors.green),
+                            ),
+                          ],
+                        ),
+                      ],
                       const Divider(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -726,13 +878,13 @@ class _Step4SelectPayment extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               // 付款方式選擇
               ...paymentMethods.map((method) {
-                final isSelected = selectedPayment?.id == method.id;
+                final isSelected = widget.selectedPayment?.id == method.id;
 
                 return AccessibleGestureWrapper(
                   label: '${method.name}，${method.description}${isSelected ? "，已選擇" : ""}',
                   description: '點擊選擇此付款方式',
                   onTap: () {
-                    onPaymentSelected(method);
+                    widget.onPaymentSelected(method);
                     if (accessibilityService.shouldUseCustomTTS) {
                       ttsHelper.speak('已選擇 ${method.name}');
                     }
@@ -775,7 +927,7 @@ class _Step4SelectPayment extends StatelessWidget {
                 child: AccessibleGestureWrapper(
                   label: '上一步',
                   description: '返回選擇配送方式步驟',
-                  onTap: onPrevious,
+                  onTap: widget.onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -797,14 +949,14 @@ class _Step4SelectPayment extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '確認結帳${selectedPayment == null ? "，請先選擇付款方式" : ""}',
+                  label: '確認結帳${widget.selectedPayment == null ? "，請先選擇付款方式" : ""}',
                   description: '完成付款並送出訂單',
-                  enabled: selectedPayment != null,
-                  onTap: selectedPayment != null ? onNext : null,
+                  enabled: widget.selectedPayment != null,
+                  onTap: widget.selectedPayment != null ? widget.onNext : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: selectedPayment != null ? AppColors.primary : Colors.grey,
+                      color: widget.selectedPayment != null ? AppColors.primary : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -833,12 +985,14 @@ class _Step5Complete extends StatefulWidget {
   final Coupon? selectedCoupon;
   final ShippingMethod? selectedShipping;
   final PaymentMethod? selectedPayment;
+  final double walletAmount;
 
   const _Step5Complete({
     required this.items,
     required this.selectedCoupon,
     required this.selectedShipping,
     required this.selectedPayment,
+    required this.walletAmount,
   });
 
   @override
@@ -889,6 +1043,21 @@ class _Step5CompleteState extends State<_Step5Complete> {
         isCashOnDelivery: isCashOnDelivery,
         deliveryType: deliveryType,
       );
+
+      // 扣除錢包餘額（如果有使用）
+      if (widget.walletAmount > 0 && mounted) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final userId = authProvider.userId;
+
+        if (userId != null) {
+          final success = await db.useWalletBalance(userId, widget.walletAmount);
+          if (!success) {
+            if (kDebugMode) {
+              print('⚠️ [CheckoutPage] 錢包扣款失敗，但訂單已建立');
+            }
+          }
+        }
+      }
 
       // 清除購物車中已結帳的項目
       // 購物車 Provider 會自動監聽資料庫變化並重新載入

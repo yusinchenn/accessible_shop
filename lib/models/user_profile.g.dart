@@ -37,33 +37,38 @@ const UserProfileSchema = CollectionSchema(
       name: r'email',
       type: IsarType.string,
     ),
-    r'membershipLevel': PropertySchema(
+    r'lastDailyRewardDate': PropertySchema(
       id: 4,
+      name: r'lastDailyRewardDate',
+      type: IsarType.dateTime,
+    ),
+    r'membershipLevel': PropertySchema(
+      id: 5,
       name: r'membershipLevel',
       type: IsarType.string,
     ),
     r'membershipPoints': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'membershipPoints',
       type: IsarType.long,
     ),
     r'phoneNumber': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'phoneNumber',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'userId': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'userId',
       type: IsarType.string,
     ),
     r'walletBalance': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'walletBalance',
       type: IsarType.double,
     )
@@ -140,12 +145,13 @@ void _userProfileSerialize(
   writer.writeDateTime(offsets[1], object.createdAt);
   writer.writeString(offsets[2], object.displayName);
   writer.writeString(offsets[3], object.email);
-  writer.writeString(offsets[4], object.membershipLevel);
-  writer.writeLong(offsets[5], object.membershipPoints);
-  writer.writeString(offsets[6], object.phoneNumber);
-  writer.writeDateTime(offsets[7], object.updatedAt);
-  writer.writeString(offsets[8], object.userId);
-  writer.writeDouble(offsets[9], object.walletBalance);
+  writer.writeDateTime(offsets[4], object.lastDailyRewardDate);
+  writer.writeString(offsets[5], object.membershipLevel);
+  writer.writeLong(offsets[6], object.membershipPoints);
+  writer.writeString(offsets[7], object.phoneNumber);
+  writer.writeDateTime(offsets[8], object.updatedAt);
+  writer.writeString(offsets[9], object.userId);
+  writer.writeDouble(offsets[10], object.walletBalance);
 }
 
 UserProfile _userProfileDeserialize(
@@ -160,12 +166,13 @@ UserProfile _userProfileDeserialize(
   object.displayName = reader.readStringOrNull(offsets[2]);
   object.email = reader.readStringOrNull(offsets[3]);
   object.id = id;
-  object.membershipLevel = reader.readStringOrNull(offsets[4]);
-  object.membershipPoints = reader.readLongOrNull(offsets[5]);
-  object.phoneNumber = reader.readStringOrNull(offsets[6]);
-  object.updatedAt = reader.readDateTimeOrNull(offsets[7]);
-  object.userId = reader.readString(offsets[8]);
-  object.walletBalance = reader.readDoubleOrNull(offsets[9]);
+  object.lastDailyRewardDate = reader.readDateTimeOrNull(offsets[4]);
+  object.membershipLevel = reader.readStringOrNull(offsets[5]);
+  object.membershipPoints = reader.readLongOrNull(offsets[6]);
+  object.phoneNumber = reader.readStringOrNull(offsets[7]);
+  object.updatedAt = reader.readDateTimeOrNull(offsets[8]);
+  object.userId = reader.readString(offsets[9]);
+  object.walletBalance = reader.readDoubleOrNull(offsets[10]);
   return object;
 }
 
@@ -185,16 +192,18 @@ P _userProfileDeserializeProp<P>(
     case 3:
       return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
-    case 5:
-      return (reader.readLongOrNull(offset)) as P;
-    case 6:
-      return (reader.readStringOrNull(offset)) as P;
-    case 7:
       return (reader.readDateTimeOrNull(offset)) as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    case 7:
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -889,6 +898,80 @@ extension UserProfileQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastDailyRewardDate',
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastDailyRewardDate',
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastDailyRewardDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastDailyRewardDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastDailyRewardDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterFilterCondition>
+      lastDailyRewardDateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastDailyRewardDate',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1628,6 +1711,20 @@ extension UserProfileQuerySortBy
     });
   }
 
+  QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
+      sortByLastDailyRewardDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastDailyRewardDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
+      sortByLastDailyRewardDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastDailyRewardDate', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy> sortByMembershipLevel() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'membershipLevel', Sort.asc);
@@ -1767,6 +1864,20 @@ extension UserProfileQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
+      thenByLastDailyRewardDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastDailyRewardDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserProfile, UserProfile, QAfterSortBy>
+      thenByLastDailyRewardDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastDailyRewardDate', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserProfile, UserProfile, QAfterSortBy> thenByMembershipLevel() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'membershipLevel', Sort.asc);
@@ -1872,6 +1983,13 @@ extension UserProfileQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserProfile, UserProfile, QDistinct>
+      distinctByLastDailyRewardDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastDailyRewardDate');
+    });
+  }
+
   QueryBuilder<UserProfile, UserProfile, QDistinct> distinctByMembershipLevel(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1943,6 +2061,13 @@ extension UserProfileQueryProperty
   QueryBuilder<UserProfile, String?, QQueryOperations> emailProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'email');
+    });
+  }
+
+  QueryBuilder<UserProfile, DateTime?, QQueryOperations>
+      lastDailyRewardDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastDailyRewardDate');
     });
   }
 

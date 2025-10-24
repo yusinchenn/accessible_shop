@@ -22,6 +22,7 @@ class UserProfile {
 
   // 錢包相關（未來擴充）
   double? walletBalance; // 錢包餘額
+  DateTime? lastDailyRewardDate; // 上次領取每日獎勵的日期
 
   // 時間戳記
   DateTime? createdAt; // 建立時間
