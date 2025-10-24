@@ -10,7 +10,7 @@ import 'package:accessible_shop/services/accessibility_service.dart';
 import 'package:intl/intl.dart';
 
 class AccountInfoPage extends StatefulWidget {
-  const AccountInfoPage({Key? key}) : super(key: key);
+  const AccountInfoPage({super.key});
 
   @override
   State<AccountInfoPage> createState() => _AccountInfoPageState();

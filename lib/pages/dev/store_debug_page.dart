@@ -42,35 +42,35 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
       _printDebugInfo();
     } catch (e) {
       setState(() => _loading = false);
-      print('❌ 載入資料失敗: $e');
+      debugPrint('❌ 載入資料失敗: $e');
     }
   }
 
   void _printDebugInfo() {
-    print('\n========== 商家功能調試資訊 ==========');
-    print('📊 商家總數: ${_stores.length}');
-    print('📊 商品總數: ${_products.length}');
+    debugPrint('\n========== 商家功能調試資訊 ==========');
+    debugPrint('📊 商家總數: ${_stores.length}');
+    debugPrint('📊 商品總數: ${_products.length}');
 
     if (_stores.isEmpty) {
-      print('⚠️  警告: 沒有找到任何商家資料！');
-      print('   請執行測試資料初始化。');
+      debugPrint('⚠️  警告: 沒有找到任何商家資料！');
+      debugPrint('   請執行測試資料初始化。');
     } else {
-      print('\n商家列表:');
+      debugPrint('\n商家列表:');
       for (var store in _stores) {
         final storeProducts = _products.where((p) => p.storeId == store.id).length;
-        print('  ${store.id}. ${store.name} - ${store.rating}星 - ${storeProducts}個商品');
+        debugPrint('  ${store.id}. ${store.name} - ${store.rating}星 - $storeProducts個商品');
       }
     }
 
     if (_products.isEmpty) {
-      print('\n⚠️  警告: 沒有找到任何商品資料！');
+      debugPrint('\n⚠️  警告: 沒有找到任何商品資料！');
     } else {
-      print('\n商品列表（前5個）:');
+      debugPrint('\n商品列表（前5個）:');
       for (var i = 0; i < _products.length && i < 5; i++) {
         final product = _products[i];
         final store = _stores.where((s) => s.id == product.storeId).firstOrNull;
         final storeName = store?.name ?? '未知商家(ID:${product.storeId})';
-        print('  ${product.id}. ${product.name} - \$${product.price} - 商家: $storeName');
+        debugPrint('  ${product.id}. ${product.name} - \$${product.price} - 商家: $storeName');
       }
     }
 
@@ -80,13 +80,13 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
     }).toList();
 
     if (orphanProducts.isNotEmpty) {
-      print('\n⚠️  警告: 發現 ${orphanProducts.length} 個商品沒有對應的商家:');
+      debugPrint('\n⚠️  警告: 發現 ${orphanProducts.length} 個商品沒有對應的商家:');
       for (var product in orphanProducts.take(3)) {
-        print('  - ${product.name} (storeId: ${product.storeId})');
+        debugPrint('  - ${product.name} (storeId: ${product.storeId})');
       }
     }
 
-    print('=====================================\n');
+    debugPrint('=====================================\n');
   }
 
   @override
@@ -182,7 +182,7 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
 
                   const SizedBox(height: 16),
 
@@ -262,7 +262,7 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
 
                   const SizedBox(height: 32),
 

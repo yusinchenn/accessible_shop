@@ -5,7 +5,7 @@ import 'package:accessible_shop/widgets/global_gesture_wrapper.dart';
 import 'package:accessible_shop/services/accessibility_service.dart';
 
 class AppSettingsPage extends StatefulWidget {
-  const AppSettingsPage({Key? key}) : super(key: key);
+  const AppSettingsPage({super.key});
 
   @override
   State<AppSettingsPage> createState() => _AppSettingsPageState();

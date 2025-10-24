@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
@@ -23,7 +24,7 @@ class TestDataService {
     await initializeProductReviews();
     await initializeOrders();
     await initializeUserSettings();
-    print('✅ 所有測試資料已初始化完成');
+    debugPrint('✅ 所有測試資料已初始化完成');
   }
 
   /// 重置到乾淨狀態
@@ -52,8 +53,8 @@ class TestDataService {
       await isar.products.clear();
     });
 
-    print('🗑️  已清空用戶資料');
-    print('💰 已重置所有使用者錢包餘額');
+    debugPrint('🗑️  已清空用戶資料');
+    debugPrint('💰 已重置所有使用者錢包餘額');
 
     // 重新初始化基礎測試資料
     await initializeStores();
@@ -61,7 +62,7 @@ class TestDataService {
     await initializeProductReviews();
     await initializeUserSettings();
 
-    print('✅ 已重置到乾淨狀態');
+    debugPrint('✅ 已重置到乾淨狀態');
   }
 
   /// 清空所有資料
@@ -75,7 +76,7 @@ class TestDataService {
       await isar.orders.clear();
       await isar.orderItems.clear();
     });
-    print('🗑️  已清空所有資料');
+    debugPrint('🗑️  已清空所有資料');
   }
 
   /// 初始化商家測試資料
@@ -86,7 +87,7 @@ class TestDataService {
       await isar.stores.putAll(stores);
     });
 
-    print('✅ 已新增 ${stores.length} 筆商家資料');
+    debugPrint('✅ 已新增 ${stores.length} 筆商家資料');
   }
 
   /// 初始化商品測試資料
@@ -97,7 +98,7 @@ class TestDataService {
       await isar.products.putAll(products);
     });
 
-    print('✅ 已新增 ${products.length} 筆商品資料');
+    debugPrint('✅ 已新增 ${products.length} 筆商品資料');
   }
 
   /// 初始化購物車測試資料（範例）
@@ -108,7 +109,7 @@ class TestDataService {
       await isar.cartItems.putAll(cartItems);
     });
 
-    print('✅ 已新增 ${cartItems.length} 筆購物車資料');
+    debugPrint('✅ 已新增 ${cartItems.length} 筆購物車資料');
   }
 
   /// 初始化用戶設定
@@ -123,7 +124,7 @@ class TestDataService {
       await isar.userSettings.put(settings);
     });
 
-    print('✅ 已初始化用戶設定');
+    debugPrint('✅ 已初始化用戶設定');
   }
 
   /// 取得範例商品資料
@@ -338,7 +339,7 @@ class TestDataService {
       await _initializeOrderTimestamps(order);
     }
 
-    print('✅ 已新增 ${orders.length} 筆訂單資料和 ${orderItems.length} 筆訂單項目');
+    debugPrint('✅ 已新增 ${orders.length} 筆訂單資料和 ${orderItems.length} 筆訂單項目');
   }
 
   /// 為訂單初始化時間戳記錄
@@ -520,7 +521,7 @@ class TestDataService {
     // 更新每個商品的平均評分和評論數量
     await _updateAllProductRatings();
 
-    print('✅ 已新增 ${reviews.length} 筆商品評論資料');
+    debugPrint('✅ 已新增 ${reviews.length} 筆商品評論資料');
   }
 
   /// 更新所有商品的評分統計
@@ -654,13 +655,13 @@ class TestDataService {
   /// 列印資料庫統計資訊
   Future<void> printDatabaseStats() async {
     final stats = await getDatabaseStats();
-    print('📊 資料庫統計：');
-    print('   - 商家數量: ${stats['stores']}');
-    print('   - 商品數量: ${stats['products']}');
-    print('   - 商品評論: ${stats['reviews']}');
-    print('   - 購物車項目: ${stats['cartItems']}');
-    print('   - 用戶設定: ${stats['userSettings']}');
-    print('   - 訂單數量: ${stats['orders']}');
-    print('   - 訂單項目: ${stats['orderItems']}');
+    debugPrint('📊 資料庫統計：');
+    debugPrint('   - 商家數量: ${stats['stores']}');
+    debugPrint('   - 商品數量: ${stats['products']}');
+    debugPrint('   - 商品評論: ${stats['reviews']}');
+    debugPrint('   - 購物車項目: ${stats['cartItems']}');
+    debugPrint('   - 用戶設定: ${stats['userSettings']}');
+    debugPrint('   - 訂單數量: ${stats['orders']}');
+    debugPrint('   - 訂單項目: ${stats['orderItems']}');
   }
 }

@@ -9,6 +9,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// 語音任務類型
@@ -52,16 +53,16 @@ class TtsHelper {
       await _flutterTts.setPitch(1.0);
       _initialized = true;
       // 開啟 debug print 可協助追蹤
-      print('[TTS] initialized');
+      debugPrint('[TTS] initialized');
     } catch (e) {
-      print('[TTS] init error: $e');
+      debugPrint('[TTS] init error: $e');
     }
   }
 
   /// 單句播放（手動操作，可立即打斷所有語音）
   Future<void> speak(String text) async {
     if (!_initialized) await _initFuture;
-    print('[TTS] speak (manual): $text');
+    debugPrint('[TTS] speak (manual): $text');
 
     final task = _SpeechTask(
       texts: [text],
@@ -80,7 +81,7 @@ class TtsHelper {
     if (!_initialized) await _initFuture;
     if (texts.isEmpty) return;
 
-    print('[TTS] speakQueue (automatic): adding ${texts.length} texts to queue');
+    debugPrint('[TTS] speakQueue (automatic): adding ${texts.length} texts to queue');
 
     final task = _SpeechTask(
       texts: texts,
@@ -116,7 +117,7 @@ class TtsHelper {
           task.completer.complete();
         }
       } catch (e) {
-        print('[TTS] Task execution error: $e');
+        debugPrint('[TTS] Task execution error: $e');
         if (!task.completer.isCompleted) {
           task.completer.completeError(e);
         }
@@ -134,12 +135,12 @@ class TtsHelper {
       // 只有自動播放才檢查任務是否被中斷，手動操作直接執行
       if (task.type == _SpeechType.automatic) {
         if (!_isProcessing || _currentTask != task) {
-          print('[TTS] Task interrupted, stopping execution');
+          debugPrint('[TTS] Task interrupted, stopping execution');
           break;
         }
       }
 
-      print('[TTS] executing: $text (${task.type})');
+      debugPrint('[TTS] executing: $text (${task.type})');
 
       final completer = Completer<void>();
       _currentSpeechCompleter = completer;
@@ -159,17 +160,17 @@ class TtsHelper {
           onTimeout: () {
             if (!completer.isCompleted) {
               completer.complete();
-              print('[TTS] timeout for: $text');
+              debugPrint('[TTS] timeout for: $text');
             }
           },
         );
       } catch (e) {
-        print('[TTS] execution error for "$text": $e');
+        debugPrint('[TTS] execution error for "$text": $e');
         await Future.delayed(const Duration(milliseconds: 300));
       }
 
       _currentSpeechCompleter = null;
-      print('[TTS] completed: $text');
+      debugPrint('[TTS] completed: $text');
     }
   }
 
@@ -193,12 +194,12 @@ class TtsHelper {
     _isProcessing = false;
     _currentTask = null;
 
-    print('[TTS] Queue cleared');
+    debugPrint('[TTS] Queue cleared');
   }
 
   /// 停止語音並清空佇列（手動操作）
   Future<void> stop() async {
-    print('[TTS] Manual stop requested');
+    debugPrint('[TTS] Manual stop requested');
     _clearQueue();
   }
 
@@ -208,7 +209,7 @@ class TtsHelper {
       _clearQueue();
       _flutterTts.stop();
     } catch (e) {
-      print('[TTS] dispose error: $e');
+      debugPrint('[TTS] dispose error: $e');
     }
   }
 }
