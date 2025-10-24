@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
 // 匯入頁面
@@ -34,7 +35,19 @@ import 'providers/comparison_provider.dart';
 // 匯入常數
 import 'utils/app_constants.dart';
 
-void main() {
+void main() async {
+  // 確保 Flutter binding 已初始化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 載入環境變數
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // 如果載入失敗，僅在 debug 模式下印出警告
+    debugPrint('⚠️ [Main] 無法載入 .env 檔案: $e');
+    debugPrint('   請確保專案根目錄有 .env 檔案，並設置 DEEPSEEK_API_KEY');
+  }
+
   runApp(const AccessibleShopApp());
 }
 
@@ -196,8 +209,24 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
                   previous ?? ShoppingCartData(dbService),
               ),
 
-              /// 商品比較
-              ChangeNotifierProvider(create: (_) => ComparisonProvider()),
+              /// 商品比較 (依賴 DatabaseService)
+              ChangeNotifierProxyProvider<DatabaseService, ComparisonProvider>(
+                create: (context) {
+                  final provider = ComparisonProvider();
+                  final db = Provider.of<DatabaseService>(context, listen: false);
+                  provider.initComparisonService(db);
+                  return provider;
+                },
+                update: (context, dbService, previous) {
+                  if (previous != null) {
+                    previous.initComparisonService(dbService);
+                    return previous;
+                  }
+                  final provider = ComparisonProvider();
+                  provider.initComparisonService(dbService);
+                  return provider;
+                },
+              ),
             ],
             child: const AppRouter(),
           );

@@ -21,6 +21,7 @@ dependencies:
   firebase_auth: ^6.1.0
   intl: ^0.19.0                      # 國際化與日期格式化
   dio: ^5.9.0
+  flutter_dotenv: ^5.2.1             # 環境變數管理
 
 # ------------------ 開發相關套件 ------------------
 dev_dependencies:
@@ -35,8 +36,8 @@ flutter:
   uses-material-design: true          # 使用 Material Icons
 
   # 資源檔案 (圖片/字體) 範例，使用時取消註解並填入路徑
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - .env                             # 環境變數檔案
   # fonts:
   #   - family: Schyler
   #     fonts:

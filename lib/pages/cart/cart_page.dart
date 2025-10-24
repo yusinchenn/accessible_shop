@@ -110,8 +110,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             );
                           },
                           onDoubleTap: () {
-                            ttsHelper.speak("進入商品比較頁面");
-                            Navigator.pushNamed(context, '/comparison');
+                            // 檢查商品數量
+                            if (comparisonProvider.itemCount < 2) {
+                              ttsHelper.speak("需要至少兩個商品才能進行比較，目前只有${comparisonProvider.itemCount}項商品");
+                            } else {
+                              ttsHelper.speak("進入商品比較頁面");
+                              Navigator.pushNamed(context, '/comparison');
+                            }
                           },
                           child: Container(
                             width: double.infinity,

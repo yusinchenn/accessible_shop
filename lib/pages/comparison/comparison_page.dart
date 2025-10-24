@@ -22,7 +22,50 @@ class _ComparisonPageState extends State<ComparisonPage> {
     super.initState();
     Future.delayed(Duration.zero, () {
       ttsHelper.speak("進入商品比較頁面");
+      _autoCompareIfNeeded();
     });
+  }
+
+  /// 自動觸發比較（如果有 2+ 商品且需要更新）
+  Future<void> _autoCompareIfNeeded() async {
+    final comparisonProvider = Provider.of<ComparisonProvider>(context, listen: false);
+
+    if (comparisonProvider.items.length >= 2 &&
+        comparisonProvider.needsRecompare() &&
+        !comparisonProvider.isComparing) {
+      ttsHelper.speak("開始 AI 智能比較分析");
+      await comparisonProvider.compareItems();
+
+      // 比較完成後朗讀結果
+      if (!mounted) return;
+
+      if (comparisonProvider.comparisonResult != null) {
+        await ttsHelper.speak("比較完成");
+        await Future.delayed(const Duration(milliseconds: 500));
+        await ttsHelper.speak(comparisonProvider.comparisonResult!);
+      } else if (comparisonProvider.comparisonError != null) {
+        await ttsHelper.speak("比較失敗：${comparisonProvider.comparisonError}");
+      }
+    }
+  }
+
+  /// 手動重新比較
+  Future<void> _handleRecompare() async {
+    final comparisonProvider = Provider.of<ComparisonProvider>(context, listen: false);
+
+    ttsHelper.speak("重新開始 AI 比較分析");
+    await comparisonProvider.recompare();
+
+    // 比較完成後朗讀結果
+    if (!mounted) return;
+
+    if (comparisonProvider.comparisonResult != null) {
+      await ttsHelper.speak("比較完成");
+      await Future.delayed(const Duration(milliseconds: 500));
+      await ttsHelper.speak(comparisonProvider.comparisonResult!);
+    } else if (comparisonProvider.comparisonError != null) {
+      await ttsHelper.speak("比較失敗：${comparisonProvider.comparisonError}");
+    }
   }
 
   @override
@@ -74,9 +117,13 @@ class _ComparisonPageState extends State<ComparisonPage> {
                     // 全部移除按鈕
                     GestureDetector(
                       onTap: () => ttsHelper.speak("全部移除"),
-                      onDoubleTap: () {
+                      onDoubleTap: () async {
+                        final navigator = Navigator.of(context);
                         comparisonProvider.clearAll();
-                        ttsHelper.speak("已清空比較清單");
+                        comparisonProvider.clearComparisonResult();
+                        await ttsHelper.speak("已清空比較清單，返回購物車");
+                        if (!mounted) return;
+                        navigator.pop();
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -111,23 +158,48 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 ),
               ),
 
-              // 商品卡片列表
+              // 橫向滑動區域：AI 比較結果（第一張）+ 商品卡片
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: items.length,
+                  // 總數 = AI 比較卡片(1) + 商品數量
+                  itemCount: items.length + 1,
                   onPageChanged: (index) {
-                    ttsHelper.speak(items[index].name);
+                    if (index == 0) {
+                      ttsHelper.speak("AI 比較結果");
+                    } else {
+                      ttsHelper.speak(items[index - 1].name);
+                    }
                   },
                   itemBuilder: (context, index) {
-                    final item = items[index];
+                    // 第一張卡片：AI 比較結果
+                    if (index == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                        child: _buildComparisonCard(comparisonProvider),
+                      );
+                    }
+
+                    // 後續卡片：商品資訊
+                    final item = items[index - 1];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                       child: ComparisonItemCard(
                         item: item,
                         onRemove: () {
+                          final navigator = Navigator.of(context);
                           comparisonProvider.removeFromComparison(item.productId);
                           ttsHelper.speak("已移除${item.name}");
+
+                          // 如果移除後商品少於 2 項，自動返回購物車
+                          if (comparisonProvider.itemCount < 2) {
+                            Future.delayed(const Duration(milliseconds: 500), () {
+                              if (mounted) {
+                                ttsHelper.speak("商品少於兩項，返回購物車");
+                                navigator.pop();
+                              }
+                            });
+                          }
                         },
                       ),
                     );
@@ -135,21 +207,199 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 ),
               ),
 
-              // 提示文字
+              // 提示文字 + 重新比較按鈕
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: GestureDetector(
-                  onTap: () => ttsHelper.speak("左右滑動查看不同商品，長按商品卡片可移除商品"),
-                  child: const Text(
-                    "左右滑動查看不同商品\n長按商品卡片可移除商品",
-                    style: AppTextStyles.body,
-                    textAlign: TextAlign.center,
-                  ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () => ttsHelper.speak("左右滑動查看 AI 比較結果和商品資訊"),
+                      child: const Text(
+                        "左右滑動查看 AI 比較結果和商品資訊\n長按商品卡片可移除商品",
+                        style: AppTextStyles.body,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    if (items.length >= 2) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      GestureDetector(
+                        onTap: () => ttsHelper.speak("重新 AI 比較"),
+                        onDoubleTap: _handleRecompare,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.md,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh, color: Colors.white),
+                              SizedBox(width: AppSpacing.sm),
+                              Text(
+                                "重新 AI 比較",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: AppFontSizes.body,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// 建立 AI 比較結果卡片（作為第一張橫向卡片）
+  Widget _buildComparisonCard(ComparisonProvider provider) {
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.blue, width: 3),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 標題
+            Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Colors.blue, size: 32),
+                const SizedBox(width: AppSpacing.sm),
+                GestureDetector(
+                  onTap: () => ttsHelper.speak("AI 智能比較分析"),
+                  child: const Text(
+                    "AI 智能比較分析",
+                    style: TextStyle(
+                      fontSize: AppFontSizes.title,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 內容區域（根據狀態顯示不同內容）
+            Expanded(
+              child: _buildComparisonContent(provider),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 建立比較內容（根據狀態）
+  Widget _buildComparisonContent(ComparisonProvider provider) {
+    // 載入中
+    if (provider.isComparing) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(
+                strokeWidth: 6,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            GestureDetector(
+              onTap: () => ttsHelper.speak("AI 正在智能分析比較中，請稍候"),
+              child: const Text(
+                "AI 正在智能分析比較中...\n請稍候",
+                style: TextStyle(
+                  fontSize: AppFontSizes.body,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 錯誤狀態
+    if (provider.comparisonError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 60),
+            const SizedBox(height: AppSpacing.lg),
+            GestureDetector(
+              onTap: () => ttsHelper.speak("比較失敗：${provider.comparisonError}"),
+              child: Text(
+                "比較失敗\n\n${provider.comparisonError}",
+                style: const TextStyle(
+                  fontSize: AppFontSizes.body,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 有比較結果
+    if (provider.comparisonResult != null) {
+      return SingleChildScrollView(
+        child: GestureDetector(
+          onTap: () => ttsHelper.speak(provider.comparisonResult!),
+          child: Text(
+            provider.comparisonResult!,
+            style: const TextStyle(
+              fontSize: AppFontSizes.body,
+              color: AppColors.text,
+              height: 1.6,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 等待比較（初始狀態）
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.pending, color: Colors.grey, size: 60),
+          const SizedBox(height: AppSpacing.lg),
+          GestureDetector(
+            onTap: () => ttsHelper.speak("等待 AI 比較分析"),
+            child: const Text(
+              "等待 AI 比較分析...\n請稍候",
+              style: TextStyle(
+                fontSize: AppFontSizes.body,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
