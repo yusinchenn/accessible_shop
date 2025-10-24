@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
 import '../services/database_service.dart';
 

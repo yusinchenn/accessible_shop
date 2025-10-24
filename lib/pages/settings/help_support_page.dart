@@ -4,7 +4,7 @@ import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
 class HelpSupportPage extends StatefulWidget {
-  const HelpSupportPage({Key? key}) : super(key: key);
+  const HelpSupportPage({super.key});
 
   @override
   State<HelpSupportPage> createState() => _HelpSupportPageState();

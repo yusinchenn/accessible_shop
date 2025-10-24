@@ -51,6 +51,9 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
   /// 重置到乾淨狀態
   Future<void> _resetToCleanState() async {
+    // 在 async 操作前先獲取 DatabaseService，避免跨 async 間隔使用 context
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+
     final confirmed = await _showConfirmDialog(
       '確定要重置測試資料嗎？',
       '這將清除訂單、購物車和用戶評論，但保留基礎商家和商品資料。',
@@ -64,7 +67,6 @@ class _DevToolsPageState extends State<DevToolsPage> {
     });
 
     try {
-      final dbService = Provider.of<DatabaseService>(context, listen: false);
       final isar = await dbService.isar;
       final testDataService = TestDataService(isar);
 
@@ -85,6 +87,9 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
   /// 清空所有資料
   Future<void> _clearAllData() async {
+    // 在 async 操作前先獲取 DatabaseService，避免跨 async 間隔使用 context
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+
     final confirmed = await _showConfirmDialog(
       '確定要清空所有資料嗎？',
       '此操作無法復原！',
@@ -98,7 +103,6 @@ class _DevToolsPageState extends State<DevToolsPage> {
     });
 
     try {
-      final dbService = Provider.of<DatabaseService>(context, listen: false);
       final isar = await dbService.isar;
       final testDataService = TestDataService(isar);
 

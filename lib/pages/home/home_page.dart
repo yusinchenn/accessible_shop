@@ -10,7 +10,6 @@ import '../../utils/app_constants.dart'; // 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 import '../../services/accessibility_service.dart'; // 匯入無障礙服務
 import '../../services/database_service.dart'; // 匯入資料庫服務
-import '../../models/order.dart'; // 匯入訂單模型
 import '../../models/order_status.dart'; // 匯入訂單狀態枚舉
 import '../../models/notification.dart'; // 匯入通知模型
 import '../../models/cart_item.dart'; // 匯入購物車項目模型

@@ -9,8 +9,7 @@ class CustomCard extends StatelessWidget {
   final Map<String, dynamic> productMap;
   final VoidCallback onAddToCart;
 
-  const CustomCard({Key? key, required this.productMap, required this.onAddToCart})
-      : super(key: key);
+  const CustomCard({super.key, required this.productMap, required this.onAddToCart});
 
   @override
   Widget build(BuildContext context) {
