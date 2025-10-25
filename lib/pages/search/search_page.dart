@@ -189,31 +189,24 @@ class _SearchPageState extends State<SearchPage> {
                     ],
                   ),
                 )
-              : NotificationListener<ScrollEndNotification>(
-                  onNotification: (notification) {
-                    final currentPage = _pageController.page?.round() ?? 0;
-                    _speakProductCard(currentPage);
-                    return false;
+              : PageView.builder(
+                  controller: _pageController,
+                  itemCount: _products.length,
+                  itemBuilder: (context, index) {
+                    final product = _products[index];
+                    final storeName = _storesMap[product.storeId]?.name;
+                    return GestureDetector(
+                      onTap: () => _speakProductCard(index),
+                      onDoubleTap: () => _navigateToProductDetail(product),
+                      child: ProductCard(
+                        product: product,
+                        tag: '隔日到貨', // 固定標籤
+                        storeName: storeName,
+                        // 移除商家連結，只顯示商家名稱
+                        onStoreDoubleTap: null,
+                      ),
+                    );
                   },
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _products.length,
-                    itemBuilder: (context, index) {
-                      final product = _products[index];
-                      final storeName = _storesMap[product.storeId]?.name;
-                      return GestureDetector(
-                        onTap: () => _speakProductCard(index),
-                        onDoubleTap: () => _navigateToProductDetail(product),
-                        child: ProductCard(
-                          product: product,
-                          tag: '隔日到貨', // 固定標籤
-                          storeName: storeName,
-                          // 移除商家連結，只顯示商家名稱
-                          onStoreDoubleTap: null,
-                        ),
-                      );
-                    },
-                  ),
                 ),
     );
   }

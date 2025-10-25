@@ -13,6 +13,9 @@ import '../models/user_profile.dart';
 import '../models/notification.dart';
 import '../models/product_review.dart';
 
+// 匯入工具類
+import '../utils/fuzzy_search_helper.dart';
+
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
 
@@ -76,10 +79,17 @@ class DatabaseService extends ChangeNotifier {
 
   /// 智能搜尋商品（支援模糊搜尋與優先級排序）
   /// 排序優先級：
-  /// 1. 商品名稱完全匹配
-  /// 2. 商品名稱包含關鍵字
-  /// 3. 描述包含關鍵字
-  /// 4. 分類包含關鍵字
+  /// 1. 商品名稱完全匹配 (100分)
+  /// 2. 商品名稱開頭匹配 (95分)
+  /// 3. 商品名稱包含關鍵字 (90分)
+  /// 4. 描述完全匹配 (80分)
+  /// 5. 描述包含關鍵字 (70分)
+  /// 6. 店家名稱完全匹配 (60分)
+  /// 7. 店家名稱包含關鍵字 (50分)
+  /// 8. 分類包含關鍵字 (40分)
+  /// 9. 商品名稱模糊匹配 (30分以下)
+  /// 10. 描述模糊匹配 (20分以下)
+  /// 11. 店家名稱模糊匹配 (10分以下)
   Future<List<Product>> searchProducts(String keyword) async {
     if (keyword.isEmpty) {
       return await getProducts();
@@ -87,6 +97,10 @@ class DatabaseService extends ChangeNotifier {
 
     final isar = await _isarFuture;
     final allProducts = await isar.products.where().findAll();
+    final allStores = await isar.stores.where().findAll();
+
+    // 建立店家 Map 以便快速查詢
+    final storesMap = {for (var store in allStores) store.id: store};
 
     if (kDebugMode) {
       print('🔍 [DatabaseService] 資料庫總商品數: ${allProducts.length}');
@@ -97,69 +111,103 @@ class DatabaseService extends ChangeNotifier {
 
     // 使用評分系統進行排序
     final scoredProducts = allProducts.map((product) {
-      int score = 0;
+      double score = 0.0;
       final name = product.name.toLowerCase();
       final description = (product.description ?? '').toLowerCase();
       final category = (product.category ?? '').toLowerCase();
 
-      // 商品名稱完全匹配 - 最高分 100
+      // 取得店家名稱
+      final store = storesMap[product.storeId];
+      final storeName = (store?.name ?? '').toLowerCase();
+
+      // === 精確匹配階段 ===
+
+      // 1. 商品名稱完全匹配 - 最高分 100
       if (name == searchKeyword) {
-        score = 100;
+        score = 100.0;
       }
-      // 商品名稱開頭匹配 - 90 分
+      // 2. 商品名稱開頭匹配 - 95 分
       else if (name.startsWith(searchKeyword)) {
-        score = 90;
+        score = 95.0;
       }
-      // 商品名稱包含關鍵字 - 80 分
+      // 3. 商品名稱包含關鍵字 - 90 分
       else if (name.contains(searchKeyword)) {
-        score = 80;
+        score = 90.0;
       }
-      // 描述完全匹配 - 70 分
+      // 4. 描述完全匹配 - 80 分
       else if (description == searchKeyword) {
-        score = 70;
+        score = 80.0;
       }
-      // 描述包含關鍵字 - 60 分
+      // 5. 描述包含關鍵字 - 70 分
       else if (description.contains(searchKeyword)) {
-        score = 60;
+        score = 70.0;
       }
-      // 分類完全匹配 - 50 分
-      else if (category == searchKeyword) {
-        score = 50;
+      // 6. 店家名稱完全匹配 - 60 分
+      else if (storeName == searchKeyword) {
+        score = 60.0;
       }
-      // 分類包含關鍵字 - 40 分
+      // 7. 店家名稱包含關鍵字 - 50 分
+      else if (storeName.contains(searchKeyword)) {
+        score = 50.0;
+      }
+      // 8. 分類包含關鍵字 - 40 分
       else if (category.contains(searchKeyword)) {
-        score = 40;
+        score = 40.0;
       }
 
-      // 模糊匹配：檢查是否包含關鍵字的部分字符（至少 2 個字）
-      if (score == 0 && searchKeyword.length >= 2) {
-        // 檢查名稱中是否包含關鍵字的連續子字串
-        for (int i = 0; i <= searchKeyword.length - 2; i++) {
-          final substring = searchKeyword.substring(i, i + 2);
-          if (name.contains(substring)) {
-            score = 20;
-            break;
-          }
-          if (description.contains(substring)) {
-            score = 10;
-            break;
-          }
+      // === 模糊匹配階段 ===
+      else {
+        // 對商品名稱進行模糊匹配（權重最高）
+        final nameFuzzyScore = FuzzySearchHelper.calculateFuzzyScore(
+          searchKeyword,
+          name,
+        );
+
+        // 對描述進行模糊匹配（權重中等）
+        final descriptionFuzzyScore = FuzzySearchHelper.calculateFuzzyScore(
+          searchKeyword,
+          description,
+        );
+
+        // 對店家名稱進行模糊匹配（權重較低）
+        final storeNameFuzzyScore = FuzzySearchHelper.calculateFuzzyScore(
+          searchKeyword,
+          storeName,
+        );
+
+        // 取最高的模糊匹配分數，並根據來源調整權重
+        if (nameFuzzyScore > 0) {
+          // 商品名稱模糊匹配：20-35分
+          score = 20.0 + (nameFuzzyScore * 0.15);
+        } else if (descriptionFuzzyScore > 0) {
+          // 描述模糊匹配：10-25分
+          score = 10.0 + (descriptionFuzzyScore * 0.15);
+        } else if (storeNameFuzzyScore > 0) {
+          // 店家名稱模糊匹配：5-15分
+          score = 5.0 + (storeNameFuzzyScore * 0.10);
         }
       }
 
       return MapEntry(product, score);
     }).where((entry) => entry.value > 0).toList();
 
-    // 按分數排序（高到低）
-    scoredProducts.sort((a, b) => b.value.compareTo(a.value));
+    // 按分數排序（高到低），分數相同則按商品評分排序
+    scoredProducts.sort((a, b) {
+      final scoreCompare = b.value.compareTo(a.value);
+      if (scoreCompare != 0) return scoreCompare;
+
+      // 分數相同時，優先顯示評分較高的商品
+      return b.key.averageRating.compareTo(a.key.averageRating);
+    });
 
     if (kDebugMode) {
       print('🔍 [DatabaseService] 找到 ${scoredProducts.length} 筆符合的商品');
       if (scoredProducts.isNotEmpty) {
-        print('🔍 [DatabaseService] 前 3 筆結果（含分數）:');
-        for (var i = 0; i < scoredProducts.length && i < 3; i++) {
+        print('🔍 [DatabaseService] 前 5 筆結果（含分數）:');
+        for (var i = 0; i < scoredProducts.length && i < 5; i++) {
           final entry = scoredProducts[i];
-          print('   ${i + 1}. ${entry.key.name} (分數: ${entry.value}, 分類: ${entry.key.category})');
+          final storeName = storesMap[entry.key.storeId]?.name ?? '未知';
+          print('   ${i + 1}. ${entry.key.name} (分數: ${entry.value.toStringAsFixed(1)}, 店家: $storeName)');
         }
       }
     }
