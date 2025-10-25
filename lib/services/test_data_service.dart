@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import '../models/product.dart';
@@ -22,7 +23,6 @@ class TestDataService {
     await initializeStores();
     await initializeProducts();
     await initializeProductReviews();
-    await initializeOrders();
     await initializeUserSettings();
     debugPrint('✅ 所有測試資料已初始化完成');
   }
@@ -38,7 +38,6 @@ class TestDataService {
       await isar.orderStatusTimestamps.clear();
       await isar.orderStatusHistorys.clear();
       await isar.cartItems.clear();
-      await isar.productReviews.clear();
 
       // 重置所有使用者的錢包餘額
       final allProfiles = await isar.userProfiles.where().findAll();
@@ -51,6 +50,7 @@ class TestDataService {
       // 清空並重新插入基礎資料
       await isar.stores.clear();
       await isar.products.clear();
+      await isar.productReviews.clear();
     });
 
     debugPrint('🗑️  已清空用戶資料');
@@ -296,32 +296,9 @@ class TestDataService {
   }
 
   /// 取得範例購物車資料
+  /// 保留此方法以備將來需要，目前返回空列表
   List<CartItem> _getSampleCartItems() {
-    return [
-      CartItem()
-        ..productId = 1 // Nike Air Max 270
-        ..name = 'Nike Air Max 270'
-        ..specification = '尺寸: L / 顏色: 黑色'
-        ..unitPrice = 4500
-        ..quantity = 1
-        ..isSelected = true,
-
-      CartItem()
-        ..productId = 10 // 運動水壺
-        ..name = '運動水壺'
-        ..specification = '尺寸: 通用尺寸 / 顏色: 藍色'
-        ..unitPrice = 450
-        ..quantity = 2
-        ..isSelected = true,
-
-      CartItem()
-        ..productId = 9 // 瑜珈墊
-        ..name = '瑜珈墊'
-        ..specification = '尺寸: 通用尺寸 / 顏色: 紫色'
-        ..unitPrice = 800
-        ..quantity = 1
-        ..isSelected = false,
-    ];
+    return [];
   }
 
   /// 初始化訂單測試資料
@@ -393,95 +370,15 @@ class TestDataService {
   }
 
   /// 取得範例訂單資料
+  /// 保留此方法以備將來需要，目前返回空列表
   List<Order> _getSampleOrders() {
-    final now = DateTime.now();
-
-    return [
-      Order()
-        ..orderNumber = '20250117-0001'
-        ..createdAt = now.subtract(const Duration(days: 2))
-        ..status = 'completed'
-        ..subtotal = 5400
-        ..discount = 100
-        ..shippingFee = 60
-        ..total = 5360
-        ..couponId = 1
-        ..couponName = '新會員優惠'
-        ..shippingMethodId = 1
-        ..shippingMethodName = '超商取貨'
-        ..paymentMethodId = 1
-        ..paymentMethodName = '信用卡',
-
-      Order()
-        ..orderNumber = '20250115-0001'
-        ..createdAt = now.subtract(const Duration(days: 5))
-        ..status = 'processing'
-        ..subtotal = 1200
-        ..discount = 0
-        ..shippingFee = 100
-        ..total = 1300
-        ..shippingMethodId = 2
-        ..shippingMethodName = '宅配'
-        ..paymentMethodId = 2
-        ..paymentMethodName = '貨到付款',
-
-      Order()
-        ..orderNumber = '20250110-0001'
-        ..createdAt = now.subtract(const Duration(days: 10))
-        ..status = 'completed'
-        ..subtotal = 3500
-        ..discount = 0
-        ..shippingFee = 80
-        ..total = 3580
-        ..shippingMethodId = 3
-        ..shippingMethodName = '郵局'
-        ..paymentMethodId = 3
-        ..paymentMethodName = 'ATM轉帳',
-    ];
+    return [];
   }
 
   /// 取得範例訂單項目資料
+  /// 保留此方法以備將來需要，目前返回空列表
   List<OrderItem> _getSampleOrderItems() {
-    return [
-      // 訂單 1 的項目
-      OrderItem()
-        ..orderId = 1
-        ..productId = 1
-        ..productName = 'Nike Air Max 270'
-        ..specification = '尺寸: L / 顏色: 黑色'
-        ..unitPrice = 4500
-        ..quantity = 1
-        ..subtotal = 4500,
-
-      OrderItem()
-        ..orderId = 1
-        ..productId = 10
-        ..productName = '運動水壺'
-        ..specification = '尺寸: 通用尺寸 / 顏色: 藍色'
-        ..unitPrice = 450
-        ..quantity = 2
-        ..subtotal = 900,
-
-      // 訂單 2 的項目
-      OrderItem()
-        ..orderId = 2
-        ..productId = 5
-        ..productName = 'Under Armour 運動上衣'
-        ..specification = '尺寸: M / 顏色: 黑色'
-        ..unitPrice = 1200
-        ..quantity = 1
-        ..subtotal = 1200,
-
-      // 訂單 3 的項目
-      OrderItem()
-        ..orderId = 3
-        ..productId = 12
-        ..productName = '啞鈴組合 (2-10kg)'
-        ..specification = '尺寸: 通用尺寸 / 顏色: 預設顏色'
-        ..unitPrice = 3500
-        ..quantity = 1
-        ..subtotal = 3500,
-    ];
+    return [];
   }
 
   /// 取得範例商家資料
@@ -547,83 +444,173 @@ class TestDataService {
     }
   }
 
-  /// 取得範例商品評論資料（每個商品 3-5 則評論）
+  /// 取得範例商品評論資料（每個商品隨機 0-15 則評論）
   List<ProductReview> _getSampleProductReviews() {
     final now = DateTime.now();
     final reviews = <ProductReview>[];
+    final random = Random(42); // 使用固定種子以保持一致性
 
-    // 定義評論者名稱和評論範本
-    final reviewers = ['王小明', '李小華', '張大同', '陳美玲', '林志明', '黃淑芬', '吳建宏', '劉雅婷', '鄭國強', '謝佳玲'];
-
-    final positiveComments = [
-      '商品品質很好，非常滿意！',
-      '使用起來非常舒適，值得推薦',
-      '質感很棒，符合期待',
-      '物超所值，cp值很高',
-      '收到貨很驚艷，比照片還好看',
-      '做工精細，使用體驗很好',
-      '賣家服務很好，商品也很棒',
-      '功能齊全，使用方便',
-      '非常實用的商品，推薦購買',
-      '品質優良，會再回購',
+    // 更豐富的評論者名稱庫
+    final reviewers = [
+      '王小明', '李小華', '張大同', '陳美玲', '林志明', '黃淑芬', '吳建宏', '劉雅婷',
+      '鄭國強', '謝佳玲', '周思涵', '蔡宗翰', '許雅文', '郭建志', '楊欣怡', '賴文傑',
+      '蘇雅婷', '何志豪', '呂佳穎', '曾俊傑', '徐美惠', '韓宗憲', '魏淑華', '羅建成',
+      '梁雅雯', '潘志偉', '丁小芳', '范文彬', '孔雅琪', '龔宗翰',
     ];
 
-    final neutralComments = [
-      '整體還不錯，符合價格',
-      '商品普通，但還算可以接受',
-      '使用上沒什麼問題，算是中規中矩',
-      '跟描述差不多，還可以',
-      '價格合理，品質也還行',
+    // 5星評論 (4.5-5.0)
+    final excellentReviews = [
+      '超級滿意！品質遠超預期，真的物超所值！已經推薦給朋友了',
+      '完美！材質、做工都是一流，使用起來非常順手，值得五星好評',
+      '收到商品後非常驚艷，質感比照片還好，包裝也很用心，會再回購',
+      '真的很棒！功能齊全，操作簡單，完全符合我的需求，大推！',
+      '品質太好了！使用了一段時間都沒有任何問題，非常耐用，強力推薦',
+      '非常滿意這次購物！商品質感極佳，賣家服務也很好，五星好評',
+      '太喜歡了！設計美觀實用，使用體驗極佳，會持續關注這家店',
+      '優質商品！收到後立刻試用，效果超乎想像，真的買對了',
+      '極力推薦！性價比超高，品質完全不輸大品牌，非常值得購買',
+      '愛不釋手！每個細節都很到位，可以感受到用心，必須給五星',
     ];
 
-    final criticalComments = [
-      '商品還不錯，但配送時間有點久',
-      '質感可以，但有一點小瑕疵',
-      '使用上沒問題，但包裝可以再改進',
-      '整體還好，但顏色跟照片有點色差',
-      '功能正常，但說明書不太清楚',
+    // 4星評論 (4.0-4.4)
+    final goodReviews = [
+      '整體表現不錯，品質很好，使用起來很滿意，值得推薦',
+      '商品質感很棒，功能完善，雖然價格稍高但物有所值',
+      '使用體驗很好，設計合理，唯一小建議是包裝可以更精緻',
+      '質量很好，做工精細，使用順暢，整體很滿意這次購買',
+      '商品符合描述，品質優良，配送速度也很快，推薦購買',
+      '很實用的商品，質感不錯，雖然有點小瑕疵但不影響使用',
+      '整體來說很棒，功能齊全，操作簡便，滿意這次購物',
+      '品質很好，設計用心，使用起來很舒適，會考慮再次購買',
+      '收到商品很滿意，質量可靠，外觀也很漂亮，值得入手',
+      '表現不錯的商品，各方面都達到預期，整體體驗良好',
     ];
 
-    // 為前 20 個商品添加評論（可根據需要調整）
+    // 3星評論 (3.0-3.9)
+    final averageReviews = [
+      '還可以，品質中規中矩，符合價格，適合基本需求',
+      '商品普通，沒有特別驚艷但也不算差，日常使用夠用',
+      '整體還行，有些小細節可以改進，但基本功能正常',
+      '價格合理，品質也還可以，就是包裝有點簡陋',
+      '使用上沒什麼大問題，算是一般水準的商品',
+      '跟描述差不多，質感普通，適合預算有限的買家',
+      '還算可以接受，功能基本滿足，但做工略顯粗糙',
+      '一般般的商品，沒有太多亮點，但也沒有明顯缺點',
+      '符合預期，就是普通的商品，不好不壞',
+      '可以用，但品質不算特別好，建議多比較再決定',
+    ];
+
+    // 2-3星評論（有具體建議）
+    final criticalReviews = [
+      '商品還可以，但配送時間太久，等了快一週才到',
+      '質感普通，而且顏色跟照片有明顯色差，有點失望',
+      '功能正常，但包裝破損，希望賣家改進物流包裝',
+      '使用上還行，不過說明書太簡略，花了一些時間摸索',
+      '品質尚可，但有些小瑕疵，建議出貨前再檢查仔細',
+      '整體還好，就是尺寸跟描述有點出入，建議標示清楚',
+      '東西可以用，但做工有待加強，細節處理不夠細緻',
+      '還算堪用，不過材質摸起來有點廉價，價格可以再優惠',
+      '基本功能有達到，但耐用度存疑，用沒多久就有鬆動',
+      '收到商品覺得普通，CP值不高，可能會考慮其他品牌',
+    ];
+
+    // 運動鞋類專業評論
+    final shoesReviews = [
+      '楦頭寬度很適中，足弓支撐做得很好，長時間穿著也不會累',
+      '鞋底緩震效果很棒，跑步時能明顯感受到保護，推薦給跑者',
+      '包覆性很好，鞋面透氣性也不錯，打球時穿很舒適',
+      '版型偏大建議選小半號，但整體質感很好，很喜歡',
+      '輕量化設計很棒，但抓地力略弱，比較適合室內運動',
+    ];
+
+    // 運動服飾專業評論
+    final clothingReviews = [
+      '排汗效果很好，運動完不會黏身，材質很舒適透氣',
+      '版型修身，尺寸準確，剪裁很好看，顏色也很正',
+      '彈性很足，活動自如，洗過幾次也不會變形，品質很好',
+      '布料觸感柔軟，吸濕速乾效果不錯，夏天穿很涼爽',
+      '車工精細，沒有線頭，做工很扎實，可以放心購買',
+    ];
+
+    // 健身器材專業評論
+    final equipmentReviews = [
+      '重量分配很均勻，握把設計人體工學，訓練起來很順手',
+      '材質扎實耐用，組裝簡單，佔用空間不大，很適合居家使用',
+      '阻力調節很順暢，不同訓練強度都能滿足，CP值很高',
+      '防滑效果很好，穩定性佳，訓練時很有安全感',
+      '便攜性不錯，收納方便，適合小空間或常搬家的人',
+    ];
+
+    // 戶外用品專業評論
+    final outdoorReviews = [
+      '防水性能很好，背負系統舒適，調節扣具也很順手',
+      '材質耐磨，縫線紮實，實際登山測試表現很優秀',
+      '重量控制得宜，收納空間充足，很適合多日行程',
+      '防潑水效果不錯，但透氣性還可以再加強',
+      'CP值很高，適合入門者使用，品質穩定可靠',
+    ];
+
+    // 為所有商品生成評論（假設有20個商品）
     for (int productId = 1; productId <= 20; productId++) {
-      // 每個商品隨機 3-5 則評論
-      final reviewCount = 3 + (productId % 3); // 3, 4 或 5 則
+      // 每個商品隨機 0-15 則評論
+      final reviewCount = random.nextInt(16); // 0 到 15
 
       for (int i = 0; i < reviewCount; i++) {
-        final reviewerIndex = (productId * 3 + i) % reviewers.length;
-        final reviewer = reviewers[reviewerIndex];
+        // 隨機選擇評論者
+        final reviewer = reviewers[random.nextInt(reviewers.length)];
 
-        // 根據評論順序決定評分和內容
+        // 根據隨機權重決定評分分佈 (偏向高分，符合真實情況)
+        final ratingRoll = random.nextDouble();
         double rating;
         String comment;
 
-        if (i == 0) {
-          // 第一則評論：高分 (4.5-5.0)
-          rating = 4.5 + (productId % 6) * 0.1;
-          if (rating > 5.0) rating = 5.0;
-          comment = positiveComments[(productId + i) % positiveComments.length];
-        } else if (i == reviewCount - 1 && reviewCount > 3) {
-          // 最後一則（如果有4則以上）：中低分 (3.0-4.0)
-          rating = 3.0 + (productId % 11) * 0.1;
-          comment = criticalComments[(productId + i) % criticalComments.length];
-        } else if (i == 1) {
-          // 第二則：高分 (4.0-5.0)
-          rating = 4.0 + (productId % 11) * 0.1;
-          comment = positiveComments[(productId + i + 3) % positiveComments.length];
+        if (ratingRoll < 0.5) {
+          // 50% 機率 5星評論
+          rating = 4.5 + random.nextDouble() * 0.5;
+          comment = excellentReviews[random.nextInt(excellentReviews.length)];
+
+          // 根據商品類別添加專業評論
+          if (random.nextDouble() > 0.5) {
+            if (productId >= 1 && productId <= 4) {
+              comment = shoesReviews[random.nextInt(shoesReviews.length)];
+            } else if (productId >= 5 && productId <= 7) {
+              comment = clothingReviews[random.nextInt(clothingReviews.length)];
+            } else if (productId >= 12 && productId <= 15) {
+              comment = equipmentReviews[random.nextInt(equipmentReviews.length)];
+            } else if (productId >= 19 && productId <= 20) {
+              comment = outdoorReviews[random.nextInt(outdoorReviews.length)];
+            }
+          }
+        } else if (ratingRoll < 0.85) {
+          // 35% 機率 4星評論
+          rating = 4.0 + random.nextDouble() * 0.4;
+          comment = goodReviews[random.nextInt(goodReviews.length)];
+        } else if (ratingRoll < 0.95) {
+          // 10% 機率 3星評論
+          rating = 3.0 + random.nextDouble() * 0.9;
+          comment = averageReviews[random.nextInt(averageReviews.length)];
         } else {
-          // 其他：中等分數 (3.5-4.5)
-          rating = 3.5 + (productId % 11) * 0.1;
-          comment = neutralComments[(productId + i) % neutralComments.length];
+          // 5% 機率 2-3星批評性評論
+          rating = 2.5 + random.nextDouble() * 1.4;
+          comment = criticalReviews[random.nextInt(criticalReviews.length)];
         }
+
+        // 四捨五入到小數點後一位
+        rating = (rating * 10).round() / 10;
+        if (rating > 5.0) rating = 5.0;
+        if (rating < 1.0) rating = 1.0;
+
+        // 隨機生成評論日期（最近90天內）
+        final daysAgo = random.nextInt(90) + 1;
 
         reviews.add(
           ProductReview()
             ..productId = productId
-            ..orderId = 0  // 測試評論不關聯訂單，使用 0 表示
+            ..orderId = 0 // 測試評論不關聯訂單
             ..userName = reviewer
             ..rating = rating
             ..comment = comment
-            ..createdAt = now.subtract(Duration(days: (i + 1) * 5)),
+            ..createdAt = now.subtract(Duration(days: daysAgo)),
         );
       }
     }
