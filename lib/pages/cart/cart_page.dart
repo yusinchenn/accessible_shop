@@ -498,7 +498,7 @@ class MoreActionsOverlay extends StatelessWidget {
                           label: isInComparison ? "已加入比較" : "加入比較",
                           icon: isInComparison ? Icons.check_circle : Icons.compare_arrows,
                           color: isInComparison ? Colors.green : Colors.orange,
-                          onTap: () => ttsHelper.speak(isInComparison ? "已加入比較按鈕" : "加入比較按鈕"),
+                          onTap: () => ttsHelper.speak(isInComparison ? "加入比較按鈕，目前已加入，雙擊移除" : "加入比較按鈕"),
                           onDoubleTap: () {
                             if (isInComparison) {
                               // 移除商品比較
