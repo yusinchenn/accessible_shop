@@ -156,7 +156,7 @@ class TtsHelper {
         await _flutterTts.speak(text);
 
         await completer.future.timeout(
-          const Duration(seconds: 6),
+          const Duration(seconds: 3),
           onTimeout: () {
             if (!completer.isCompleted) {
               completer.complete();

@@ -434,14 +434,11 @@ class _HomePageState extends State<HomePage> {
 
       await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
 
-      await ttsHelper.speak('進入首頁'); // 播報「進入首頁」，等待播報完成
-      if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
-
-      // 短暫延遲，讓用戶區分兩句話
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
-
-      await ttsHelper.speak('${_entryItems[_currentPageIndex].title}入口'); // 播報當前卡片標題
+      // 使用 speakQueue 連續播放，避免多次 timeout 延遲
+      await ttsHelper.speakQueue([
+        '進入首頁',
+        '${_entryItems[_currentPageIndex].title}入口',
+      ]);
     } finally {
       _isAnnouncingHome = false; // 重置首頁播報標記
       _speaking = false; // 重置語音播報標記

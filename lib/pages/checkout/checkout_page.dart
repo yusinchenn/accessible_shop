@@ -391,8 +391,11 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
       final isAvailable = subtotal >= coupon.minAmount;
 
       announcement.write('第${i + 2}項，');
-      if (!isAvailable) {
-        announcement.write('無法使用，');
+      // 明確標示可使用或不可使用
+      if (isAvailable) {
+        announcement.write('可使用，');
+      } else {
+        announcement.write('不可使用，');
       }
       announcement.write('${coupon.name}，${coupon.description}。');
     }
@@ -452,17 +455,22 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                 final isSelected = widget.selectedCoupon?.id == coupon.id;
 
                 return AccessibleGestureWrapper(
-                  label: '${!isAvailable ? "無法使用，" : ""}${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
-                  description: isAvailable ? '點擊選擇此優惠券' : '此優惠券未達使用門檻',
-                  enabled: isAvailable,
-                  onTap: isAvailable
-                      ? () {
-                          widget.onCouponSelected(coupon);
-                          if (accessibilityService.shouldUseCustomTTS) {
-                            ttsHelper.speak('已選擇 ${coupon.name}');
-                          }
-                        }
-                      : null,
+                  label: '${!isAvailable ? "不可使用，" : ""}${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
+                  description: isAvailable ? '點擊選擇此優惠券' : '點擊朗讀不可使用原因',
+                  onTap: () {
+                    if (isAvailable) {
+                      // 可使用：選擇優惠券
+                      widget.onCouponSelected(coupon);
+                      if (accessibilityService.shouldUseCustomTTS) {
+                        ttsHelper.speak('已選擇 ${coupon.name}');
+                      }
+                    } else {
+                      // 不可使用：朗讀不可使用訊息
+                      if (accessibilityService.shouldUseCustomTTS) {
+                        ttsHelper.speak('不可使用，${coupon.name}，${coupon.description}，未達最低消費${coupon.minAmount.toStringAsFixed(0)}元');
+                      }
+                    }
+                  },
                   child: Card(
                     color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
                     child: Opacity(
