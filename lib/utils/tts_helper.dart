@@ -155,12 +155,20 @@ class TtsHelper {
         await _flutterTts.stop();
         await _flutterTts.speak(text);
 
+        // 根據文字長度動態計算超時時間（避免固定 3 秒造成過長間隔）
+        // 語速 0.45，平均每個字約需 200-250ms，加上 300ms 緩衝
+        final estimatedMilliseconds = (text.length * 250 / 0.45).toInt() + 300;
+        // 確保超時時間在合理範圍內（最少 1000ms，最多 10000ms）
+        final timeoutDuration = Duration(
+          milliseconds: estimatedMilliseconds.clamp(1000, 10000),
+        );
+
         await completer.future.timeout(
-          const Duration(seconds: 3),
+          timeoutDuration,
           onTimeout: () {
             if (!completer.isCompleted) {
               completer.complete();
-              debugPrint('[TTS] timeout for: $text');
+              debugPrint('[TTS] timeout for: $text (${timeoutDuration.inMilliseconds}ms)');
             }
           },
         );
