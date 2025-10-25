@@ -283,6 +283,62 @@ $reviewsText
     }
   }
 
+  /// 直接購買
+  Future<void> _buyNow() async {
+    if (_product == null) return;
+
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+      final specification = '尺寸: $_selectedSize / 顏色: $_selectedColor';
+
+      // 先加入購物車
+      await db.addToCart(
+        productId: _product!.id,
+        productName: _product!.name,
+        price: _product!.price,
+        specification: specification,
+        quantity: _quantity,
+      );
+
+      // 清除所有購物車項目的選取狀態
+      await db.clearAllCartItemSelections();
+
+      // 獲取剛加入的購物車項目並設為選取
+      final cartItems = await db.getCartItems();
+      final newItem = cartItems.firstWhere(
+        (item) =>
+            item.productId == _product!.id &&
+            item.specification == specification,
+      );
+
+      // 設置該項目為選取狀態
+      if (!newItem.isSelected) {
+        await db.toggleCartItemSelection(newItem.id);
+      }
+
+      _ttsHelper.speak('前往結帳');
+
+      // 導航到結帳頁面
+      if (mounted) {
+        Navigator.pushNamed(context, '/checkout');
+      }
+    } catch (e) {
+      _ttsHelper.speak('直接購買失敗');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '直接購買失敗: $e',
+              style: const TextStyle(fontSize: 24),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   /// 建立規格選擇區域
   Widget _buildSpecificationSection() {
     return Column(
@@ -413,7 +469,7 @@ $reviewsText
           children: [
             // 減少按鈕
             GestureDetector(
-              onTap: () => _ttsHelper.speak('減少數量'),
+              onTap: () => _ttsHelper.speak('減少數量按鈕'),
               onDoubleTap: () {
                 if (_quantity > 1) {
                   setState(() => _quantity--);
@@ -462,7 +518,7 @@ $reviewsText
 
             // 增加按鈕
             GestureDetector(
-              onTap: () => _ttsHelper.speak('增加數量'),
+              onTap: () => _ttsHelper.speak('增加數量按鈕'),
               onDoubleTap: () {
                 if (_quantity < 99) {
                   setState(() => _quantity++);
@@ -726,27 +782,60 @@ $reviewsText
 
                         const SizedBox(height: AppSpacing.xl),
 
-                        // 加入購物車按鈕
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _addToCart,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        // 按鈕區域（加入購物車 + 直接購買）
+                        Row(
+                          children: [
+                            // 加入購物車按鈕
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _ttsHelper.speak('加入購物車按鈕'),
+                                onDoubleTap: _addToCart,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      '加入購物車',
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            child: const Text(
-                              '加入購物車',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            const SizedBox(width: AppSpacing.md),
+
+                            // 直接購買按鈕
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _ttsHelper.speak('直接購買按鈕'),
+                                onDoubleTap: _buyNow,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      '直接購買',
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
 
                         const SizedBox(height: AppSpacing.xl),
@@ -818,12 +907,21 @@ $reviewsText
         if (canGenerateAiSummary && _aiReviewSummary == null)
           Container(
             margin: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isGeneratingAiSummary ? null : _generateAiReviewSummary,
-                icon: _isGeneratingAiSummary
-                    ? const SizedBox(
+            child: GestureDetector(
+              onTap: () => _ttsHelper.speak('AI 整理評論按鈕'),
+              onDoubleTap: _isGeneratingAiSummary ? null : _generateAiReviewSummary,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: _isGeneratingAiSummary ? Colors.deepPurple.shade300 : Colors.deepPurple,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_isGeneratingAiSummary)
+                      const SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
@@ -831,21 +929,18 @@ $reviewsText
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Icon(Icons.auto_awesome, size: 28),
-                label: Text(
-                  _isGeneratingAiSummary ? '正在生成 AI 摘要...' : 'AI 整理評論',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    else
+                      const Icon(Icons.auto_awesome, size: 28, color: Colors.white),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      _isGeneratingAiSummary ? '正在生成 AI 摘要...' : 'AI 整理評論',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -911,7 +1006,7 @@ $reviewsText
                 ),
                 // 重新生成按鈕
                 GestureDetector(
-                  onTap: () => _ttsHelper.speak('重新生成摘要'),
+                  onTap: () => _ttsHelper.speak('重新生成摘要按鈕'),
                   onDoubleTap: () {
                     setState(() {
                       _aiReviewSummary = null;
