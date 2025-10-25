@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../widgets/global_gesture_wrapper.dart';
@@ -8,6 +9,7 @@ import '../../models/product.dart';
 import '../../models/store.dart';
 import '../../models/product_review.dart';
 import '../../services/database_service.dart';
+import '../../services/openai_client.dart';
 import '../store/store_page.dart';
 
 class ProductDetailPage extends StatefulWidget {
@@ -33,9 +35,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final List<String> _sizeOptions = ['通用尺寸', 'S', 'M', 'L', 'XL'];
   final List<String> _colorOptions = ['預設顏色', '黑色', '白色', '灰色', '藍色', '紅色'];
 
+  // AI 評論摘要相關狀態
+  String? _aiReviewSummary; // AI 生成的評論摘要
+  bool _isGeneratingAiSummary = false; // 是否正在生成 AI 摘要
+  OpenAICompatibleClient? _aiClient;
+
   @override
   void initState() {
     super.initState();
+    _initAiClient();
+  }
+
+  /// 初始化 AI 客戶端
+  void _initAiClient() {
+    try {
+      final apiKey = dotenv.env['DEEPSEEK_API_KEY'] ?? '';
+
+      if (apiKey.isEmpty || apiKey == 'your_deepseek_api_key_here') {
+        // API Key 未設置，不初始化客戶端
+        return;
+      }
+
+      final config = ProviderConfig(
+        name: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com',
+        apiKey: apiKey,
+        defaultModel: 'deepseek-chat',
+      );
+
+      _aiClient = OpenAICompatibleClient(config);
+    } catch (e) {
+      // 初始化失敗，保持 _aiClient 為 null
+    }
   }
 
   @override
@@ -100,6 +131,104 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         : '';
     final text = '商品詳情，${_product!.name}，價格 ${_product!.price.toStringAsFixed(0)} 元$ratingInfo$storeInfo$category';
     await _ttsHelper.speak(text);
+  }
+
+  /// 生成 AI 評論摘要
+  Future<void> _generateAiReviewSummary() async {
+    if (_aiClient == null) {
+      _ttsHelper.speak('AI 功能未啟用，請檢查設定');
+      return;
+    }
+
+    // 過濾出有文字內容的評論
+    final reviewsWithText = _reviews.where((r) => r.comment.trim().isNotEmpty).toList();
+
+    if (reviewsWithText.length < 10) {
+      _ttsHelper.speak('評論數量不足，無法生成 AI 摘要');
+      return;
+    }
+
+    setState(() {
+      _isGeneratingAiSummary = true;
+    });
+
+    _ttsHelper.speak('正在生成 AI 評論摘要，請稍候');
+
+    try {
+      // 準備評論資料給 AI
+      final reviewsText = StringBuffer();
+      for (var i = 0; i < reviewsWithText.length; i++) {
+        final review = reviewsWithText[i];
+        reviewsText.writeln('評論 ${i + 1}：');
+        reviewsText.writeln('評分：${review.rating.toStringAsFixed(1)} 星');
+        reviewsText.writeln('內容：${review.comment}');
+        reviewsText.writeln('---');
+      }
+
+      // 構建 AI 提示詞
+      final prompt = '''
+你是一位專業的電商評論分析師。請分析以下商品評論，並提供一份簡潔的摘要（約100-150字），重點包括：
+
+1. 商品的主要優點（客戶最滿意的地方）
+2. 商品的主要缺點或需要改進的地方（如果有）
+3. 整體評價趨勢
+
+商品名稱：${_product!.name}
+評論總數：${reviewsWithText.length} 則
+
+評論內容：
+$reviewsText
+
+請用繁體中文回答，語氣親切專業，適合朗讀給視障使用者聽。直接提供摘要內容，不需要額外的標題或前綴。
+''';
+
+      // 調用 DeepSeek API
+      final response = await _aiClient!.chatCompletion(
+        ChatCompletionOptions(
+          messages: [
+            ChatMessage(
+              role: Role.system,
+              content: '你是一位專業的電商評論分析助手，擅長從大量評論中提取關鍵資訊。',
+            ),
+            ChatMessage(
+              role: Role.user,
+              content: prompt,
+            ),
+          ],
+          temperature: 0.7,
+          maxTokens: 500,
+        ),
+      );
+
+      setState(() {
+        _aiReviewSummary = response.trim();
+        _isGeneratingAiSummary = false;
+      });
+
+      // 朗讀 AI 摘要
+      if (_aiReviewSummary != null && _aiReviewSummary!.isNotEmpty) {
+        await _ttsHelper.speak('AI 評論摘要：$_aiReviewSummary');
+      }
+    } catch (e) {
+      setState(() {
+        _isGeneratingAiSummary = false;
+      });
+
+      _ttsHelper.speak('生成 AI 摘要失敗，請稍後再試');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '生成 AI 摘要失敗: $e',
+              style: const TextStyle(fontSize: 24),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   /// 加入購物車
@@ -637,6 +766,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return const SizedBox.shrink();
     }
 
+    // 計算有文字內容的評論數量
+    final reviewsWithText = _reviews.where((r) => r.comment.trim().isNotEmpty).toList();
+    final canGenerateAiSummary = reviewsWithText.length >= 10 && _aiClient != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -681,9 +814,163 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         const SizedBox(height: AppSpacing.md),
 
+        // AI 整理按鈕（當有超過 10 則有文字的評論時顯示）
+        if (canGenerateAiSummary && _aiReviewSummary == null)
+          Container(
+            margin: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isGeneratingAiSummary ? null : _generateAiReviewSummary,
+                icon: _isGeneratingAiSummary
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.auto_awesome, size: 28),
+                label: Text(
+                  _isGeneratingAiSummary ? '正在生成 AI 摘要...' : 'AI 整理評論',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // AI 摘要卡片（如果已生成）
+        if (_aiReviewSummary != null) _buildAiSummaryCard(),
+
         // 評論列表
         ..._reviews.map((review) => _buildReviewCard(review)),
       ],
+    );
+  }
+
+  /// 建立 AI 摘要卡片
+  Widget _buildAiSummaryCard() {
+    return GestureDetector(
+      onTap: () {
+        if (_aiReviewSummary != null) {
+          _ttsHelper.speak('AI 評論摘要：$_aiReviewSummary');
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade50, Colors.purple.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.deepPurple.shade200, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // AI 摘要標題
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                const Expanded(
+                  child: Text(
+                    'AI 評論摘要',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                ),
+                // 重新生成按鈕
+                GestureDetector(
+                  onTap: () => _ttsHelper.speak('重新生成摘要'),
+                  onDoubleTap: () {
+                    setState(() {
+                      _aiReviewSummary = null;
+                    });
+                    _generateAiReviewSummary();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.deepPurple, width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.refresh,
+                      color: Colors.deepPurple,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // AI 摘要內容
+            Text(
+              _aiReviewSummary ?? '',
+              style: const TextStyle(
+                fontSize: 26,
+                color: AppColors.text,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // 提示文字
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '此摘要由 AI 自動生成，供參考使用',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
