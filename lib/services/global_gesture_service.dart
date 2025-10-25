@@ -50,31 +50,39 @@ class GlobalGestureService {
   GlobalGestureConfig get config => _config;
 
   /// 處理兩指上滑（回首頁）
-  void handleTwoFingerSwipeUp(BuildContext context) {
+  Future<void> handleTwoFingerSwipeUp(BuildContext context) async {
     debugPrint('[GlobalGesture] 偵測到兩指上滑 - 回首頁');
 
     // 語音提示
     if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {
-      ttsHelper.speak('回到首頁');
+      await ttsHelper.speak('回到首頁');
+      // 等待語音播報完成後再導航，避免與首頁進入語音衝突
+      await Future.delayed(const Duration(milliseconds: 300));
     }
 
     // 導航到首頁（移除所有路由）
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    }
   }
 
   /// 處理兩指下滑（回上一頁）
-  void handleTwoFingerSwipeDown(BuildContext context) {
+  Future<void> handleTwoFingerSwipeDown(BuildContext context) async {
     debugPrint('[GlobalGesture] 偵測到兩指下滑 - 回上一頁');
 
     // 檢查是否可以返回
     if (Navigator.of(context).canPop()) {
       // 語音提示
       if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {
-        ttsHelper.speak('返回上一頁');
+        await ttsHelper.speak('返回上一頁');
+        // 等待語音播報完成後再導航
+        await Future.delayed(const Duration(milliseconds: 300));
       }
 
       // 返回上一頁
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
     } else {
       // 無法返回時提示
       if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {

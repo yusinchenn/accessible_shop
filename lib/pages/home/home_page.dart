@@ -54,6 +54,7 @@ class _HomePageState extends State<HomePage> {
   // 通知數據
   List<NotificationModel> _notifications = []; // 所有通知列表
   int _totalNotificationCount = 0; // 通知總數
+  int _unreadNotificationCount = 0; // 未讀通知數量
 
   // 購物車數據
   List<CartItem> _cartItems = []; // 購物車商品列表
@@ -354,6 +355,8 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         _totalNotificationCount = notifications.length;
+        // 統計未讀通知數量
+        _unreadNotificationCount = notifications.where((n) => !n.isRead).length;
         // 只取前三筆用於顯示
         _notifications = notifications.take(3).toList();
       });
@@ -363,6 +366,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _notifications = [];
           _totalNotificationCount = 0;
+          _unreadNotificationCount = 0;
         });
       }
     }
@@ -425,15 +429,19 @@ class _HomePageState extends State<HomePage> {
     _speaking = true; // 標記正在語音播報
 
     try {
+      // 等待一小段時間，確保手勢導航的語音播報已完成
+      await Future.delayed(const Duration(milliseconds: 100));
+
       await ttsHelper.stop(); // 停止任何正在進行的語音播報，確保乾淨的播報環境
 
-      await ttsHelper.speak('進入首頁'); // 播報「進入首頁」
+      await ttsHelper.speak('進入首頁'); // 播報「進入首頁」，等待播報完成
       if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
 
-      await Future.delayed(const Duration(seconds: 1)); // 等待 1 秒
+      // 短暫延遲，讓用戶區分兩句話
+      await Future.delayed(const Duration(milliseconds: 300));
       if (!_isAnnouncingHome || !_speaking) return; // 檢查是否被中斷
 
-      await ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報當前卡片標題
+      await ttsHelper.speak('${_entryItems[_currentPageIndex].title}入口'); // 播報當前卡片標題
     } finally {
       _isAnnouncingHome = false; // 重置首頁播報標記
       _speaking = false; // 重置語音播報標記
@@ -456,7 +464,7 @@ class _HomePageState extends State<HomePage> {
 
     // 只在自訂模式播放語音
     if (accessibilityService.shouldUseCustomTTS) {
-      ttsHelper.speak(_entryItems[_currentPageIndex].title); // 播報新卡片的標題
+      ttsHelper.speak('${_entryItems[_currentPageIndex].title}入口'); // 播報新卡片的標題
     }
   }
 
@@ -474,7 +482,24 @@ class _HomePageState extends State<HomePage> {
     if (_isAnnouncingHome || _speaking) return; // 如果正在播報，則跳過
     // 只在自訂模式播放語音
     if (accessibilityService.shouldUseCustomTTS) {
-      ttsHelper.speak(_entryItems[index].title); // 播報點擊的卡片標題
+      String announcement;
+
+      // 根據不同的入口類型，播報不同的詳細信息
+      switch (index) {
+        case 1: // 購物車
+          announcement = '購物車入口，有$_totalCartItemCount項商品';
+          break;
+        case 2: // 訂單
+          announcement = '訂單入口，有待付款$_pendingPaymentCount筆、待出貨$_pendingShipmentCount筆、待收貨$_pendingReceiptCount筆';
+          break;
+        case 5: // 通知
+          announcement = '通知入口，有$_unreadNotificationCount項未讀通知';
+          break;
+        default:
+          announcement = '${_entryItems[index].title}入口';
+      }
+
+      ttsHelper.speak(announcement); // 播報點擊的卡片標題及詳細信息
     }
   }
 
