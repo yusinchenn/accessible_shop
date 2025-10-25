@@ -40,16 +40,17 @@ class ComparisonProvider extends ChangeNotifier {
   /// 取得比較清單中的商品數量
   int get itemCount => _comparisonItems.length;
 
-  /// 檢查商品是否已在比較清單中
-  bool isInComparison(int productId) {
-    return _comparisonItems.any((item) => item.productId == productId);
+  /// 檢查購物車項目是否已在比較清單中
+  /// 使用購物車項目的唯一 ID，支援同一商品的不同規格分別比較
+  bool isInComparison(int cartItemId) {
+    return _comparisonItems.any((item) => item.id == cartItemId);
   }
 
   /// 加入商品到比較清單
   /// 如果超過最大數量，會自動移除最先加入的商品
   void addToComparison(CartItem item) {
-    // 檢查是否已存在
-    if (isInComparison(item.productId)) {
+    // 檢查是否已存在（使用購物車項目 ID）
+    if (isInComparison(item.id)) {
       return;
     }
 
@@ -66,9 +67,10 @@ class ComparisonProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 從比較清單中移除商品
-  void removeFromComparison(int productId) {
-    _comparisonItems.removeWhere((item) => item.productId == productId);
+  /// 從比較清單中移除購物車項目
+  /// 使用購物車項目 ID，支援移除特定規格的商品
+  void removeFromComparison(int cartItemId) {
+    _comparisonItems.removeWhere((item) => item.id == cartItemId);
 
     // 標記需要重新比較
     _markNeedsRecompare();

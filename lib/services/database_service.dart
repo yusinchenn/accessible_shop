@@ -173,7 +173,11 @@ class DatabaseService extends ChangeNotifier {
   /// 取得所有購物車項目
   Future<List<CartItem>> getCartItems() async {
     final isar = await _isarFuture;
-    return await isar.cartItems.where().findAll();
+    // 取得所有購物車項目
+    final items = await isar.cartItems.where().findAll();
+    // 按 ID 降序排序，新加入的商品顯示在前面
+    items.sort((a, b) => b.id.compareTo(a.id));
+    return items;
   }
 
   /// 加入商品到購物車

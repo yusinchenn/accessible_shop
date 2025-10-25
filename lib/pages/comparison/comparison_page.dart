@@ -188,8 +188,8 @@ class _ComparisonPageState extends State<ComparisonPage> {
                         item: item,
                         onRemove: () {
                           final navigator = Navigator.of(context);
-                          comparisonProvider.removeFromComparison(item.productId);
-                          ttsHelper.speak("已移除${item.name}");
+                          comparisonProvider.removeFromComparison(item.id);
+                          ttsHelper.speak("已移除${item.name}，${item.specification}");
 
                           // 如果移除後商品少於 2 項，自動返回購物車
                           if (comparisonProvider.itemCount < 2) {

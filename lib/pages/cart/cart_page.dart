@@ -492,7 +492,7 @@ class MoreActionsOverlay extends StatelessWidget {
                     // 加入比較按鈕
                     Consumer<ComparisonProvider>(
                       builder: (context, comparisonProvider, _) {
-                        final isInComparison = comparisonProvider.isInComparison(item.productId);
+                        final isInComparison = comparisonProvider.isInComparison(item.id);
 
                         return _buildLargeActionButton(
                           label: isInComparison ? "已加入比較" : "加入比較",
@@ -502,12 +502,12 @@ class MoreActionsOverlay extends StatelessWidget {
                           onDoubleTap: () {
                             if (isInComparison) {
                               // 移除商品比較
-                              comparisonProvider.removeFromComparison(item.productId);
-                              ttsHelper.speak("移除${item.name}商品比較");
+                              comparisonProvider.removeFromComparison(item.id);
+                              ttsHelper.speak("移除${item.name}，${item.specification}商品比較");
                             } else {
                               // 加入商品比較
                               comparisonProvider.addToComparison(item);
-                              ttsHelper.speak("已將${item.name}加入比較");
+                              ttsHelper.speak("已將${item.name}，${item.specification}加入比較");
                             }
                             onDismiss();
                           },
