@@ -17,4 +17,7 @@ class Product {
   // 評分相關欄位
   double averageRating = 0.0;  // 平均評分
   int reviewCount = 0;         // 評論數量
+
+  // 銷售相關欄位
+  int soldCount = 0;           // 售出次數
 }

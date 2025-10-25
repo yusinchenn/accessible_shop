@@ -1,3 +1,4 @@
+import 'package:accessible_shop/models/product.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import '../models/order.dart';
@@ -72,15 +73,23 @@ class OrderStatusService {
     }
 
     // 更新時間戳（只更新非 null 的值）
-    if (pendingPaymentAt != null) timestamps.pendingPaymentAt = pendingPaymentAt;
+    if (pendingPaymentAt != null) {
+      timestamps.pendingPaymentAt = pendingPaymentAt;
+    }
     if (paidAt != null) timestamps.paidAt = paidAt;
-    if (pendingShipmentAt != null) timestamps.pendingShipmentAt = pendingShipmentAt;
-    if (pendingDeliveryAt != null) timestamps.pendingDeliveryAt = pendingDeliveryAt;
+    if (pendingShipmentAt != null) {
+      timestamps.pendingShipmentAt = pendingShipmentAt;
+    }
+    if (pendingDeliveryAt != null) {
+      timestamps.pendingDeliveryAt = pendingDeliveryAt;
+    }
     if (completedAt != null) timestamps.completedAt = completedAt;
     if (returnRefundAt != null) timestamps.returnRefundAt = returnRefundAt;
     if (invalidAt != null) timestamps.invalidAt = invalidAt;
     if (inTransitAt != null) timestamps.inTransitAt = inTransitAt;
-    if (arrivedAtPickupPointAt != null) timestamps.arrivedAtPickupPointAt = arrivedAtPickupPointAt;
+    if (arrivedAtPickupPointAt != null) {
+      timestamps.arrivedAtPickupPointAt = arrivedAtPickupPointAt;
+    }
     if (signedAt != null) timestamps.signedAt = signedAt;
 
     await isar.writeTxn(() async {
@@ -136,7 +145,10 @@ class OrderStatusService {
         if (logisticsStatus == LogisticsStatus.inTransit) {
           await _updateTimestamps(orderId: orderId, inTransitAt: now);
         } else if (logisticsStatus == LogisticsStatus.arrivedAtPickupPoint) {
-          await _updateTimestamps(orderId: orderId, arrivedAtPickupPointAt: now);
+          await _updateTimestamps(
+            orderId: orderId,
+            arrivedAtPickupPointAt: now,
+          );
         } else if (logisticsStatus == LogisticsStatus.signed) {
           await _updateTimestamps(orderId: orderId, signedAt: now);
         }
@@ -153,7 +165,9 @@ class OrderStatusService {
     }
 
     if (kDebugMode) {
-      print('📦 [OrderStatusService] 更新訂單狀態: 訂單 #${order.orderNumber} -> ${mainStatus.displayName} (${logisticsStatus.displayName})');
+      print(
+        '📦 [OrderStatusService] 更新訂單狀態: 訂單 #${order.orderNumber} -> ${mainStatus.displayName} (${logisticsStatus.displayName})',
+      );
     }
   }
 
@@ -212,7 +226,9 @@ class OrderStatusService {
     }
 
     if (kDebugMode) {
-      print('🚚 [OrderStatusService] 更新物流狀態: 訂單 #${order.orderNumber} -> ${logisticsStatus.displayName}');
+      print(
+        '🚚 [OrderStatusService] 更新物流狀態: 訂單 #${order.orderNumber} -> ${logisticsStatus.displayName}',
+      );
     }
   }
 
@@ -278,6 +294,9 @@ class OrderStatusService {
       description: '買家確認完成訂單',
     );
 
+    // 更新商品售出次數
+    await _updateProductSoldCount(orderId);
+
     // 創建訂單完成通知
     await _db.createOrderNotification(
       title: '訂單已完成',
@@ -287,5 +306,35 @@ class OrderStatusService {
     );
 
     return true;
+  }
+
+  /// 更新商品售出次數（訂單完成時）
+  Future<void> _updateProductSoldCount(int orderId) async {
+    try {
+      // 獲取訂單項目
+      final orderItems = await _db.getOrderItems(orderId);
+
+      // 更新每個商品的售出次數
+      for (var item in orderItems) {
+        final product = await _db.getProductById(item.productId);
+        if (product != null) {
+          final isar = await _db.isar;
+          await isar.writeTxn(() async {
+            product.soldCount += item.quantity;
+            await isar.products.put(product);
+          });
+
+          if (kDebugMode) {
+            print(
+              '📈 [OrderStatusService] 更新商品售出次數: ${product.name} +${item.quantity} (總計: ${product.soldCount})',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [OrderStatusService] 更新商品售出次數失敗: $e');
+      }
+    }
   }
 }

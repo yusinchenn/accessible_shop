@@ -129,6 +129,8 @@ class TestDataService {
 
   /// 取得範例商品資料
   List<Product> _getSampleProducts() {
+    final random = Random();
+
     return [
       // 商家 1 - 運動世界專賣店 (7個商品)
       Product()
@@ -137,7 +139,8 @@ class TestDataService {
         ..description = '經典氣墊運動鞋，提供絕佳緩震效果，適合日常穿著與運動'
         ..imageUrl = 'https://picsum.photos/400/400?random=1'
         ..category = '運動鞋'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Adidas Ultraboost 22'
@@ -145,7 +148,8 @@ class TestDataService {
         ..description = '頂級跑步鞋款，採用 Boost 中底技術，提供卓越能量回饋'
         ..imageUrl = 'https://picsum.photos/400/400?random=2'
         ..category = '運動鞋'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Nike Dri-FIT 運動短褲'
@@ -153,7 +157,8 @@ class TestDataService {
         ..description = '輕量透氣運動短褲，搭載 Dri-FIT 科技'
         ..imageUrl = 'https://picsum.photos/400/400?random=6'
         ..category = '運動服飾'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Adidas 運動外套'
@@ -161,7 +166,8 @@ class TestDataService {
         ..description = '防風防潑水外套，三線經典設計'
         ..imageUrl = 'https://picsum.photos/400/400?random=7'
         ..category = '運動服飾'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Under Armour 運動上衣'
@@ -169,7 +175,8 @@ class TestDataService {
         ..description = '吸濕排汗機能上衣，適合各種運動場合'
         ..imageUrl = 'https://picsum.photos/400/400?random=5'
         ..category = '運動服飾'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Adidas 足球'
@@ -177,7 +184,8 @@ class TestDataService {
         ..description = '5號標準足球，機縫設計，耐用度高'
         ..imageUrl = 'https://picsum.photos/400/400?random=18'
         ..category = '球類運動'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Wilson 籃球'
@@ -185,7 +193,8 @@ class TestDataService {
         ..description = '7號標準籃球，室內外兩用'
         ..imageUrl = 'https://picsum.photos/400/400?random=16'
         ..category = '球類運動'
-        ..storeId = 1,
+        ..storeId = 1
+        ..soldCount = random.nextInt(1000),
 
       // 商家 2 - 健身器材專賣店 (7個商品)
       Product()
@@ -194,7 +203,8 @@ class TestDataService {
         ..description = '可調式啞鈴組，適合居家重訓'
         ..imageUrl = 'https://picsum.photos/400/400?random=12'
         ..category = '健身器材'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '彈力帶組合'
@@ -202,7 +212,8 @@ class TestDataService {
         ..description = '5 條不同阻力彈力帶，適合各種訓練'
         ..imageUrl = 'https://picsum.photos/400/400?random=13'
         ..category = '健身器材'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '跳繩'
@@ -210,7 +221,8 @@ class TestDataService {
         ..description = '專業競速跳繩，可調節長度，培林設計更順暢'
         ..imageUrl = 'https://picsum.photos/400/400?random=14'
         ..category = '健身器材'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '瑜珈磚'
@@ -218,7 +230,8 @@ class TestDataService {
         ..description = 'EVA 材質瑜珈磚，輔助伸展與平衡訓練'
         ..imageUrl = 'https://picsum.photos/400/400?random=15'
         ..category = '健身器材'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '瑜珈墊'
@@ -226,7 +239,8 @@ class TestDataService {
         ..description = '加厚防滑瑜珈墊，附收納背帶，適合居家運動'
         ..imageUrl = 'https://picsum.photos/400/400?random=9'
         ..category = '運動配件'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '智能運動手環'
@@ -234,7 +248,8 @@ class TestDataService {
         ..description = '心率監測、步數記錄、睡眠追蹤，支援多種運動模式'
         ..imageUrl = 'https://picsum.photos/400/400?random=8'
         ..category = '運動配件'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '運動水壺'
@@ -242,7 +257,8 @@ class TestDataService {
         ..description = '750ml 大容量運動水壺，不含 BPA，易於清洗'
         ..imageUrl = 'https://picsum.photos/400/400?random=10'
         ..category = '運動配件'
-        ..storeId = 2,
+        ..storeId = 2
+        ..soldCount = random.nextInt(1000),
 
       // 商家 3 - 戶外探險家 (6個商品)
       Product()
@@ -251,7 +267,8 @@ class TestDataService {
         ..description = '多功能登山背包，防潑水材質，透氣背負系統'
         ..imageUrl = 'https://picsum.photos/400/400?random=19'
         ..category = '戶外用品'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '登山杖'
@@ -259,7 +276,8 @@ class TestDataService {
         ..description = '鋁合金登山杖，可調節長度，減輕膝蓋負擔'
         ..imageUrl = 'https://picsum.photos/400/400?random=20'
         ..category = '戶外用品'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'New Balance 574'
@@ -267,7 +285,8 @@ class TestDataService {
         ..description = '復古經典款式，舒適耐穿，百搭各種休閒造型'
         ..imageUrl = 'https://picsum.photos/400/400?random=3'
         ..category = '運動鞋'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Converse Chuck Taylor'
@@ -275,7 +294,8 @@ class TestDataService {
         ..description = '永不退流行的帆布鞋，經典高筒設計'
         ..imageUrl = 'https://picsum.photos/400/400?random=4'
         ..category = '休閒鞋'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = '運動腰包'
@@ -283,7 +303,8 @@ class TestDataService {
         ..description = '防水運動腰包，可放手機、鑰匙等小物'
         ..imageUrl = 'https://picsum.photos/400/400?random=11'
         ..category = '運動配件'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
 
       Product()
         ..name = 'Molten 排球'
@@ -291,7 +312,8 @@ class TestDataService {
         ..description = '5號標準排球，柔軟觸感，適合比賽與訓練'
         ..imageUrl = 'https://picsum.photos/400/400?random=17'
         ..category = '球類運動'
-        ..storeId = 3,
+        ..storeId = 3
+        ..soldCount = random.nextInt(1000),
     ];
   }
 

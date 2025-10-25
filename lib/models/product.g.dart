@@ -52,8 +52,18 @@ const ProductSchema = CollectionSchema(
       name: r'reviewCount',
       type: IsarType.long,
     ),
-    r'storeId': PropertySchema(
+    r'soldCount': PropertySchema(
       id: 7,
+      name: r'soldCount',
+      type: IsarType.long,
+    ),
+    r'stock': PropertySchema(
+      id: 8,
+      name: r'stock',
+      type: IsarType.long,
+    ),
+    r'storeId': PropertySchema(
+      id: 9,
       name: r'storeId',
       type: IsarType.long,
     )
@@ -113,7 +123,9 @@ void _productSerialize(
   writer.writeString(offsets[4], object.name);
   writer.writeDouble(offsets[5], object.price);
   writer.writeLong(offsets[6], object.reviewCount);
-  writer.writeLong(offsets[7], object.storeId);
+  writer.writeLong(offsets[7], object.soldCount);
+  writer.writeLong(offsets[8], object.stock);
+  writer.writeLong(offsets[9], object.storeId);
 }
 
 Product _productDeserialize(
@@ -131,7 +143,9 @@ Product _productDeserialize(
   object.name = reader.readString(offsets[4]);
   object.price = reader.readDouble(offsets[5]);
   object.reviewCount = reader.readLong(offsets[6]);
-  object.storeId = reader.readLong(offsets[7]);
+  object.soldCount = reader.readLong(offsets[7]);
+  object.stock = reader.readLong(offsets[8]);
+  object.storeId = reader.readLong(offsets[9]);
   return object;
 }
 
@@ -157,6 +171,10 @@ P _productDeserializeProp<P>(
     case 6:
       return (reader.readLong(offset)) as P;
     case 7:
+      return (reader.readLong(offset)) as P;
+    case 8:
+      return (reader.readLong(offset)) as P;
+    case 9:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1051,6 +1069,112 @@ extension ProductQueryFilter
     });
   }
 
+  QueryBuilder<Product, Product, QAfterFilterCondition> soldCountEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'soldCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> soldCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'soldCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> soldCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'soldCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> soldCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'soldCount',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> stockEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'stock',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> stockGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'stock',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> stockLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'stock',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterFilterCondition> stockBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'stock',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterFilterCondition> storeIdEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -1196,6 +1320,30 @@ extension ProductQuerySortBy on QueryBuilder<Product, Product, QSortBy> {
     });
   }
 
+  QueryBuilder<Product, Product, QAfterSortBy> sortBySoldCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'soldCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> sortBySoldCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'soldCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> sortByStock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'stock', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> sortByStockDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'stock', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> sortByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'storeId', Sort.asc);
@@ -1307,6 +1455,30 @@ extension ProductQuerySortThenBy
     });
   }
 
+  QueryBuilder<Product, Product, QAfterSortBy> thenBySoldCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'soldCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> thenBySoldCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'soldCount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> thenByStock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'stock', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Product, Product, QAfterSortBy> thenByStockDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'stock', Sort.desc);
+    });
+  }
+
   QueryBuilder<Product, Product, QAfterSortBy> thenByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'storeId', Sort.asc);
@@ -1368,6 +1540,18 @@ extension ProductQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Product, Product, QDistinct> distinctBySoldCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'soldCount');
+    });
+  }
+
+  QueryBuilder<Product, Product, QDistinct> distinctByStock() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'stock');
+    });
+  }
+
   QueryBuilder<Product, Product, QDistinct> distinctByStoreId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'storeId');
@@ -1422,6 +1606,18 @@ extension ProductQueryProperty
   QueryBuilder<Product, int, QQueryOperations> reviewCountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'reviewCount');
+    });
+  }
+
+  QueryBuilder<Product, int, QQueryOperations> soldCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'soldCount');
+    });
+  }
+
+  QueryBuilder<Product, int, QQueryOperations> stockProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'stock');
     });
   }
 
