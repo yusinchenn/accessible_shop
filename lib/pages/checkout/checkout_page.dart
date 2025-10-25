@@ -187,7 +187,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 }
 
 /// 步驟1: 商品確認
-class _Step1OrderConfirmation extends StatelessWidget {
+class _Step1OrderConfirmation extends StatefulWidget {
   final List<CartItem> items;
   final VoidCallback onNext;
 
@@ -197,8 +197,47 @@ class _Step1OrderConfirmation extends StatelessWidget {
   });
 
   @override
+  State<_Step1OrderConfirmation> createState() => _Step1OrderConfirmationState();
+}
+
+class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (accessibilityService.shouldUseCustomTTS) {
+        _announceAllItems();
+      }
+    });
+  }
+
+  void _announceAllItems() {
+    final subtotal = widget.items.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+
+    // 建立完整的朗讀內容
+    final StringBuffer announcement = StringBuffer();
+    announcement.write('商品確認，共${widget.items.length}項商品。');
+
+    for (int i = 0; i < widget.items.length; i++) {
+      final item = widget.items[i];
+      announcement.write('第${i + 1}項，');
+      announcement.write('${item.name}，${item.specification}，');
+      announcement.write('單價${item.unitPrice.toStringAsFixed(0)}元，');
+      announcement.write('數量${item.quantity}，');
+      announcement.write('小計${(item.unitPrice * item.quantity).toStringAsFixed(0)}元。');
+    }
+
+    announcement.write('商品總計${subtotal.toStringAsFixed(0)}元');
+
+    ttsHelper.speak(announcement.toString());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final subtotal = items.fold<double>(
+    final subtotal = widget.items.fold<double>(
       0.0,
       (sum, item) => sum + (item.unitPrice * item.quantity),
     );
@@ -215,9 +254,9 @@ class _Step1OrderConfirmation extends StatelessWidget {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            itemCount: items.length,
+            itemCount: widget.items.length,
             itemBuilder: (context, index) {
-              final item = items[index];
+              final item = widget.items[index];
               final itemSubtotal = (item.unitPrice * item.quantity).toStringAsFixed(0);
               return AccessibleSpeakWrapper(
                 label: '${item.name}，規格 ${item.specification}，單價 ${item.unitPrice.toStringAsFixed(0)} 元，數量 ${item.quantity}，小計 $itemSubtotal 元',
@@ -274,9 +313,9 @@ class _Step1OrderConfirmation extends StatelessWidget {
                 children: [
                   Expanded(
                     child: AccessibleGestureWrapper(
-                      label: '下一步',
+                      label: '下一步按鈕',
                       description: '前往選擇優惠券',
-                      onTap: onNext,
+                      onTap: widget.onNext,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                         decoration: BoxDecoration(
@@ -306,7 +345,7 @@ class _Step1OrderConfirmation extends StatelessWidget {
 }
 
 /// 步驟2: 選擇優惠券
-class _Step2SelectCoupon extends StatelessWidget {
+class _Step2SelectCoupon extends StatefulWidget {
   final List<CartItem> items;
   final Coupon? selectedCoupon;
   final ValueChanged<Coupon?> onCouponSelected;
@@ -322,9 +361,49 @@ class _Step2SelectCoupon extends StatelessWidget {
   });
 
   @override
+  State<_Step2SelectCoupon> createState() => _Step2SelectCouponState();
+}
+
+class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (accessibilityService.shouldUseCustomTTS) {
+        _announceAllCoupons();
+      }
+    });
+  }
+
+  void _announceAllCoupons() {
+    final coupons = Coupon.getSampleCoupons();
+    final subtotal = widget.items.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+
+    final StringBuffer announcement = StringBuffer();
+    announcement.write('選擇優惠券。');
+    announcement.write('第1項，不套用優惠券。');
+
+    for (int i = 0; i < coupons.length; i++) {
+      final coupon = coupons[i];
+      final isAvailable = subtotal >= coupon.minAmount;
+
+      announcement.write('第${i + 2}項，');
+      if (!isAvailable) {
+        announcement.write('無法使用，');
+      }
+      announcement.write('${coupon.name}，${coupon.description}。');
+    }
+
+    ttsHelper.speak(announcement.toString());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final coupons = Coupon.getSampleCoupons();
-    final subtotal = items.fold<double>(
+    final subtotal = widget.items.fold<double>(
       0.0,
       (sum, item) => sum + (item.unitPrice * item.quantity),
     );
@@ -343,23 +422,23 @@ class _Step2SelectCoupon extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             children: [
               AccessibleGestureWrapper(
-                label: '不使用優惠券${selectedCoupon == null ? "，已選擇" : ""}',
+                label: '不使用優惠券${widget.selectedCoupon == null ? "，已選擇" : ""}',
                 description: '點擊取消使用優惠券',
                 onTap: () {
-                  onCouponSelected(null);
+                  widget.onCouponSelected(null);
                   if (accessibilityService.shouldUseCustomTTS) {
                     ttsHelper.speak('已取消選擇優惠券');
                   }
                 },
                 child: Card(
-                  color: selectedCoupon == null ? AppColors.primary.withValues(alpha: 0.2) : null,
+                  color: widget.selectedCoupon == null ? AppColors.primary.withValues(alpha: 0.2) : null,
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
                         Icon(
-                          selectedCoupon == null ? Icons.radio_button_checked : Icons.radio_button_off,
-                          color: selectedCoupon == null ? AppColors.primary : Colors.grey,
+                          widget.selectedCoupon == null ? Icons.radio_button_checked : Icons.radio_button_off,
+                          color: widget.selectedCoupon == null ? AppColors.primary : Colors.grey,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         const Text('不使用優惠券', style: AppTextStyles.subtitle),
@@ -370,15 +449,15 @@ class _Step2SelectCoupon extends StatelessWidget {
               ),
               ...coupons.map((coupon) {
                 final isAvailable = subtotal >= coupon.minAmount;
-                final isSelected = selectedCoupon?.id == coupon.id;
+                final isSelected = widget.selectedCoupon?.id == coupon.id;
 
                 return AccessibleGestureWrapper(
-                  label: '${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}${!isAvailable ? "，未達最低消費金額" : ""}',
+                  label: '${!isAvailable ? "無法使用，" : ""}${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
                   description: isAvailable ? '點擊選擇此優惠券' : '此優惠券未達使用門檻',
                   enabled: isAvailable,
                   onTap: isAvailable
                       ? () {
-                          onCouponSelected(coupon);
+                          widget.onCouponSelected(coupon);
                           if (accessibilityService.shouldUseCustomTTS) {
                             ttsHelper.speak('已選擇 ${coupon.name}');
                           }
@@ -437,9 +516,9 @@ class _Step2SelectCoupon extends StatelessWidget {
             children: [
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '上一步',
+                  label: '上一步按鈕',
                   description: '返回商品確認步驟',
-                  onTap: onPrevious,
+                  onTap: widget.onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -461,9 +540,9 @@ class _Step2SelectCoupon extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '下一步',
+                  label: '下一步按鈕',
                   description: '前往選擇配送方式',
-                  onTap: onNext,
+                  onTap: widget.onNext,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -491,7 +570,7 @@ class _Step2SelectCoupon extends StatelessWidget {
 }
 
 /// 步驟3: 選擇配送方式
-class _Step3SelectShipping extends StatelessWidget {
+class _Step3SelectShipping extends StatefulWidget {
   final ShippingMethod? selectedShipping;
   final ValueChanged<ShippingMethod> onShippingSelected;
   final VoidCallback onNext;
@@ -503,6 +582,36 @@ class _Step3SelectShipping extends StatelessWidget {
     required this.onNext,
     required this.onPrevious,
   });
+
+  @override
+  State<_Step3SelectShipping> createState() => _Step3SelectShippingState();
+}
+
+class _Step3SelectShippingState extends State<_Step3SelectShipping> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (accessibilityService.shouldUseCustomTTS) {
+        _announceAllShippingMethods();
+      }
+    });
+  }
+
+  void _announceAllShippingMethods() {
+    final shippingMethods = ShippingMethod.getSampleMethods();
+    final StringBuffer announcement = StringBuffer();
+    announcement.write('選擇配送方式，共${shippingMethods.length}種方式。');
+
+    for (int i = 0; i < shippingMethods.length; i++) {
+      final method = shippingMethods[i];
+      announcement.write('第${i + 1}項，');
+      announcement.write('${method.name}，${method.description}，');
+      announcement.write('運費${method.fee.toStringAsFixed(0)}元。');
+    }
+
+    ttsHelper.speak(announcement.toString());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -521,13 +630,13 @@ class _Step3SelectShipping extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             children: shippingMethods.map((method) {
-              final isSelected = selectedShipping?.id == method.id;
+              final isSelected = widget.selectedShipping?.id == method.id;
 
               return AccessibleGestureWrapper(
                 label: '${method.name}，${method.description}，運費 ${method.fee.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
                 description: '點擊選擇此配送方式',
                 onTap: () {
-                  onShippingSelected(method);
+                  widget.onShippingSelected(method);
                   if (accessibilityService.shouldUseCustomTTS) {
                     ttsHelper.speak('已選擇 ${method.name}');
                   }
@@ -571,9 +680,9 @@ class _Step3SelectShipping extends StatelessWidget {
             children: [
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '上一步',
+                  label: '上一步按鈕',
                   description: '返回選擇優惠券步驟',
-                  onTap: onPrevious,
+                  onTap: widget.onPrevious,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
@@ -595,14 +704,14 @@ class _Step3SelectShipping extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '下一步${selectedShipping == null ? "，請先選擇配送方式" : ""}',
+                  label: '下一步按鈕${widget.selectedShipping == null ? "，請先選擇配送方式" : ""}',
                   description: '前往選擇付款方式',
-                  enabled: selectedShipping != null,
-                  onTap: selectedShipping != null ? onNext : null,
+                  enabled: widget.selectedShipping != null,
+                  onTap: widget.selectedShipping != null ? widget.onNext : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: selectedShipping != null ? AppColors.primary : Colors.grey,
+                      color: widget.selectedShipping != null ? AppColors.primary : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -662,6 +771,42 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
     super.initState();
     _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
     _loadWalletBalance();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (accessibilityService.shouldUseCustomTTS) {
+        _announcePaymentInfo();
+      }
+    });
+  }
+
+  void _announcePaymentInfo() {
+    final subtotal = widget.items.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+    final discount = widget.selectedCoupon?.discount ?? 0.0;
+    final shippingFee = widget.selectedShipping?.fee ?? 0.0;
+    final total = subtotal - discount + shippingFee;
+    final paymentMethods = PaymentMethod.getSampleMethods();
+
+    final StringBuffer announcement = StringBuffer();
+    announcement.write('選擇付款方式。費用明細如下，');
+    announcement.write('商品小計${subtotal.toStringAsFixed(0)}元，');
+
+    if (widget.selectedCoupon != null) {
+      announcement.write('優惠券${widget.selectedCoupon!.name}折抵${discount.toStringAsFixed(0)}元，');
+    }
+
+    announcement.write('運費${widget.selectedShipping?.name ?? ""}${shippingFee.toStringAsFixed(0)}元，');
+    announcement.write('總計${total.toStringAsFixed(0)}元。');
+    announcement.write('付款方式有${paymentMethods.length}種，');
+
+    for (int i = 0; i < paymentMethods.length; i++) {
+      final method = paymentMethods[i];
+      announcement.write('第${i + 1}項，${method.name}，${method.description}。');
+    }
+
+    ttsHelper.speak(announcement.toString());
   }
 
   @override
@@ -925,7 +1070,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
             children: [
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '上一步',
+                  label: '上一步按鈕',
                   description: '返回選擇配送方式步驟',
                   onTap: widget.onPrevious,
                   child: Container(
@@ -949,7 +1094,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '確認結帳${widget.selectedPayment == null ? "，請先選擇付款方式" : ""}',
+                  label: '確認結帳按鈕${widget.selectedPayment == null ? "，請先選擇付款方式" : ""}',
                   description: '完成付款並送出訂單',
                   enabled: widget.selectedPayment != null,
                   onTap: widget.selectedPayment != null ? widget.onNext : null,
@@ -1160,64 +1305,74 @@ class _Step5CompleteState extends State<_Step5Complete> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  children: [
-                    const Text('訂單摘要', style: AppTextStyles.subtitle),
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('商品數量'),
-                        Text('${widget.items.length} 項'),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('付款方式'),
-                        Text(widget.selectedPayment?.name ?? '未選擇'),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('配送方式'),
-                        Text(widget.selectedShipping?.name ?? '未選擇'),
-                      ],
-                    ),
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          '總金額',
-                          style: TextStyle(
-                            fontSize: AppFontSizes.subtitle,
-                            fontWeight: FontWeight.bold,
+            AccessibleGestureWrapper(
+              label: '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元',
+              description: '點擊可再次朗讀訂單摘要',
+              onTap: () {
+                if (accessibilityService.shouldUseCustomTTS) {
+                  final summaryText = '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元';
+                  ttsHelper.speak(summaryText);
+                }
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    children: [
+                      const Text('訂單摘要', style: AppTextStyles.subtitle),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('商品數量'),
+                          Text('${widget.items.length} 項'),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('付款方式'),
+                          Text(widget.selectedPayment?.name ?? '未選擇'),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('配送方式'),
+                          Text(widget.selectedShipping?.name ?? '未選擇'),
+                        ],
+                      ),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            '總金額',
+                            style: TextStyle(
+                              fontSize: AppFontSizes.subtitle,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '\$${order.total.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: AppFontSizes.subtitle,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                          Text(
+                            '\$${order.total.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: AppFontSizes.subtitle,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             AccessibleGestureWrapper(
-              label: '查看訂單',
+              label: '查看訂單按鈕',
               description: '前往歷史訂單頁面',
               onTap: () {
                 Navigator.pushReplacementNamed(context, '/orders');
@@ -1242,7 +1397,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
             ),
             const SizedBox(height: AppSpacing.md),
             AccessibleGestureWrapper(
-              label: '回首頁',
+              label: '回首頁按鈕',
               description: '返回首頁',
               onTap: () {
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
