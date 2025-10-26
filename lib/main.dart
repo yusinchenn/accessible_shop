@@ -59,6 +59,14 @@ class AccessibleShopApp extends StatelessWidget {
     return MaterialApp(
       title: 'Accessible Shop',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(1.0), // 固定為 1.0，完全忽略系統字體大小
+          ),
+          child: child!,
+        );
+      },
       theme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.background,
@@ -80,14 +88,8 @@ class AccessibleShopApp extends StatelessWidget {
           elevation: 0,
           titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
         ),
-        cardTheme: CardThemeData(
-          color: AppColors.cardBackground,
-          elevation: 2,
-        ),
-        dividerTheme: DividerThemeData(
-          color: AppColors.divider,
-          thickness: 1,
-        ),
+        cardTheme: CardThemeData(color: AppColors.cardBackground, elevation: 2),
+        dividerTheme: DividerThemeData(color: AppColors.divider, thickness: 1),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const FirebaseInitializer(),
@@ -134,11 +136,7 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 80,
-                      color: Colors.red,
-                    ),
+                    Icon(Icons.error_outline, size: 80, color: Colors.red),
                     SizedBox(height: AppSpacing.lg),
                     Text(
                       '初始化失敗',
@@ -189,14 +187,17 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
               /// 訂單自動化服務 (依賴 DatabaseService)
               ProxyProvider<DatabaseService, OrderAutomationService>(
                 create: (context) {
-                  final db = Provider.of<DatabaseService>(context, listen: false);
+                  final db = Provider.of<DatabaseService>(
+                    context,
+                    listen: false,
+                  );
                   final service = OrderAutomationService(db);
                   // 初始化自動化服務（掃描現有訂單）
                   service.initialize();
                   return service;
                 },
                 update: (context, dbService, previous) =>
-                  previous ?? OrderAutomationService(dbService),
+                    previous ?? OrderAutomationService(dbService),
                 dispose: (context, service) => service.dispose(),
               ),
 
@@ -206,14 +207,17 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
                   Provider.of<DatabaseService>(context, listen: false),
                 ),
                 update: (context, dbService, previous) =>
-                  previous ?? ShoppingCartData(dbService),
+                    previous ?? ShoppingCartData(dbService),
               ),
 
               /// 商品比較 (依賴 DatabaseService)
               ChangeNotifierProxyProvider<DatabaseService, ComparisonProvider>(
                 create: (context) {
                   final provider = ComparisonProvider();
-                  final db = Provider.of<DatabaseService>(context, listen: false);
+                  final db = Provider.of<DatabaseService>(
+                    context,
+                    listen: false,
+                  );
                   provider.initComparisonService(db);
                   return provider;
                 },
@@ -239,11 +243,7 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.shopping_bag,
-                  size: 120,
-                  color: AppColors.text,
-                ),
+                Icon(Icons.shopping_bag, size: 120, color: AppColors.text),
                 SizedBox(height: AppSpacing.lg),
                 Text(
                   'Accessible Shop',
@@ -302,14 +302,8 @@ class AppRouter extends StatelessWidget {
           elevation: 0,
           titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
         ),
-        cardTheme: CardThemeData(
-          color: AppColors.cardBackground,
-          elevation: 2,
-        ),
-        dividerTheme: DividerThemeData(
-          color: AppColors.divider,
-          thickness: 1,
-        ),
+        cardTheme: CardThemeData(color: AppColors.cardBackground, elevation: 2),
+        dividerTheme: DividerThemeData(color: AppColors.divider, thickness: 1),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
 
