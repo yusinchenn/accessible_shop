@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 
 // 匯入頁面
 import 'pages/home/home_page.dart';
+import 'widgets/splash_screen.dart';
 import 'pages/product/product_detail_page.dart';
 import 'pages/store/store_page.dart';
 import 'pages/cart/cart_page.dart';
@@ -203,37 +204,8 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
           );
         }
 
-        // 載入中
-        return Scaffold(
-          backgroundColor: AppColors.background_2,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.shopping_bag, size: 120, color: AppColors.text_2),
-                SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Accessible Shop',
-                  style: AppTextStyles.extraLargeTitle.copyWith(
-                    color: AppColors.text_2,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.xl),
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.text_2),
-                  strokeWidth: 4,
-                ),
-                SizedBox(height: AppSpacing.lg),
-                Text(
-                  '正在初始化...',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.subtitle_2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        // 載入中 - 使用新的 SplashScreen
+        return const SplashScreen();
       },
     );
   }
