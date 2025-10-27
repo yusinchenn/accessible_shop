@@ -369,7 +369,7 @@ $reviewsText
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppColors.text,
+              color: AppColors.text_2,
             ),
           ),
         ),
@@ -383,7 +383,7 @@ $reviewsText
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w600,
-              color: AppColors.text,
+              color: AppColors.text_2,
             ),
           ),
         ),
@@ -405,10 +405,10 @@ $reviewsText
                   vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.grey[200],
+                  color: isSelected ? AppColors.primary_2 : Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[400]!,
+                    color: isSelected ? AppColors.primary_2 : Colors.grey[400]!,
                     width: 2,
                   ),
                 ),
@@ -416,7 +416,7 @@ $reviewsText
                   size,
                   style: TextStyle(
                     fontSize: 24,
-                    color: isSelected ? Colors.white : AppColors.text,
+                    color: isSelected ? Colors.white : AppColors.text_2,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -436,7 +436,7 @@ $reviewsText
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w600,
-              color: AppColors.text,
+              color: AppColors.text_2,
             ),
           ),
         ),
@@ -458,10 +458,10 @@ $reviewsText
                   vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accent : Colors.grey[200],
+                  color: isSelected ? AppColors.accent_2 : Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? AppColors.accent : Colors.grey[400]!,
+                    color: isSelected ? AppColors.accent_2 : Colors.grey[400]!,
                     width: 2,
                   ),
                 ),
@@ -469,7 +469,7 @@ $reviewsText
                   color,
                   style: TextStyle(
                     fontSize: 24,
-                    color: isSelected ? Colors.white : AppColors.text,
+                    color: isSelected ? Colors.white : AppColors.text_2,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -503,7 +503,7 @@ $reviewsText
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: AppColors.text,
+                color: AppColors.text_2,
               ),
             ),
           ),
@@ -521,7 +521,7 @@ $reviewsText
                   style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    color: AppColors.primary_2,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -540,7 +540,7 @@ $reviewsText
                     style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.accent,
+                      color: AppColors.accent_2,
                     ),
                   ),
                 ],
@@ -575,7 +575,7 @@ $reviewsText
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppColors.text,
+              color: AppColors.text_2,
             ),
           ),
         ),
@@ -595,7 +595,7 @@ $reviewsText
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: _quantity > 1 ? AppColors.primary : Colors.grey[300],
+                  color: _quantity > 1 ? AppColors.primary_2 : Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -616,7 +616,7 @@ $reviewsText
                   vertical: AppSpacing.md,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.divider, width: 2),
+                  border: Border.all(color: AppColors.subtitle_2, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -624,7 +624,7 @@ $reviewsText
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.text,
+                    color: AppColors.text_2,
                   ),
                 ),
               ),
@@ -644,7 +644,9 @@ $reviewsText
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: _quantity < 99 ? AppColors.primary : Colors.grey[300],
+                  color: _quantity < 99
+                      ? AppColors.primary_2
+                      : Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -669,11 +671,12 @@ $reviewsText
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: Text(_product?.name ?? '商品詳情'),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        backgroundColor: AppColors.background_2,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -723,7 +726,7 @@ $reviewsText
                         style: const TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.text,
+                          color: AppColors.text_2,
                         ),
                       ),
                     ),
@@ -822,7 +825,7 @@ $reviewsText
                             '\$${_product!.price.toStringAsFixed(0)}',
                             style: const TextStyle(
                               fontSize: 32,
-                              color: AppColors.primary,
+                              color: AppColors.primary_2,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -909,7 +912,7 @@ $reviewsText
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.text,
+                          color: AppColors.text_2,
                         ),
                       ),
                     ),
@@ -923,7 +926,7 @@ $reviewsText
                         _product!.description ?? '無描述',
                         style: const TextStyle(
                           fontSize: 28,
-                          color: AppColors.text,
+                          color: AppColors.text_2,
                           height: 1.5,
                         ),
                       ),
@@ -958,7 +961,7 @@ $reviewsText
                                 vertical: AppSpacing.md,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.accent,
+                                color: AppColors.accent_2,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Center(
@@ -986,7 +989,7 @@ $reviewsText
                                 vertical: AppSpacing.md,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary,
+                                color: AppColors.primary_2,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Center(
@@ -1048,7 +1051,7 @@ $reviewsText
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+                  color: AppColors.text_2,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1059,7 +1062,7 @@ $reviewsText
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+                  color: AppColors.text_2,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1215,7 +1218,7 @@ $reviewsText
               _aiReviewSummary ?? '',
               style: const TextStyle(
                 fontSize: 26,
-                color: AppColors.text,
+                color: AppColors.text_2,
                 height: 1.5,
               ),
             ),
@@ -1272,7 +1275,7 @@ $reviewsText
                 // 使用者頭像
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primary_2,
                   child: Text(
                     review.userName.isNotEmpty ? review.userName[0] : '?',
                     style: const TextStyle(
@@ -1294,7 +1297,7 @@ $reviewsText
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.text,
+                          color: AppColors.text_2,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1349,7 +1352,7 @@ $reviewsText
               review.comment,
               style: const TextStyle(
                 fontSize: 24,
-                color: AppColors.text,
+                color: AppColors.text_2,
                 height: 1.4,
               ),
             ),

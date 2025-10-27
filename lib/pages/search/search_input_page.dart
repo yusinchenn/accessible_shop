@@ -94,11 +94,12 @@ class _SearchInputPageState extends State<SearchInputPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('搜尋'),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        backgroundColor: AppColors.background_2,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -107,11 +108,7 @@ class _SearchInputPageState extends State<SearchInputPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.xl),
-              const Icon(
-                Icons.search,
-                size: 80,
-                color: AppColors.primary,
-              ),
+              const Icon(Icons.search, size: 80, color: AppColors.primary_2),
               const SizedBox(height: AppSpacing.xl),
               GestureDetector(
                 onTap: () {
@@ -129,10 +126,7 @@ class _SearchInputPageState extends State<SearchInputPage> {
                       vertical: AppSpacing.md,
                     ),
                   ),
-                  child: const Text(
-                    '推薦商品',
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  child: const Text('推薦商品', style: TextStyle(fontSize: 24)),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -158,10 +152,7 @@ class _SearchInputPageState extends State<SearchInputPage> {
                     vertical: AppSpacing.md,
                   ),
                 ),
-                child: const Text(
-                  '搜尋',
-                  style: TextStyle(fontSize: 24),
-                ),
+                child: const Text('搜尋', style: TextStyle(fontSize: 24)),
               ),
             ],
           ),

@@ -102,7 +102,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   /// 處理雙擊事件 - 如果是訂單通知則跳轉到訂單詳情，否則切換已讀狀態
   Future<void> _onNotificationDoubleTap(
-      NotificationModel notification, int index) async {
+    NotificationModel notification,
+    int index,
+  ) async {
     final db = Provider.of<DatabaseService>(context, listen: false);
 
     // 如果是訂單通知且有訂單 ID，跳轉到訂單詳情
@@ -197,11 +199,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('通知'),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        backgroundColor: AppColors.background_2,
         actions: [
           // 全部標記為已讀按鈕
           IconButton(
@@ -212,138 +215,132 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? const Center(
-                  child: Text(
-                    '暫無通知',
-                    style: AppTextStyles.body,
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _notifications.length,
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  itemBuilder: (context, index) {
-                    final notification = _notifications[index];
-                    final isSelected = index == _selectedIndex;
+          ? const Center(child: Text('暫無通知', style: AppTextStyles.body))
+          : ListView.builder(
+              itemCount: _notifications.length,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              itemBuilder: (context, index) {
+                final notification = _notifications[index];
+                final isSelected = index == _selectedIndex;
 
-                    return GestureDetector(
-                      onTap: () => _onNotificationTap(notification, index),
-                      onDoubleTap: () =>
-                          _onNotificationDoubleTap(notification, index),
-                      child: Card(
-                        elevation: isSelected ? 8 : 2,
-                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                        color: notification.isRead
-                            ? Colors.white
-                            : AppColors.accent.withValues(alpha: 0.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: isSelected
-                              ? const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                )
-                              : BorderSide.none,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 通知圖示
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: _getNotificationColor(notification.type)
-                                      .withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: Icon(
-                                  _getNotificationIcon(notification.type),
-                                  color: _getNotificationColor(notification.type),
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              // 通知內容
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                return GestureDetector(
+                  onTap: () => _onNotificationTap(notification, index),
+                  onDoubleTap: () =>
+                      _onNotificationDoubleTap(notification, index),
+                  child: Card(
+                    elevation: isSelected ? 8 : 2,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    color: notification.isRead
+                        ? Colors.white
+                        : AppColors.accent_2.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected
+                          ? const BorderSide(
+                              color: AppColors.primary_2,
+                              width: 2,
+                            )
+                          : BorderSide.none,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 通知圖示
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: _getNotificationColor(
+                                notification.type,
+                              ).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Icon(
+                              _getNotificationIcon(notification.type),
+                              color: _getNotificationColor(notification.type),
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          // 通知內容
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            notification.title,
-                                            style: AppTextStyles.subtitle.copyWith(
-                                              fontWeight: notification.isRead
-                                                  ? FontWeight.normal
-                                                  : FontWeight.bold,
-                                            ),
-                                          ),
+                                    Expanded(
+                                      child: Text(
+                                        notification.title,
+                                        style: AppTextStyles.subtitle.copyWith(
+                                          fontWeight: notification.isRead
+                                              ? FontWeight.normal
+                                              : FontWeight.bold,
                                         ),
-                                        if (!notification.isRead)
-                                          Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.red,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: AppSpacing.sm),
-                                    Text(
-                                      notification.content,
-                                      style: AppTextStyles.body.copyWith(
-                                        color: Colors.grey[700],
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: AppSpacing.sm),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          _formatTimestamp(notification.timestamp),
-                                          style: AppTextStyles.small.copyWith(
-                                            color: Colors.grey[500],
-                                          ),
+                                    if (!notification.isRead)
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
                                         ),
-                                        if (notification.type ==
-                                                NotificationType.order &&
-                                            notification.orderNumber != null) ...[
-                                          const SizedBox(width: AppSpacing.sm),
-                                          const Icon(
-                                            Icons.arrow_forward,
-                                            size: 16,
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '查看訂單',
-                                            style: AppTextStyles.small.copyWith(
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
+                                      ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  notification.content,
+                                  style: AppTextStyles.body.copyWith(
+                                    color: Colors.grey[700],
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Row(
+                                  children: [
+                                    Text(
+                                      _formatTimestamp(notification.timestamp),
+                                      style: AppTextStyles.small.copyWith(
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                    if (notification.type ==
+                                            NotificationType.order &&
+                                        notification.orderNumber != null) ...[
+                                      const SizedBox(width: AppSpacing.sm),
+                                      const Icon(
+                                        Icons.arrow_forward,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '查看訂單',
+                                        style: AppTextStyles.small.copyWith(
+                                          color: AppColors.primary_2,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

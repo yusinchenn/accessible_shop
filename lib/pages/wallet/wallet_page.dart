@@ -85,8 +85,10 @@ class _WalletPageState extends State<WalletPage> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('領取成功！獲得 \$${reward.toStringAsFixed(0)} 元',
-                  style: const TextStyle(fontSize: 18)),
+              content: Text(
+                '領取成功！獲得 \$${reward.toStringAsFixed(0)} 元',
+                style: const TextStyle(fontSize: 18),
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
@@ -132,10 +134,10 @@ class _WalletPageState extends State<WalletPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('我的錢包'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.background_2,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -169,15 +171,16 @@ class _WalletPageState extends State<WalletPage> {
       onTap: () {},
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+              colors: [
+                AppColors.primary_2,
+                AppColors.primary_2.withValues(alpha: 0.7),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -232,9 +235,7 @@ class _WalletPageState extends State<WalletPage> {
   Widget _buildDailyRewardSection() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -242,29 +243,19 @@ class _WalletPageState extends State<WalletPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.card_giftcard,
-                  color: AppColors.primary,
-                  size: 28,
-                ),
+                Icon(Icons.card_giftcard, color: AppColors.primary_2, size: 28),
                 const SizedBox(width: AppSpacing.sm),
-                const Text(
-                  '每日登入獎勵',
-                  style: AppTextStyles.subtitle,
-                ),
+                const Text('每日登入獎勵', style: AppTextStyles.subtitle),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            const Text(
-              '每天登入可領取 1 元獎勵',
-              style: AppTextStyles.body,
-            ),
+            const Text('每天登入可領取 1 元獎勵', style: AppTextStyles.body),
             const SizedBox(height: AppSpacing.sm),
             if (_userProfile?.lastDailyRewardDate != null)
               Text(
                 '上次領取時間：${DateFormat('yyyy-MM-dd HH:mm').format(_userProfile!.lastDailyRewardDate!)}',
                 style: AppTextStyles.body.copyWith(
-                  color: AppColors.subtitle,
+                  color: AppColors.subtitle_2,
                   fontSize: AppFontSizes.small,
                 ),
               ),
@@ -275,32 +266,42 @@ class _WalletPageState extends State<WalletPage> {
                 label: _hasClaimedToday ? '今天已領取' : '領取今日獎勵',
                 description: _hasClaimedToday ? '今天已經領取過了' : '點擊領取 1 元獎勵',
                 enabled: !_hasClaimedToday && !_isClaiming,
-                onTap: _hasClaimedToday || _isClaiming ? null : _claimDailyReward,
+                onTap: _hasClaimedToday || _isClaiming
+                    ? null
+                    : _claimDailyReward,
                 child: ElevatedButton.icon(
-                  onPressed: _hasClaimedToday || _isClaiming ? null : _claimDailyReward,
+                  onPressed: _hasClaimedToday || _isClaiming
+                      ? null
+                      : _claimDailyReward,
                   icon: _isClaiming
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Icon(
-                          _hasClaimedToday ? Icons.check_circle : Icons.card_giftcard,
+                          _hasClaimedToday
+                              ? Icons.check_circle
+                              : Icons.card_giftcard,
                           size: 24,
                         ),
                   label: Text(
                     _isClaiming
                         ? '領取中...'
                         : _hasClaimedToday
-                            ? '今天已領取'
-                            : '領取今日獎勵',
+                        ? '今天已領取'
+                        : '領取今日獎勵',
                     style: const TextStyle(fontSize: 20),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _hasClaimedToday ? Colors.grey : AppColors.primary,
+                    backgroundColor: _hasClaimedToday
+                        ? Colors.grey
+                        : AppColors.primary_2,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -320,9 +321,7 @@ class _WalletPageState extends State<WalletPage> {
   Widget _buildInstructionsSection() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -330,16 +329,9 @@ class _WalletPageState extends State<WalletPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppColors.primary,
-                  size: 28,
-                ),
+                Icon(Icons.info_outline, color: AppColors.primary_2, size: 28),
                 const SizedBox(width: AppSpacing.sm),
-                const Text(
-                  '使用說明',
-                  style: AppTextStyles.subtitle,
-                ),
+                const Text('使用說明', style: AppTextStyles.subtitle),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -360,18 +352,9 @@ class _WalletPageState extends State<WalletPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 20,
-          ),
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
           const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.body,
-            ),
-          ),
+          Expanded(child: Text(text, style: AppTextStyles.body)),
         ],
       ),
     );

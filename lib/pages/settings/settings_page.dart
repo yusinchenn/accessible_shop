@@ -70,7 +70,8 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    final int initialPageOffset = _entryItems.length * 1000; // 設置初始頁面偏移，實現無限滾動效果
+    final int initialPageOffset =
+        _entryItems.length * 1000; // 設置初始頁面偏移，實現無限滾動效果
     _pageController = PageController(
       viewportFraction: 0.85, // 每個卡片佔據視窗寬度的 85%
       initialPage: initialPageOffset,
@@ -179,7 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: const Text('帳號'),
         centerTitle: true,
@@ -200,7 +201,8 @@ class _SettingsPageState extends State<SettingsPage> {
               if (_pageController.hasClients &&
                   _pageController.position.haveDimensions) {
                 final double value =
-                    (index.toDouble() - (_pageController.page ?? 0)).abs(); // 計算與當前頁面的距離
+                    (index.toDouble() - (_pageController.page ?? 0))
+                        .abs(); // 計算與當前頁面的距離
                 // 當前卡片 (value < 0.5) 完全不透明(1.0)，旁邊的卡片半透明(0.3)
                 opacity = value < 0.5 ? 1.0 : 0.3;
               }
@@ -210,38 +212,39 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Opacity(
                   opacity: opacity, // 應用淡出淡入效果
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0), // 增加卡片間距
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                    ), // 增加卡片間距
                     child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.85, // 設定卡片寬度為螢幕寬度的 85%
+                      width:
+                          MediaQuery.of(context).size.width *
+                          0.85, // 設定卡片寬度為螢幕寬度的 85%
                       child: GestureDetector(
-                      onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
-                      onDoubleTap: () => _onDoubleTap(actualIndex), // 雙擊導航
-                      child: Card(
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                item.icon,
-                                size: 60,
-                                color: AppColors.text,
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              Text(
-                                item.title,
-                                style: AppTextStyles.title,
-                              ),
-                            ],
+                        onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
+                        onDoubleTap: () => _onDoubleTap(actualIndex), // 雙擊導航
+                        child: Card(
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  size: 60,
+                                  color: AppColors.text_1,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Text(item.title, style: AppTextStyles.title),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     ),
                   ),
                 ),

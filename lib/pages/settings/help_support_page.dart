@@ -28,7 +28,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background, // 套用背景色
+      backgroundColor: AppColors.background_2, // 套用背景色
       appBar: AppBar(
         title: const Text('幫助與客服'),
         automaticallyImplyLeading: false,

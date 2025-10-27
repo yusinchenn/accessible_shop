@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 
 // 匯入頁面
@@ -57,55 +58,9 @@ class AccessibleShopApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Accessible Shop',
-      debugShowCheckedModeBanner: false,
-      // 添加本地化支援
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('zh', 'TW'), // 繁體中文
-        Locale('en', 'US'), // 英文
-      ],
-      locale: const Locale('zh', 'TW'), // 預設語言
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(1.0), // 固定為 1.0，完全忽略系統字體大小
-          ),
-          child: child!,
-        );
-      },
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
-        ),
-        textTheme: const TextTheme(
-          displayLarge: AppTextStyles.extraLargeTitle,
-          titleLarge: AppTextStyles.title,
-          titleMedium: AppTextStyles.subtitle,
-          bodyLarge: AppTextStyles.body,
-          bodyMedium: AppTextStyles.small,
-        ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
-        ),
-        cardTheme: CardThemeData(color: AppColors.cardBackground, elevation: 2),
-        dividerTheme: DividerThemeData(color: AppColors.divider, thickness: 1),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const FirebaseInitializer(),
-    );
+    // 直接返回 FirebaseInitializer，避免雙層 MaterialApp
+    // 實際的 MaterialApp 在 AppRouter 中定義
+    return const FirebaseInitializer();
   }
 }
 
@@ -141,7 +96,7 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
         // 錯誤處理
         if (snapshot.hasError) {
           return Scaffold(
-            backgroundColor: AppColors.background,
+            backgroundColor: AppColors.background_2,
             body: Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.lg),
@@ -171,7 +126,7 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
                       icon: Icon(Icons.refresh),
                       label: Text('重試', style: AppTextStyles.body),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.text,
+                        backgroundColor: AppColors.text_2,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           horizontal: AppSpacing.lg,
@@ -250,29 +205,29 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
 
         // 載入中
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.background_2,
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shopping_bag, size: 120, color: AppColors.text),
+                Icon(Icons.shopping_bag, size: 120, color: AppColors.text_2),
                 SizedBox(height: AppSpacing.lg),
                 Text(
                   'Accessible Shop',
                   style: AppTextStyles.extraLargeTitle.copyWith(
-                    color: AppColors.text,
+                    color: AppColors.text_2,
                   ),
                 ),
                 SizedBox(height: AppSpacing.xl),
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.text),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.text_2),
                   strokeWidth: 4,
                 ),
                 SizedBox(height: AppSpacing.lg),
                 Text(
                   '正在初始化...',
                   style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.subtitle,
+                    color: AppColors.subtitle_2,
                   ),
                 ),
               ],
@@ -296,7 +251,9 @@ class AppRouter extends StatelessWidget {
       // 未登入時，導向登入頁面
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/auth', (route) => false);
         }
       });
       return const AccessibleAuthPage();
@@ -320,29 +277,44 @@ class AppRouter extends StatelessWidget {
         Locale('en', 'US'), // 英文
       ],
       locale: const Locale('zh', 'TW'), // 預設語言
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(1.0), // 固定為 1.0，完全忽略系統字體大小
+          ),
+          child: child!,
+        );
+      },
       theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
+        primaryColor: AppColors.primary_2,
+        scaffoldBackgroundColor: AppColors.background_2,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
+          seedColor: AppColors.primary_2,
+          primary: AppColors.primary_2,
+          secondary: AppColors.accent_2,
         ),
-        textTheme: const TextTheme(
-          displayLarge: AppTextStyles.extraLargeTitle,
-          titleLarge: AppTextStyles.title,
-          titleMedium: AppTextStyles.subtitle,
-          bodyLarge: AppTextStyles.body,
-          bodyMedium: AppTextStyles.small,
+        textTheme: GoogleFonts.notoSansTcTextTheme(
+          const TextTheme(
+            displayLarge: AppTextStyles.extraLargeTitle,
+            titleLarge: AppTextStyles.title,
+            titleMedium: AppTextStyles.subtitle,
+            bodyLarge: AppTextStyles.body,
+            bodyMedium: AppTextStyles.small,
+          ),
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primary_2,
           foregroundColor: Colors.white,
           elevation: 0,
-          titleTextStyle: AppTextStyles.title.copyWith(color: Colors.white),
+          titleTextStyle: GoogleFonts.notoSansTc(
+            textStyle: AppTextStyles.title.copyWith(color: Colors.white),
+          ),
         ),
-        cardTheme: CardThemeData(color: AppColors.cardBackground, elevation: 2),
-        dividerTheme: DividerThemeData(color: AppColors.divider, thickness: 1),
+        cardTheme: CardThemeData(
+          color: AppColors.cardBackground_1,
+          elevation: 2,
+        ),
+        dividerTheme: DividerThemeData(color: AppColors.text_2, thickness: 1),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
 
@@ -359,21 +331,36 @@ class AppRouter extends StatelessWidget {
       routes: {
         '/auth': (context) => const AccessibleAuthPage(),
         '/home': (context) => _buildProtectedRoute(context, const HomePage()),
-        '/product': (context) => _buildProtectedRoute(context, const ProductDetailPage()),
-        '/product_detail': (context) => _buildProtectedRoute(context, const ProductDetailPage()),
-        '/cart': (context) => _buildProtectedRoute(context, const ShoppingCartPage()),
-        '/comparison': (context) => _buildProtectedRoute(context, const ComparisonPage()),
-        '/checkout': (context) => _buildProtectedRoute(context, const CheckoutPage()),
-        '/orders': (context) => _buildProtectedRoute(context, const OrderHistoryPage()),
-        '/order-detail': (context) => _buildProtectedRoute(context, const OrderDetailPage()),
-        '/settings': (context) => _buildProtectedRoute(context, const SettingsPage()),
-        '/search': (context) => _buildProtectedRoute(context, const SearchPage()),
-        '/search_input': (context) => _buildProtectedRoute(context, const SearchInputPage()),
-        '/dev-tools': (context) => _buildProtectedRoute(context, const DevToolsPage()),
-        '/gesture-demo': (context) => _buildProtectedRoute(context, const GestureDemoPage()),
-        '/short_videos': (context) => _buildProtectedRoute(context, const ShortVideosPage()),
-        '/notifications': (context) => _buildProtectedRoute(context, const NotificationsPage()),
-        '/wallet': (context) => _buildProtectedRoute(context, const WalletPage()),
+        '/product': (context) =>
+            _buildProtectedRoute(context, const ProductDetailPage()),
+        '/product_detail': (context) =>
+            _buildProtectedRoute(context, const ProductDetailPage()),
+        '/cart': (context) =>
+            _buildProtectedRoute(context, const ShoppingCartPage()),
+        '/comparison': (context) =>
+            _buildProtectedRoute(context, const ComparisonPage()),
+        '/checkout': (context) =>
+            _buildProtectedRoute(context, const CheckoutPage()),
+        '/orders': (context) =>
+            _buildProtectedRoute(context, const OrderHistoryPage()),
+        '/order-detail': (context) =>
+            _buildProtectedRoute(context, const OrderDetailPage()),
+        '/settings': (context) =>
+            _buildProtectedRoute(context, const SettingsPage()),
+        '/search': (context) =>
+            _buildProtectedRoute(context, const SearchPage()),
+        '/search_input': (context) =>
+            _buildProtectedRoute(context, const SearchInputPage()),
+        '/dev-tools': (context) =>
+            _buildProtectedRoute(context, const DevToolsPage()),
+        '/gesture-demo': (context) =>
+            _buildProtectedRoute(context, const GestureDemoPage()),
+        '/short_videos': (context) =>
+            _buildProtectedRoute(context, const ShortVideosPage()),
+        '/notifications': (context) =>
+            _buildProtectedRoute(context, const NotificationsPage()),
+        '/wallet': (context) =>
+            _buildProtectedRoute(context, const WalletPage()),
       },
 
       /// 動態路由（需要參數的頁面）
@@ -383,10 +370,8 @@ class AppRouter extends StatelessWidget {
           final storeId = settings.arguments as int?;
           if (storeId != null) {
             return MaterialPageRoute(
-              builder: (context) => _buildProtectedRoute(
-                context,
-                StorePage(storeId: storeId),
-              ),
+              builder: (context) =>
+                  _buildProtectedRoute(context, StorePage(storeId: storeId)),
               settings: settings,
             );
           }

@@ -14,14 +14,24 @@ import 'package:flutter/material.dart';
 
 /// 顏色常數
 class AppColors {
-  static const primary = Color(0xFFD4A574); // 主色 - 杏色
-  static const accent = Color(0xFFF5DEB3); // 強調色 - 淺杏色
-  static const background = Color(0xFFD4A574); // 背景色 - 杏色
-  static const text = Color(0xFF3A3A3A); // 主要文字色 - 深灰
-  static const subtitle = Color(0xFF707070); // 副標文字色 - 中灰
-  static const cardBackground = Color(0xFFFFF8F0); // 卡片背景 - 淡杏色
-  static const divider = Color(0xFFE0E0E0); // 分隔線 - 淺灰
-  // ...可自行擴充
+  static const primary_1 = Color(0xFFFFF8F0);
+  static const accent_1 = Color(0xFFbc6546);
+  static const background_1 = Color(0xFFbf9e71);
+  static const text_1 = Color(0xFF3b3425);
+  static const subtitle_1 = Color(0xFF707070);
+  static const cardBackground_1 = Color(0xFFFFF8F0);
+  static const botton_1 = Color(0xFF3b3425);
+  static const bottonText_1 = Color(0xFFFFF8F0);
+
+  static const primary_2 = Color(0xFFbf9e71);
+  static const secondery_2 = Color(0xFF6ea4bb);
+  static const accent_2 = Color(0xFFbc6546);
+  static const background_2 = Color(0xFFFFF8F0);
+  static const text_2 = Color(0xFF3b3425);
+  static const subtitle_2 = Color(0xFF707070);
+  static const blockBackground_2 = Color(0xFFbed7d1);
+  static const botton_2 = Color(0xFFbf9e71);
+  static const bottonText_2 = Color(0xFFFFF8F0);
 }
 
 /// 字體大小常數 (針對年長者優化，字體加大)
@@ -31,39 +41,6 @@ class AppFontSizes {
   static const double subtitle = 24; // 副標題 (原 18 -> 24)
   static const double body = 20; // 內文 (原 16 -> 20)
   static const double small = 18; // 小字 (原 13 -> 18)
-  // ...可自行擴充
-}
-
-/// 文字樣式 (針對年長者優化，增加行距和字重)
-class AppTextStyles {
-  static const extraLargeTitle = TextStyle(
-    fontSize: AppFontSizes.extraLarge,
-    fontWeight: FontWeight.bold,
-    color: AppColors.text,
-    height: 1.4, // 增加行距
-  );
-  static const title = TextStyle(
-    fontSize: AppFontSizes.title,
-    fontWeight: FontWeight.bold,
-    color: AppColors.text,
-    height: 1.4, // 增加行距
-  );
-  static const subtitle = TextStyle(
-    fontSize: AppFontSizes.subtitle,
-    fontWeight: FontWeight.w600, // 加粗副標題
-    color: AppColors.subtitle,
-    height: 1.4,
-  );
-  static const body = TextStyle(
-    fontSize: AppFontSizes.body,
-    color: AppColors.text,
-    height: 1.5, // 增加行距提升可讀性
-  );
-  static const small = TextStyle(
-    fontSize: AppFontSizes.small,
-    color: AppColors.subtitle,
-    height: 1.4,
-  );
   // ...可自行擴充
 }
 
@@ -79,9 +56,78 @@ class AppSpacing {
 
 /// 動畫時長
 class AppDurations {
-  static const short = Duration(milliseconds: 150);
-  static const normal = Duration(milliseconds: 300);
-  static const long = Duration(milliseconds: 600);
+  static const Duration short = Duration(milliseconds: 300);
+  static const Duration medium = Duration(milliseconds: 600);
+  static const Duration long = Duration(milliseconds: 900);
 }
 
 // 你可以依需求再加上圓角、陰影、icon size...等常數
+class AppBorders {
+  // 輸入框
+  static const double inputBorderRadius = 12.0;
+  // 按鈕
+  static const double buttonBorderRadius = 24.0;
+}
+
+/// 文字樣式常數 (使用 AppFontSizes 和 AppColors)
+class AppTextStyles {
+  // 特大標題
+  static const TextStyle extraLargeTitle = TextStyle(
+    fontSize: AppFontSizes.extraLarge,
+    fontWeight: FontWeight.bold,
+    color: AppColors.text_1,
+  );
+
+  // 標題
+  static const TextStyle title = TextStyle(
+    fontSize: AppFontSizes.title,
+    fontWeight: FontWeight.bold,
+    color: AppColors.text_1,
+  );
+
+  // 副標題
+  static const TextStyle subtitle = TextStyle(
+    fontSize: AppFontSizes.subtitle,
+    fontWeight: FontWeight.w500,
+    color: AppColors.subtitle_1,
+  );
+
+  // 內文
+  static const TextStyle body = TextStyle(
+    fontSize: AppFontSizes.body,
+    fontWeight: FontWeight.normal,
+    color: AppColors.text_1,
+  );
+
+  // 小字
+  static const TextStyle small = TextStyle(
+    fontSize: AppFontSizes.small,
+    fontWeight: FontWeight.normal,
+    color: AppColors.subtitle_1,
+  );
+}
+
+/// 統一的顏色別名 (預設使用第一組配色方案)
+/// 如需切換配色方案，請修改這裡的映射
+extension AppColorsAlias on AppColors {
+  // 主要顏色
+  static const Color primary = AppColors.primary_1;
+  static const Color accent = AppColors.accent_1;
+  static const Color background = AppColors.background_1;
+
+  // 文字顏色
+  static const Color text = AppColors.text_1;
+  static const Color subtitle = AppColors.subtitle_1;
+
+  // 卡片顏色
+  static const Color cardBackground = AppColors.cardBackground_1;
+  static const Color cardText = AppColors.text_1;
+  static const Color cardSubtitle = AppColors.subtitle_1;
+
+  // 按鈕顏色
+  static const Color button = AppColors.botton_1;
+  static const Color buttonText = AppColors.bottonText_1;
+
+  // 分隔線顏色
+  static const Color divider = AppColors.subtitle_1;
+}

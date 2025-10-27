@@ -90,11 +90,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     );
 
     await Future.delayed(const Duration(milliseconds: 400));
-    ttsHelper.speakQueue([
-      '密碼輸入頁面',
-      '請輸入密碼',
-      '至少需要 6 個字元',
-    ]);
+    ttsHelper.speakQueue(['密碼輸入頁面', '請輸入密碼', '至少需要 6 個字元']);
   }
 
   Future<void> _submit() async {
@@ -147,10 +143,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     } else if (success) {
       ttsHelper.speak(_isLoginMode ? '登入成功' : '註冊成功');
       // 登入/註冊成功後，導航到首頁並清除所有導航堆疊
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/home',
-        (route) => false,
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     }
   }
 
@@ -174,23 +167,20 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       enableGlobalGestures: false, // 登入頁面禁用全域手勢，防止未登入時跳轉
       appBar: AppBar(
         title: Text(
           _isLoginMode ? '登入' : '註冊',
-          style: AppTextStyles.title.copyWith(color: Colors.white),
+          style: AppTextStyles.title.copyWith(color: AppColors.text_2),
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.background_2,
         automaticallyImplyLeading: false,
       ),
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: [
-          _buildEmailStep(),
-          _buildPasswordStep(),
-        ],
+        children: [_buildEmailStep(), _buildPasswordStep()],
       ),
     );
   }
@@ -206,17 +196,13 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
           children: [
             SizedBox(height: AppSpacing.lg),
             // Logo
-            Icon(
-              Icons.shopping_bag,
-              size: 100,
-              color: AppColors.text,
-            ),
+            Icon(Icons.shopping_bag, size: 100, color: AppColors.text_2),
             SizedBox(height: AppSpacing.md),
             Text(
               'Accessible Shop',
               textAlign: TextAlign.center,
               style: AppTextStyles.extraLargeTitle.copyWith(
-                color: AppColors.text,
+                color: AppColors.text_2,
               ),
             ),
             SizedBox(height: AppSpacing.xl),
@@ -226,7 +212,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               '步驟 1/2：輸入電子郵件',
               textAlign: TextAlign.center,
               style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.subtitle,
+                color: AppColors.subtitle_2,
               ),
             ),
             SizedBox(height: AppSpacing.lg),
@@ -238,26 +224,26 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               decoration: InputDecoration(
                 labelText: '電子郵件',
                 labelStyle: AppTextStyles.body.copyWith(
-                  color: AppColors.subtitle,
+                  color: AppColors.subtitle_2,
                 ),
                 prefixIcon: Icon(
                   Icons.email,
                   size: 32,
-                  color: AppColors.text,
+                  color: AppColors.text_2,
                 ),
                 filled: true,
-                fillColor: AppColors.cardBackground,
+                fillColor: AppColors.background_2,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.divider, width: 2),
+                  borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.text, width: 3),
+                  borderSide: BorderSide(color: AppColors.primary_2, width: 3),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -277,14 +263,14 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.text,
+                  color: AppColors.primary_2,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '下一步',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.title.copyWith(
-                    color: Colors.white,
+                    color: AppColors.bottonText_2,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -298,7 +284,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               child: Text(
                 _isLoginMode ? '還沒有帳號？立即註冊' : '已有帳號？立即登入',
                 style: AppTextStyles.body.copyWith(
-                  color: AppColors.text,
+                  color: AppColors.text_2,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -325,7 +311,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               '步驟 2/2：輸入密碼',
               textAlign: TextAlign.center,
               style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.subtitle,
+                color: AppColors.subtitle_2,
               ),
             ),
             SizedBox(height: AppSpacing.lg),
@@ -334,14 +320,14 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.email, size: 28, color: AppColors.text),
+                Icon(Icons.email, size: 28, color: AppColors.text_2),
                 SizedBox(width: AppSpacing.sm),
                 Flexible(
                   child: Text(
                     _emailController.text,
                     style: AppTextStyles.body.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.text,
+                      color: AppColors.text_2,
                     ),
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
@@ -358,26 +344,22 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               decoration: InputDecoration(
                 labelText: '密碼（至少 6 個字元）',
                 labelStyle: AppTextStyles.body.copyWith(
-                  color: AppColors.subtitle,
+                  color: AppColors.subtitle_2,
                 ),
-                prefixIcon: Icon(
-                  Icons.lock,
-                  size: 32,
-                  color: AppColors.text,
-                ),
+                prefixIcon: Icon(Icons.lock, size: 32, color: AppColors.text_2),
                 filled: true,
-                fillColor: AppColors.cardBackground,
+                fillColor: AppColors.background_2,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.divider, width: 2),
+                  borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.text, width: 3),
+                  borderSide: BorderSide(color: AppColors.primary_2, width: 3),
                 ),
               ),
               obscureText: true,
@@ -398,7 +380,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                   return Container(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.subtitle,
+                      color: AppColors.primary_2,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -433,7 +415,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.text,
+                      color: AppColors.text_2,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -494,9 +476,6 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleTap,
-      child: widget.child,
-    );
+    return GestureDetector(onTap: _handleTap, child: widget.child);
   }
 }

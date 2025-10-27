@@ -85,7 +85,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background, // 套用背景色
+      backgroundColor: AppColors.background_1, // 套用背景色
       appBar: AppBar(
         title: const Text('購物車'),
         automaticallyImplyLeading: false,
@@ -118,7 +118,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           onDoubleTap: () {
                             // 檢查商品數量
                             if (comparisonProvider.itemCount < 2) {
-                              ttsHelper.speak("需要至少兩個商品才能進行比較，目前只有${comparisonProvider.itemCount}項商品");
+                              ttsHelper.speak(
+                                "需要至少兩個商品才能進行比較，目前只有${comparisonProvider.itemCount}項商品",
+                              );
                             } else {
                               ttsHelper.speak("進入商品比較頁面");
                               Navigator.pushNamed(context, '/comparison');
@@ -175,7 +177,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       itemBuilder: (context, index) {
                         final item = items[index];
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           child: ShoppingCartItemCard(
                             item: item,
                             cartData: cartData,
@@ -233,7 +237,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     "選取商品總數: ${cartData.totalSelectedCount}",
@@ -329,7 +334,9 @@ class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
       onDoubleTap: () async {
         final wasSelected = item.isSelected; // 記錄切換前的狀態
         await cartData.toggleSelection(item.id);
-        ttsHelper.speak("${wasSelected ? '取消選取' : '選取'}${item.name}，數量${item.quantity}");
+        ttsHelper.speak(
+          "${wasSelected ? '取消選取' : '選取'}${item.name}，數量${item.quantity}",
+        );
       },
       onLongPress: () => widget.onShowMoreActions(item),
       child: Card(
@@ -349,7 +356,10 @@ class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
               const SizedBox(height: AppSpacing.sm),
               Text("規格: ${item.specification}", style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.xs),
-              Text("單價: \$${item.unitPrice.toStringAsFixed(0)}", style: AppTextStyles.body),
+              Text(
+                "單價: \$${item.unitPrice.toStringAsFixed(0)}",
+                style: AppTextStyles.body,
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text("數量: ${item.quantity}", style: AppTextStyles.body),
               const Spacer(),
@@ -456,7 +466,7 @@ class MoreActionsOverlay extends StatelessWidget {
                       padding: const EdgeInsets.all(AppSpacing.md),
                       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.9),
+                        color: AppColors.primary_1.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -474,7 +484,7 @@ class MoreActionsOverlay extends StatelessWidget {
                     _buildLargeActionButton(
                       label: "瀏覽商品頁面",
                       icon: Icons.visibility,
-                      color: AppColors.primary,
+                      color: AppColors.primary_1,
                       onTap: () => ttsHelper.speak("瀏覽商品頁面按鈕"),
                       onDoubleTap: () {
                         ttsHelper.speak("開啟${item.name}商品頁面");
@@ -492,22 +502,31 @@ class MoreActionsOverlay extends StatelessWidget {
                     // 加入比較按鈕
                     Consumer<ComparisonProvider>(
                       builder: (context, comparisonProvider, _) {
-                        final isInComparison = comparisonProvider.isInComparison(item.id);
+                        final isInComparison = comparisonProvider
+                            .isInComparison(item.id);
 
                         return _buildLargeActionButton(
                           label: isInComparison ? "已加入比較" : "加入比較",
-                          icon: isInComparison ? Icons.check_circle : Icons.compare_arrows,
+                          icon: isInComparison
+                              ? Icons.check_circle
+                              : Icons.compare_arrows,
                           color: isInComparison ? Colors.green : Colors.orange,
-                          onTap: () => ttsHelper.speak(isInComparison ? "加入比較按鈕，目前已加入，雙擊移除" : "加入比較按鈕"),
+                          onTap: () => ttsHelper.speak(
+                            isInComparison ? "加入比較按鈕，目前已加入，雙擊移除" : "加入比較按鈕",
+                          ),
                           onDoubleTap: () {
                             if (isInComparison) {
                               // 移除商品比較
                               comparisonProvider.removeFromComparison(item.id);
-                              ttsHelper.speak("移除${item.name}，${item.specification}商品比較");
+                              ttsHelper.speak(
+                                "移除${item.name}，${item.specification}商品比較",
+                              );
                             } else {
                               // 加入商品比較
                               comparisonProvider.addToComparison(item);
-                              ttsHelper.speak("已將${item.name}，${item.specification}加入比較");
+                              ttsHelper.speak(
+                                "已將${item.name}，${item.specification}加入比較",
+                              );
                             }
                             onDismiss();
                           },
@@ -584,11 +603,7 @@ class MoreActionsOverlay extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 32,
-            ),
+            Icon(icon, color: Colors.white, size: 32),
             const SizedBox(width: AppSpacing.md),
             Text(
               label,

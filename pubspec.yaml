@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter                     # Flutter SDK 核心
   flutter_localizations:             # Flutter 本地化支援
     sdk: flutter
+  google_fonts: ^6.2.0               # Google 字體套件
   cupertino_icons: ^1.0.8            # iOS Cupertino Icon 套件
   provider: ^6.1.5+1                 # 狀態管理
   isar: ^3.1.0+1                     # 本地資料庫核心

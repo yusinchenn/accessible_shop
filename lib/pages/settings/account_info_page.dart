@@ -159,9 +159,9 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
       builder: (context, child) {
         // 使用 MediaQuery 來調整字體大小，避免遮蔽 MaterialLocalizations
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.2),
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1.2)),
           child: child!,
         );
       },
@@ -196,10 +196,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
         ttsHelper.speak("已登出");
       }
       // 導航到登入頁面，並清除所有導航堆疊
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/auth',
-        (route) => false,
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
     }
   }
 
@@ -208,16 +205,14 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
     final authProvider = context.watch<AuthProvider>();
 
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('帳號資訊'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.text_2,
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -227,7 +222,10 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                   _buildSectionTitle('帳號資訊'),
                   const SizedBox(height: AppSpacing.sm),
                   _buildInfoCard([
-                    _buildReadOnlyField('帳號 (Email)', authProvider.userEmail ?? '-'),
+                    _buildReadOnlyField(
+                      '帳號 (Email)',
+                      authProvider.userEmail ?? '-',
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     _buildEditableField(
                       '使用者名稱',
@@ -260,7 +258,8 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
 
                       // 檢測雙擊
                       if (_lastSaveTapTime != null &&
-                          now.difference(_lastSaveTapTime!) < const Duration(milliseconds: 500)) {
+                          now.difference(_lastSaveTapTime!) <
+                              const Duration(milliseconds: 500)) {
                         // 雙擊 - 執行儲存
                         _lastSaveTapTime = null;
                         _saveUserProfile();
@@ -276,7 +275,9 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: _isSaving ? AppColors.primary.withValues(alpha: 0.6) : AppColors.primary,
+                        color: _isSaving
+                            ? AppColors.primary_2.withValues(alpha: 0.6)
+                            : AppColors.primary_2,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -288,10 +289,16 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
-                              : const Icon(Icons.save, size: 24, color: Colors.white),
+                              : const Icon(
+                                  Icons.save,
+                                  size: 24,
+                                  color: Colors.white,
+                                ),
                           const SizedBox(width: 8),
                           Text(
                             _isSaving ? '儲存中...' : '儲存資料',
@@ -338,7 +345,8 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
 
                       // 檢測雙擊
                       if (_lastLogoutTapTime != null &&
-                          now.difference(_lastLogoutTapTime!) < const Duration(milliseconds: 500)) {
+                          now.difference(_lastLogoutTapTime!) <
+                              const Duration(milliseconds: 500)) {
                         // 雙擊 - 執行登出
                         _lastLogoutTapTime = null;
                         _logout();
@@ -354,7 +362,9 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: authProvider.isLoading ? Colors.red.withValues(alpha: 0.6) : Colors.red,
+                        color: authProvider.isLoading
+                            ? Colors.red.withValues(alpha: 0.6)
+                            : Colors.red,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -366,10 +376,16 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
-                              : const Icon(Icons.logout, size: 24, color: Colors.white),
+                              : const Icon(
+                                  Icons.logout,
+                                  size: 24,
+                                  color: Colors.white,
+                                ),
                           const SizedBox(width: 8),
                           Text(
                             authProvider.isLoading ? '登出中...' : '登出',
@@ -397,7 +413,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
         title,
         style: AppTextStyles.subtitle.copyWith(
           fontWeight: FontWeight.bold,
-          color: AppColors.text,
+          color: AppColors.text_2,
         ),
       ),
     );
@@ -407,9 +423,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -435,7 +449,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
           Text(
             label,
             style: AppTextStyles.body.copyWith(
-              color: AppColors.subtitle,
+              color: AppColors.subtitle_2,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -454,12 +468,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
               children: [
                 const Icon(Icons.email, size: 20, color: Colors.grey),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    value,
-                    style: AppTextStyles.body,
-                  ),
-                ),
+                Expanded(child: Text(value, style: AppTextStyles.body)),
               ],
             ),
           ),
@@ -482,7 +491,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
         Text(
           label,
           style: AppTextStyles.body.copyWith(
-            color: AppColors.subtitle,
+            color: AppColors.subtitle_2,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -496,18 +505,18 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
             hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
             prefixIcon: Icon(icon, size: 24),
             filled: true,
-            fillColor: AppColors.cardBackground,
+            fillColor: AppColors.background_2,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.divider, width: 1),
+              borderSide: BorderSide(color: AppColors.subtitle_2, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: BorderSide(color: AppColors.primary_2, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               vertical: AppSpacing.sm,
@@ -545,7 +554,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
           Text(
             '生日',
             style: AppTextStyles.body.copyWith(
-              color: AppColors.subtitle,
+              color: AppColors.subtitle_2,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -557,23 +566,27 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
               horizontal: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: AppColors.background_2,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.divider, width: 1),
+              border: Border.all(color: AppColors.subtitle_2, width: 1),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.cake,
                   size: 24,
-                  color: _selectedBirthday != null ? AppColors.text : Colors.grey,
+                  color: _selectedBirthday != null
+                      ? AppColors.text_2
+                      : Colors.grey,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     displayText,
                     style: AppTextStyles.body.copyWith(
-                      color: _selectedBirthday != null ? AppColors.text : Colors.grey,
+                      color: _selectedBirthday != null
+                          ? AppColors.text_2
+                          : Colors.grey,
                     ),
                   ),
                 ),
@@ -614,20 +627,15 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
           horizontal: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: AppColors.background_2,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.divider, width: 1),
+          border: Border.all(color: AppColors.subtitle_2, width: 1),
         ),
         child: Row(
           children: [
             const Icon(Icons.lock, size: 24),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                '更改密碼',
-                style: AppTextStyles.body,
-              ),
-            ),
+            Expanded(child: Text('更改密碼', style: AppTextStyles.body)),
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
@@ -649,27 +657,29 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
           ttsHelper.speak('$title：$subtitle');
         }
       },
-      onDoubleTap: onTap ?? () {
-        // 雙擊顯示提示（功能尚未實作）
-        if (accessibilityService.shouldUseCustomTTS) {
-          ttsHelper.speak('此功能尚未實作');
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('此功能尚未實作', style: TextStyle(fontSize: 18)),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
+      onDoubleTap:
+          onTap ??
+          () {
+            // 雙擊顯示提示（功能尚未實作）
+            if (accessibilityService.shouldUseCustomTTS) {
+              ttsHelper.speak('此功能尚未實作');
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('此功能尚未實作', style: TextStyle(fontSize: 18)),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary_2.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 28, color: AppColors.primary),
+            child: Icon(icon, size: 28, color: AppColors.primary_2),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -686,7 +696,7 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                 Text(
                   subtitle,
                   style: AppTextStyles.body.copyWith(
-                    color: AppColors.subtitle,
+                    color: AppColors.subtitle_2,
                     fontSize: 16,
                   ),
                 ),

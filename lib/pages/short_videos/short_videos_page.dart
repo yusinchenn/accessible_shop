@@ -143,27 +143,22 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
     }
 
     // 這裡可以加入實際的影片播放邏輯
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('播放影片：${video.title}')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('播放影片：${video.title}')));
   }
 
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: const Text('短影音'),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
       body: _videos.isEmpty
-          ? const Center(
-              child: Text(
-                '暫無影片',
-                style: AppTextStyles.body,
-              ),
-            )
+          ? const Center(child: Text('暫無影片', style: AppTextStyles.body))
           : PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
@@ -182,7 +177,7 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: const BorderSide(
-                          color: AppColors.primary,
+                          color: AppColors.primary_1,
                           width: 2,
                         ),
                       ),

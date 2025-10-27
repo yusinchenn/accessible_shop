@@ -144,7 +144,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: const Text('歷史訂單'),
         automaticallyImplyLeading: false,
@@ -183,11 +183,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.list_alt, size: 80, color: AppColors.primary),
+            Icon(Icons.list_alt, size: 80, color: AppColors.primary_1),
             SizedBox(height: AppSpacing.md),
             Text('目前沒有訂單', style: AppTextStyles.subtitle),
             SizedBox(height: AppSpacing.sm),
-            Text('此狀態的訂單會出現在這裡。', style: TextStyle(color: AppColors.subtitle)),
+            Text(
+              '此狀態的訂單會出現在這裡。',
+              style: TextStyle(color: AppColors.subtitle_1),
+            ),
           ],
         ),
       );
@@ -268,7 +271,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                   Text(
                     dateStr,
                     style: const TextStyle(
-                      color: AppColors.subtitle,
+                      color: AppColors.subtitle_1,
                       fontSize: AppFontSizes.body,
                     ),
                   ),
@@ -284,7 +287,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                         style: const TextStyle(
                           fontSize: AppFontSizes.subtitle,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          color: AppColors.primary_1,
                         ),
                       ),
                     ],

@@ -96,7 +96,10 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
         ttsHelper.speak('評論$action失敗');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('評論$action失敗，請稍後再試', style: const TextStyle(fontSize: 18)),
+            content: Text(
+              '評論$action失敗，請稍後再試',
+              style: const TextStyle(fontSize: 18),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -107,9 +110,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -144,7 +145,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: AppColors.background_2,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -161,7 +162,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
                     Text(
                       widget.orderItem.specification,
                       style: const TextStyle(
-                        color: AppColors.subtitle,
+                        color: AppColors.subtitle_2,
                         fontSize: AppFontSizes.body,
                       ),
                     ),
@@ -207,7 +208,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
                     '$_rating 星',
                     style: const TextStyle(
                       fontSize: AppFontSizes.body,
-                      color: AppColors.subtitle,
+                      color: AppColors.subtitle_2,
                     ),
                   ),
                 ),
@@ -229,14 +230,14 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
                 decoration: InputDecoration(
                   hintText: '分享您的使用心得...',
                   hintStyle: const TextStyle(
-                    color: AppColors.subtitle,
+                    color: AppColors.subtitle_2,
                     fontSize: AppFontSizes.body,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: AppColors.background_2,
                 ),
                 style: const TextStyle(fontSize: AppFontSizes.body),
                 onTap: () {
@@ -252,7 +253,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitReview,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primary_2,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

@@ -40,7 +40,7 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
     return GlobalGestureScaffold(
       appBar: AppBar(
         title: const Text('無障礙測試'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.primary_1,
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -84,10 +84,7 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
             const SizedBox(height: AppSpacing.xl),
 
             // 測試 1: 計數器按鈕
-            const Text(
-              '測試 1: 可點擊按鈕',
-              style: AppTextStyles.subtitle,
-            ),
+            const Text('測試 1: 可點擊按鈕', style: AppTextStyles.subtitle),
             const SizedBox(height: AppSpacing.sm),
             AccessibleSpeakWrapper(
               label: '目前計數: $_counter',
@@ -174,20 +171,14 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
             const SizedBox(height: AppSpacing.xl),
 
             // 測試 2: 單選選項
-            const Text(
-              '測試 2: 單選選項',
-              style: AppTextStyles.subtitle,
-            ),
+            const Text('測試 2: 單選選項', style: AppTextStyles.subtitle),
             const SizedBox(height: AppSpacing.sm),
             ..._buildOptions(),
 
             const SizedBox(height: AppSpacing.xl),
 
             // 測試 3: 純資訊顯示
-            const Text(
-              '測試 3: 資訊朗讀',
-              style: AppTextStyles.subtitle,
-            ),
+            const Text('測試 3: 資訊朗讀', style: AppTextStyles.subtitle),
             const SizedBox(height: AppSpacing.sm),
             AccessibleSpeakWrapper(
               label: '這是一段重要資訊，點擊可朗讀完整內容',
@@ -232,13 +223,13 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
                     Text(
                       isSystemMode
                           ? '• 單擊元素：聚焦並朗讀\n'
-                              '• 雙擊元素：執行動作\n'
-                              '• 語音由系統提供\n'
-                              '• 可使用 TalkBack/VoiceOver 手勢導航'
+                                '• 雙擊元素：執行動作\n'
+                                '• 語音由系統提供\n'
+                                '• 可使用 TalkBack/VoiceOver 手勢導航'
                           : '• 單擊元素：朗讀說明\n'
-                              '• 雙擊元素：執行動作\n'
-                              '• 語音由 App 提供\n'
-                              '• 支援自訂語音速度與音調',
+                                '• 雙擊元素：執行動作\n'
+                                '• 語音由 App 提供\n'
+                                '• 支援自訂語音速度與音調',
                       style: AppTextStyles.body,
                     ),
                   ],
@@ -273,21 +264,20 @@ class _AccessibilityTestPageState extends State<AccessibilityTestPage> {
           }
         },
         child: Card(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
+          color: isSelected ? AppColors.primary_1.withValues(alpha: 0.2) : null,
           margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 Icon(
-                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isSelected ? AppColors.primary : Colors.grey,
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: isSelected ? AppColors.primary_1 : Colors.grey,
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Text(
-                  label,
-                  style: AppTextStyles.subtitle,
-                ),
+                Text(label, style: AppTextStyles.subtitle),
               ],
             ),
           ),

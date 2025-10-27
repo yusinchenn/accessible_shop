@@ -26,9 +26,7 @@ class ProductCard extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -40,7 +38,7 @@ class ProductCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 35,
                 fontWeight: FontWeight.bold,
-                color: AppColors.text,
+                color: AppColors.text_1,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -50,7 +48,7 @@ class ProductCard extends StatelessWidget {
               '\$${product.price.toStringAsFixed(0)}',
               style: const TextStyle(
                 fontSize: 30,
-                color: AppColors.primary,
+                color: AppColors.text_1,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -60,27 +58,20 @@ class ProductCard extends StatelessWidget {
             if (product.reviewCount > 0)
               Row(
                 children: [
-                  const Icon(
-                    Icons.star,
-                    size: 24,
-                    color: Colors.amber,
-                  ),
+                  const Icon(Icons.star, size: 24, color: Colors.amber),
                   const SizedBox(width: 4),
                   Text(
                     product.averageRating.toStringAsFixed(1),
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.text,
+                      color: AppColors.text_1,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '(${product.reviewCount}則評論)',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 24, color: Colors.grey),
                   ),
                 ],
               ),
@@ -92,11 +83,7 @@ class ProductCard extends StatelessWidget {
                 onDoubleTap: onStoreDoubleTap,
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.store,
-                      size: 22,
-                      color: Colors.grey,
-                    ),
+                    const Icon(Icons.store, size: 22, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
                       storeName!,
@@ -104,8 +91,8 @@ class ProductCard extends StatelessWidget {
                         fontSize: 26,
                         color: Colors.grey,
                         decoration: onStoreDoubleTap != null
-                          ? TextDecoration.underline
-                          : null,
+                            ? TextDecoration.underline
+                            : null,
                       ),
                     ),
                   ],
@@ -116,10 +103,7 @@ class ProductCard extends StatelessWidget {
             // 商品描述
             Text(
               product.description ?? '無描述',
-              style: const TextStyle(
-                fontSize: 30,
-                color: AppColors.text,
-              ),
+              style: const TextStyle(fontSize: 30, color: AppColors.text_1),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
@@ -135,7 +119,7 @@ class ProductCard extends StatelessWidget {
                     vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: AppColors.accent_1,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

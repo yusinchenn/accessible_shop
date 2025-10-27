@@ -90,7 +90,7 @@ class _GestureDemoPageState extends State<GestureDemoPage> {
   @override
   Widget build(BuildContext context) {
     return UnifiedGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: const Text('手勢系統示範'),
         centerTitle: true,
@@ -243,10 +243,7 @@ class _GestureDemoPageState extends State<GestureDemoPage> {
               const SizedBox(height: 4),
               Text(
                 '項目 ${currentIndex + 1} / $totalCount',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
             ],
           );

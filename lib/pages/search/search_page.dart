@@ -19,7 +19,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late final PageController _pageController;
-  List<Product> _products = []; // 當前顯示的商品列表
+  final List<Product> _products = []; // 當前顯示的商品列表
   List<Product> _allProducts = []; // 所有可用的商品列表（用於分頁載入）
   Map<int, Store> _storesMap = {}; // 商家資料 Map (storeId -> Store)
   String _searchKeyword = ''; // 用戶搜尋關鍵字
@@ -124,8 +124,14 @@ class _SearchPageState extends State<SearchPage> {
   void _loadNextPage() {
     if (_currentLoadedCount >= _allProducts.length) return;
 
-    final endIndex = (_currentLoadedCount + _pageSize).clamp(0, _allProducts.length);
-    final nextPageProducts = _allProducts.sublist(_currentLoadedCount, endIndex);
+    final endIndex = (_currentLoadedCount + _pageSize).clamp(
+      0,
+      _allProducts.length,
+    );
+    final nextPageProducts = _allProducts.sublist(
+      _currentLoadedCount,
+      endIndex,
+    );
 
     setState(() {
       _products.addAll(nextPageProducts);
@@ -133,7 +139,9 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     if (kDebugMode) {
-      print('📄 [SearchPage] 已載入 $_currentLoadedCount / ${_allProducts.length} 個商品');
+      print(
+        '📄 [SearchPage] 已載入 $_currentLoadedCount / ${_allProducts.length} 個商品',
+      );
     }
   }
 
@@ -144,7 +152,8 @@ class _SearchPageState extends State<SearchPage> {
       _speakProductCard(currentPage);
 
       // 當滑到接近末尾時，載入下一頁
-      if (currentPage >= _products.length - 5 && _currentLoadedCount < _allProducts.length) {
+      if (currentPage >= _products.length - 5 &&
+          _currentLoadedCount < _allProducts.length) {
         _loadNextPage();
       }
     }
@@ -187,11 +196,7 @@ class _SearchPageState extends State<SearchPage> {
 
   /// 導航到商品詳情頁面
   void _navigateToProductDetail(Product product) {
-    Navigator.pushNamed(
-      context,
-      '/product',
-      arguments: product.id,
-    );
+    Navigator.pushNamed(context, '/product', arguments: product.id);
   }
 
   @override
@@ -216,64 +221,52 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: Text(title),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _products.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.search_off,
-                        size: 80,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        '找不到相關商品',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        '請嘗試其他關鍵字',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_off, size: 80, color: Colors.grey),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    '找不到相關商品',
+                    style: const TextStyle(fontSize: 32, color: Colors.grey),
                   ),
-                )
-              : PageView.builder(
-                  controller: _pageController,
-                  itemCount: _products.length,
-                  itemBuilder: (context, index) {
-                    final product = _products[index];
-                    final storeName = _storesMap[product.storeId]?.name;
-                    return GestureDetector(
-                      onTap: () => _speakProductCard(index),
-                      onDoubleTap: () => _navigateToProductDetail(product),
-                      child: ProductCard(
-                        product: product,
-                        tag: '隔日到貨', // 固定標籤
-                        storeName: storeName,
-                        // 移除商家連結，只顯示商家名稱
-                        onStoreDoubleTap: null,
-                      ),
-                    );
-                  },
-                ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '請嘗試其他關鍵字',
+                    style: const TextStyle(fontSize: 28, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : PageView.builder(
+              controller: _pageController,
+              itemCount: _products.length,
+              itemBuilder: (context, index) {
+                final product = _products[index];
+                final storeName = _storesMap[product.storeId]?.name;
+                return GestureDetector(
+                  onTap: () => _speakProductCard(index),
+                  onDoubleTap: () => _navigateToProductDetail(product),
+                  child: ProductCard(
+                    product: product,
+                    tag: '隔日到貨', // 固定標籤
+                    storeName: storeName,
+                    // 移除商家連結，只顯示商家名稱
+                    onStoreDoubleTap: null,
+                  ),
+                );
+              },
+            ),
     );
   }
 }

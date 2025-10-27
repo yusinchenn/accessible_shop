@@ -28,7 +28,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
 
   /// 自動觸發比較（如果有 2+ 商品且需要更新）
   Future<void> _autoCompareIfNeeded() async {
-    final comparisonProvider = Provider.of<ComparisonProvider>(context, listen: false);
+    final comparisonProvider = Provider.of<ComparisonProvider>(
+      context,
+      listen: false,
+    );
 
     if (comparisonProvider.items.length >= 2 &&
         comparisonProvider.needsRecompare() &&
@@ -51,7 +54,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
 
   /// 手動重新比較
   Future<void> _handleRecompare() async {
-    final comparisonProvider = Provider.of<ComparisonProvider>(context, listen: false);
+    final comparisonProvider = Provider.of<ComparisonProvider>(
+      context,
+      listen: false,
+    );
 
     ttsHelper.speak("重新開始 AI 比較分析");
     await comparisonProvider.recompare();
@@ -77,7 +83,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('商品比較'),
         automaticallyImplyLeading: false,
@@ -175,7 +181,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
                     // 第一張卡片：AI 比較結果
                     if (index == 0) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
                         child: _buildComparisonCard(comparisonProvider),
                       );
                     }
@@ -183,22 +191,29 @@ class _ComparisonPageState extends State<ComparisonPage> {
                     // 後續卡片：商品資訊
                     final item = items[index - 1];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
                       child: ComparisonItemCard(
                         item: item,
                         onRemove: () {
                           final navigator = Navigator.of(context);
                           comparisonProvider.removeFromComparison(item.id);
-                          ttsHelper.speak("已移除${item.name}，${item.specification}");
+                          ttsHelper.speak(
+                            "已移除${item.name}，${item.specification}",
+                          );
 
                           // 如果移除後商品少於 2 項，自動返回購物車
                           if (comparisonProvider.itemCount < 2) {
-                            Future.delayed(const Duration(milliseconds: 500), () {
-                              if (mounted) {
-                                ttsHelper.speak("商品少於兩項，返回購物車");
-                                navigator.pop();
-                              }
-                            });
+                            Future.delayed(
+                              const Duration(milliseconds: 500),
+                              () {
+                                if (mounted) {
+                                  ttsHelper.speak("商品少於兩項，返回購物車");
+                                  navigator.pop();
+                                }
+                              },
+                            );
                           }
                         },
                       ),
@@ -297,9 +312,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
             const SizedBox(height: AppSpacing.lg),
 
             // 內容區域（根據狀態顯示不同內容）
-            Expanded(
-              child: _buildComparisonContent(provider),
-            ),
+            Expanded(child: _buildComparisonContent(provider)),
           ],
         ),
       ),
@@ -373,7 +386,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
             provider.comparisonResult!,
             style: const TextStyle(
               fontSize: AppFontSizes.body,
-              color: AppColors.text,
+              color: AppColors.text_2,
               height: 1.6,
             ),
           ),
@@ -392,10 +405,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
             onTap: () => ttsHelper.speak("等待 AI 比較分析"),
             child: const Text(
               "等待 AI 比較分析...\n請稍候",
-              style: TextStyle(
-                fontSize: AppFontSizes.body,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: AppFontSizes.body, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
           ),
@@ -452,7 +462,7 @@ class ComparisonItemCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: AppFontSizes.title,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+                  color: AppColors.text_2,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -462,7 +472,7 @@ class ComparisonItemCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.style,
-                    color: AppColors.subtitle,
+                    color: AppColors.subtitle_2,
                     size: 24,
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -471,7 +481,7 @@ class ComparisonItemCard extends StatelessWidget {
                       "規格: ${item.specification}",
                       style: const TextStyle(
                         fontSize: AppFontSizes.body,
-                        color: AppColors.text,
+                        color: AppColors.text_2,
                       ),
                     ),
                   ),
@@ -484,7 +494,7 @@ class ComparisonItemCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.attach_money,
-                    color: AppColors.primary,
+                    color: AppColors.primary_2,
                     size: 24,
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -493,7 +503,7 @@ class ComparisonItemCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: AppFontSizes.subtitle,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: AppColors.primary_2,
                     ),
                   ),
                 ],
@@ -505,7 +515,7 @@ class ComparisonItemCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.shopping_cart,
-                    color: AppColors.subtitle,
+                    color: AppColors.subtitle_2,
                     size: 24,
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -513,7 +523,7 @@ class ComparisonItemCard extends StatelessWidget {
                     "購物車數量: ${item.quantity}",
                     style: const TextStyle(
                       fontSize: AppFontSizes.body,
-                      color: AppColors.text,
+                      color: AppColors.text_2,
                     ),
                   ),
                 ],
@@ -536,9 +546,11 @@ class ComparisonItemCard extends StatelessWidget {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.md,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.primary_2,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,
@@ -561,7 +573,9 @@ class ComparisonItemCard extends StatelessWidget {
                       onTap: () => ttsHelper.speak("移除商品"),
                       onDoubleTap: () => _showRemoveDialog(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.md,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(8),

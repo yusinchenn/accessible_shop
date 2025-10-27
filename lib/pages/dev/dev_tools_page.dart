@@ -90,10 +90,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
     // 在 async 操作前先獲取 DatabaseService，避免跨 async 間隔使用 context
     final dbService = Provider.of<DatabaseService>(context, listen: false);
 
-    final confirmed = await _showConfirmDialog(
-      '確定要清空所有資料嗎？',
-      '此操作無法復原！',
-    );
+    final confirmed = await _showConfirmDialog('確定要清空所有資料嗎？', '此操作無法復原！');
 
     if (!confirmed) return;
 
@@ -168,10 +165,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '資料庫統計',
-                                style: AppTextStyles.title,
-                              ),
+                              Text('資料庫統計', style: AppTextStyles.title),
                               IconButton(
                                 icon: const Icon(Icons.refresh),
                                 onPressed: _loadStats,
@@ -218,10 +212,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // 操作按鈕
-                  Text(
-                    '資料管理',
-                    style: AppTextStyles.subtitle,
-                  ),
+                  Text('資料管理', style: AppTextStyles.subtitle),
                   const SizedBox(height: AppSpacing.md),
 
                   ElevatedButton.icon(
@@ -229,7 +220,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('重置測試資料'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: AppColors.primary_2,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.all(AppSpacing.md),
                     ),
@@ -251,10 +242,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // 測試與示範
-                  Text(
-                    '測試與示範',
-                    style: AppTextStyles.subtitle,
-                  ),
+                  Text('測試與示範', style: AppTextStyles.subtitle),
                   const SizedBox(height: AppSpacing.md),
 
                   ElevatedButton.icon(
@@ -282,8 +270,10 @@ class _DevToolsPageState extends State<DevToolsPage> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.info_outline,
-                                  color: Colors.blue.shade700),
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.shade700,
+                              ),
                               const SizedBox(width: AppSpacing.sm),
                               Text(
                                 '使用說明',
@@ -322,7 +312,7 @@ class _DevToolsPageState extends State<DevToolsPage> {
             value.toString(),
             style: AppTextStyles.body.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.primary_2,
             ),
           ),
         ],

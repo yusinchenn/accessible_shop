@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
       contentBuilder: (context) => const Center(
         child: Text(
           '搜尋商品',
-          style: TextStyle(fontSize: 24, color: AppColors.subtitle),
+          style: TextStyle(fontSize: 24, color: AppColors.text_1),
         ),
       ),
     ),
@@ -77,9 +77,7 @@ class _HomePageState extends State<HomePage> {
       title: '購物車',
       icon: Icons.shopping_cart,
       route: '/cart',
-      contentBuilder: (context) => Center(
-        child: _buildCartSummary(),
-      ),
+      contentBuilder: (context) => Center(child: _buildCartSummary()),
     ),
     ShopEntryItem(
       title: '訂單',
@@ -115,20 +113,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text(
-              '帳號資訊',
-              style: TextStyle(fontSize: 20),
-            ),
+            Text('帳號資訊', style: TextStyle(fontSize: 20)),
             SizedBox(height: AppSpacing.sm),
-            Text(
-              'APP設定',
-              style: TextStyle(fontSize: 20),
-            ),
+            Text('APP設定', style: TextStyle(fontSize: 20)),
             SizedBox(height: AppSpacing.sm),
-            Text(
-              '幫助與客服',
-              style: TextStyle(fontSize: 20),
-            ),
+            Text('幫助與客服', style: TextStyle(fontSize: 20)),
           ],
         ),
       ),
@@ -143,9 +132,7 @@ class _HomePageState extends State<HomePage> {
       title: '通知',
       icon: Icons.notifications,
       route: '/notifications',
-      contentBuilder: (context) => Center(
-        child: _buildNotificationSummary(),
-      ),
+      contentBuilder: (context) => Center(child: _buildNotificationSummary()),
     ),
   ];
 
@@ -169,7 +156,7 @@ class _HomePageState extends State<HomePage> {
     if (_cartItems.isEmpty) {
       return const Text(
         '購物車是空的',
-        style: TextStyle(fontSize: 20, color: AppColors.subtitle),
+        style: TextStyle(fontSize: 20, color: AppColors.text_1),
       );
     }
 
@@ -223,7 +210,7 @@ class _HomePageState extends State<HomePage> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.text_1,
             ),
             textAlign: TextAlign.center,
           ),
@@ -237,7 +224,7 @@ class _HomePageState extends State<HomePage> {
     if (_notifications.isEmpty) {
       return const Text(
         '目前沒有通知',
-        style: TextStyle(fontSize: 20, color: AppColors.subtitle),
+        style: TextStyle(fontSize: 20, color: AppColors.text_1),
       );
     }
 
@@ -291,7 +278,7 @@ class _HomePageState extends State<HomePage> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.text_1,
             ),
             textAlign: TextAlign.center,
           ),
@@ -487,7 +474,8 @@ class _HomePageState extends State<HomePage> {
           announcement = '購物車入口，有$_totalCartItemCount項商品';
           break;
         case 2: // 訂單
-          announcement = '訂單入口，有待付款$_pendingPaymentCount筆、待出貨$_pendingShipmentCount筆、待收貨$_pendingReceiptCount筆';
+          announcement =
+              '訂單入口，有待付款$_pendingPaymentCount筆、待出貨$_pendingShipmentCount筆、待收貨$_pendingReceiptCount筆';
           break;
         case 5: // 通知
           announcement = '通知入口，有$_unreadNotificationCount項未讀通知';
@@ -511,7 +499,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background, // 套用背景色
+      backgroundColor: AppColors.background_1, // 套用背景色
       appBar: AppBar(
         title: const Text('首頁'), // 顯示固定文字「首頁」
         centerTitle: true, // 標題居中
@@ -531,7 +519,8 @@ class _HomePageState extends State<HomePage> {
               if (_pageController.hasClients &&
                   _pageController.position.haveDimensions) {
                 final double value =
-                    (index.toDouble() - (_pageController.page ?? 0)).abs(); // 計算與當前頁面的距離
+                    (index.toDouble() - (_pageController.page ?? 0))
+                        .abs(); // 計算與當前頁面的距離
                 // 當前卡片 (value < 0.5) 完全不透明(1.0)，旁邊的卡片半透明(0.3)
                 opacity = value < 0.5 ? 1.0 : 0.3;
               }
@@ -541,46 +530,52 @@ class _HomePageState extends State<HomePage> {
                 child: Opacity(
                   opacity: opacity, // 應用淡出淡入效果
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0), // 增加卡片間距
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                    ), // 增加卡片間距
                     child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.85, // 設定卡片寬度為螢幕寬度的 85%
+                      width:
+                          MediaQuery.of(context).size.width *
+                          0.85, // 設定卡片寬度為螢幕寬度的 85%
                       child: GestureDetector(
-                      onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
-                      onDoubleTap: () => _onDoubleTap(
-                        _entryItems[actualIndex].route,
-                      ), // 雙擊導航到對應路由
-                      child: Card(
-                      elevation: 8, // 卡片陰影效果
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16), // 圓角邊框
-                      ),
-                      clipBehavior: Clip.antiAlias, // 裁剪溢出內容
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md), // 卡片內邊距
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center, // 內容垂直居中
-                          children: [
-                            Icon(
-                              _entryItems[actualIndex].icon, // 顯示卡片圖示
-                              size: 60, // 圖示大小
-                              color: AppColors.text, // 圖示顏色
+                        onTap: () => _onSingleTap(actualIndex), // 單次點擊觸發語音播報
+                        onDoubleTap: () => _onDoubleTap(
+                          _entryItems[actualIndex].route,
+                        ), // 雙擊導航到對應路由
+                        child: Card(
+                          elevation: 8, // 卡片陰影效果
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16), // 圓角邊框
+                          ),
+                          clipBehavior: Clip.antiAlias, // 裁剪溢出內容
+                          child: Padding(
+                            padding: const EdgeInsets.all(
+                              AppSpacing.md,
+                            ), // 卡片內邊距
+                            child: Column(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.center, // 內容垂直居中
+                              children: [
+                                Icon(
+                                  _entryItems[actualIndex].icon, // 顯示卡片圖示
+                                  size: 60, // 圖示大小
+                                  color: AppColors.text_1, // 圖示顏色
+                                ),
+                                const SizedBox(height: AppSpacing.md), // 間距
+                                Text(
+                                  _entryItems[actualIndex].title, // 顯示卡片標題
+                                  style: AppTextStyles.title,
+                                ),
+                                const SizedBox(height: AppSpacing.md), // 間距
+                                Expanded(
+                                  child: _entryItems[actualIndex]
+                                      .contentBuilder(context), // 動態生成卡片內容
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: AppSpacing.md), // 間距
-                            Text(
-                              _entryItems[actualIndex].title, // 顯示卡片標題
-                              style: AppTextStyles.title,
-                            ),
-                            const SizedBox(height: AppSpacing.md), // 間距
-                            Expanded(
-                              child: _entryItems[actualIndex].contentBuilder(
-                                context,
-                              ), // 動態生成卡片內容
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                    ),
                     ),
                   ),
                 ),

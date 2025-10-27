@@ -76,11 +76,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
         title: const Text('App 設定'),
         centerTitle: true,
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.background_2,
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -93,9 +93,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
               padding: const EdgeInsets.only(bottom: AppSpacing.lg),
               child: Text(
                 '管理您的應用程式設定',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.subtitle,
-                ),
+                style: AppTextStyles.body.copyWith(color: AppColors.subtitle_2),
               ),
             ),
 
@@ -104,7 +102,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
               title: '通知設定',
               description: '管理推播通知和提醒設定',
               icon: Icons.notifications_outlined,
-              iconColor: AppColors.primary,
+              iconColor: AppColors.primary_2,
               onTap: () => _onFunctionTap('通知設定', '管理推播通知和提醒設定'),
               onDoubleTap: () => _onFunctionDoubleTap('通知設定'),
             ),
@@ -152,9 +150,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
       onDoubleTap: onDoubleTap, // 雙擊進入功能
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
@@ -166,11 +162,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: iconColor,
-                ),
+                child: Icon(icon, size: 32, color: iconColor),
               ),
               const SizedBox(width: AppSpacing.md),
               // 文字區域
@@ -182,14 +174,14 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                       title,
                       style: AppTextStyles.subtitle.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.text,
+                        color: AppColors.text_2,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
                       style: AppTextStyles.body.copyWith(
-                        color: AppColors.subtitle,
+                        color: AppColors.subtitle_2,
                         fontSize: 16,
                       ),
                     ),
@@ -197,11 +189,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                 ),
               ),
               // 箭頭圖示
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 20,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.grey),
             ],
           ),
         ),

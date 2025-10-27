@@ -105,7 +105,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     if (selectedItems.isEmpty) {
       return GlobalGestureScaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.background_1,
         appBar: AppBar(
           title: const Text('結帳'),
           automaticallyImplyLeading: false,
@@ -127,7 +127,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: Text('結帳 - 步驟 ${_currentStep + 1}/5'),
         centerTitle: true,
@@ -137,10 +137,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          _Step1OrderConfirmation(
-            items: selectedItems,
-            onNext: _nextStep,
-          ),
+          _Step1OrderConfirmation(items: selectedItems, onNext: _nextStep),
           _Step2SelectCoupon(
             items: selectedItems,
             selectedCoupon: _selectedCoupon,
@@ -191,13 +188,11 @@ class _Step1OrderConfirmation extends StatefulWidget {
   final List<CartItem> items;
   final VoidCallback onNext;
 
-  const _Step1OrderConfirmation({
-    required this.items,
-    required this.onNext,
-  });
+  const _Step1OrderConfirmation({required this.items, required this.onNext});
 
   @override
-  State<_Step1OrderConfirmation> createState() => _Step1OrderConfirmationState();
+  State<_Step1OrderConfirmation> createState() =>
+      _Step1OrderConfirmationState();
 }
 
 class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
@@ -227,7 +222,9 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
       announcement.write('${item.name}，${item.specification}，');
       announcement.write('單價${item.unitPrice.toStringAsFixed(0)}元，');
       announcement.write('數量${item.quantity}，');
-      announcement.write('小計${(item.unitPrice * item.quantity).toStringAsFixed(0)}元。');
+      announcement.write(
+        '小計${(item.unitPrice * item.quantity).toStringAsFixed(0)}元。',
+      );
     }
 
     announcement.write('商品總計${subtotal.toStringAsFixed(0)}元');
@@ -246,10 +243,7 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: const Text(
-            '確認訂單商品',
-            style: AppTextStyles.title,
-          ),
+          child: const Text('確認訂單商品', style: AppTextStyles.title),
         ),
         Expanded(
           child: ListView.builder(
@@ -257,9 +251,11 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
             itemCount: widget.items.length,
             itemBuilder: (context, index) {
               final item = widget.items[index];
-              final itemSubtotal = (item.unitPrice * item.quantity).toStringAsFixed(0);
+              final itemSubtotal = (item.unitPrice * item.quantity)
+                  .toStringAsFixed(0);
               return AccessibleSpeakWrapper(
-                label: '${item.name}，規格 ${item.specification}，單價 ${item.unitPrice.toStringAsFixed(0)} 元，數量 ${item.quantity}，小計 $itemSubtotal 元',
+                label:
+                    '${item.name}，規格 ${item.specification}，單價 ${item.unitPrice.toStringAsFixed(0)} 元，數量 ${item.quantity}，小計 $itemSubtotal 元',
                 child: Card(
                   margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Padding(
@@ -269,7 +265,10 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
                       children: [
                         Text(item.name, style: AppTextStyles.subtitle),
                         const SizedBox(height: AppSpacing.xs),
-                        Text('規格: ${item.specification}', style: AppTextStyles.body),
+                        Text(
+                          '規格: ${item.specification}',
+                          style: AppTextStyles.body,
+                        ),
                         const SizedBox(height: AppSpacing.xs),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,7 +277,9 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
                             Text('x ${item.quantity}'),
                             Text(
                               '小計: \$$itemSubtotal',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -292,7 +293,7 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          color: AppColors.cardBackground,
+          color: AppColors.cardBackground_1,
           child: Column(
             children: [
               AccessibleSpeakWrapper(
@@ -317,9 +318,11 @@ class _Step1OrderConfirmationState extends State<_Step1OrderConfirmation> {
                       description: '前往選擇優惠券',
                       onTap: widget.onNext,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.md,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.botton_1,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,
@@ -415,10 +418,7 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: const Text(
-            '選擇優惠券',
-            style: AppTextStyles.title,
-          ),
+          child: const Text('選擇優惠券', style: AppTextStyles.title),
         ),
         Expanded(
           child: ListView(
@@ -434,14 +434,20 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                   }
                 },
                 child: Card(
-                  color: widget.selectedCoupon == null ? AppColors.primary.withValues(alpha: 0.2) : null,
+                  color: widget.selectedCoupon == null
+                      ? AppColors.primary_1.withValues(alpha: 0.2)
+                      : null,
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
                         Icon(
-                          widget.selectedCoupon == null ? Icons.radio_button_checked : Icons.radio_button_off,
-                          color: widget.selectedCoupon == null ? AppColors.primary : Colors.grey,
+                          widget.selectedCoupon == null
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: widget.selectedCoupon == null
+                              ? AppColors.primary_1
+                              : Colors.grey,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         const Text('不使用優惠券', style: AppTextStyles.subtitle),
@@ -455,7 +461,8 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                 final isSelected = widget.selectedCoupon?.id == coupon.id;
 
                 return AccessibleGestureWrapper(
-                  label: '${!isAvailable ? "不可使用，" : ""}${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
+                  label:
+                      '${!isAvailable ? "不可使用，" : ""}${coupon.name}，${coupon.description}，折扣 ${coupon.discount.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
                   description: isAvailable ? '點擊選擇此優惠券' : '點擊朗讀不可使用原因',
                   onTap: () {
                     if (isAvailable) {
@@ -467,12 +474,16 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                     } else {
                       // 不可使用：朗讀不可使用訊息
                       if (accessibilityService.shouldUseCustomTTS) {
-                        ttsHelper.speak('不可使用，${coupon.name}，${coupon.description}，未達最低消費${coupon.minAmount.toStringAsFixed(0)}元');
+                        ttsHelper.speak(
+                          '不可使用，${coupon.name}，${coupon.description}，未達最低消費${coupon.minAmount.toStringAsFixed(0)}元',
+                        );
                       }
                     }
                   },
                   child: Card(
-                    color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
+                    color: isSelected
+                        ? AppColors.primary_1.withValues(alpha: 0.2)
+                        : null,
                     child: Opacity(
                       opacity: isAvailable ? 1.0 : 0.5,
                       child: Padding(
@@ -480,9 +491,13 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                         child: Row(
                           children: [
                             Icon(
-                              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_off,
                               color: isAvailable
-                                  ? (isSelected ? AppColors.primary : Colors.grey)
+                                  ? (isSelected
+                                        ? AppColors.primary_1
+                                        : Colors.grey)
                                   : Colors.grey,
                             ),
                             const SizedBox(width: AppSpacing.md),
@@ -490,12 +505,21 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(coupon.name, style: AppTextStyles.subtitle),
-                                  Text(coupon.description, style: AppTextStyles.body),
+                                  Text(
+                                    coupon.name,
+                                    style: AppTextStyles.subtitle,
+                                  ),
+                                  Text(
+                                    coupon.description,
+                                    style: AppTextStyles.body,
+                                  ),
                                   if (!isAvailable)
                                     Text(
                                       '未達最低消費 \$${coupon.minAmount.toStringAsFixed(0)}',
-                                      style: TextStyle(color: Colors.red, fontSize: AppFontSizes.small),
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: AppFontSizes.small,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -519,7 +543,7 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          color: AppColors.cardBackground,
+          color: AppColors.cardBackground_1,
           child: Row(
             children: [
               Expanded(
@@ -528,7 +552,9 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                   description: '返回商品確認步驟',
                   onTap: widget.onPrevious,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey,
                       borderRadius: BorderRadius.circular(8),
@@ -552,9 +578,11 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                   description: '前往選擇配送方式',
                   onTap: widget.onNext,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: AppColors.primary_1,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -629,10 +657,7 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: const Text(
-            '選擇配送方式',
-            style: AppTextStyles.title,
-          ),
+          child: const Text('選擇配送方式', style: AppTextStyles.title),
         ),
         Expanded(
           child: ListView(
@@ -641,7 +666,8 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
               final isSelected = widget.selectedShipping?.id == method.id;
 
               return AccessibleGestureWrapper(
-                label: '${method.name}，${method.description}，運費 ${method.fee.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
+                label:
+                    '${method.name}，${method.description}，運費 ${method.fee.toStringAsFixed(0)} 元${isSelected ? "，已選擇" : ""}',
                 description: '點擊選擇此配送方式',
                 onTap: () {
                   widget.onShippingSelected(method);
@@ -650,14 +676,18 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
                   }
                 },
                 child: Card(
-                  color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
+                  color: isSelected
+                      ? AppColors.primary_1.withValues(alpha: 0.2)
+                      : null,
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
                         Icon(
-                          isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                          color: isSelected ? AppColors.primary : Colors.grey,
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: isSelected ? AppColors.primary_1 : Colors.grey,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
@@ -665,7 +695,10 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(method.name, style: AppTextStyles.subtitle),
-                              Text(method.description, style: AppTextStyles.body),
+                              Text(
+                                method.description,
+                                style: AppTextStyles.body,
+                              ),
                             ],
                           ),
                         ),
@@ -683,7 +716,7 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          color: AppColors.cardBackground,
+          color: AppColors.cardBackground_1,
           child: Row(
             children: [
               Expanded(
@@ -692,7 +725,9 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
                   description: '返回選擇優惠券步驟',
                   onTap: widget.onPrevious,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey,
                       borderRadius: BorderRadius.circular(8),
@@ -712,14 +747,19 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '下一步按鈕${widget.selectedShipping == null ? "，請先選擇配送方式" : ""}',
+                  label:
+                      '下一步按鈕${widget.selectedShipping == null ? "，請先選擇配送方式" : ""}',
                   description: '前往選擇付款方式',
                   enabled: widget.selectedShipping != null,
                   onTap: widget.selectedShipping != null ? widget.onNext : null,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
-                      color: widget.selectedShipping != null ? AppColors.primary : Colors.grey,
+                      color: widget.selectedShipping != null
+                          ? AppColors.primary_1
+                          : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -777,7 +817,9 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
   @override
   void initState() {
     super.initState();
-    _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+    _walletController.text = widget.walletAmount > 0
+        ? widget.walletAmount.toStringAsFixed(0)
+        : '';
     _loadWalletBalance();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -802,10 +844,14 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
     announcement.write('商品小計${subtotal.toStringAsFixed(0)}元，');
 
     if (widget.selectedCoupon != null) {
-      announcement.write('優惠券${widget.selectedCoupon!.name}折抵${discount.toStringAsFixed(0)}元，');
+      announcement.write(
+        '優惠券${widget.selectedCoupon!.name}折抵${discount.toStringAsFixed(0)}元，',
+      );
     }
 
-    announcement.write('運費${widget.selectedShipping?.name ?? ""}${shippingFee.toStringAsFixed(0)}元，');
+    announcement.write(
+      '運費${widget.selectedShipping?.name ?? ""}${shippingFee.toStringAsFixed(0)}元，',
+    );
     announcement.write('總計${total.toStringAsFixed(0)}元。');
     announcement.write('付款方式有${paymentMethods.length}種，');
 
@@ -865,7 +911,9 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
           duration: Duration(seconds: 2),
         ),
       );
-      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      _walletController.text = widget.walletAmount > 0
+          ? widget.walletAmount.toStringAsFixed(0)
+          : '';
       return;
     }
 
@@ -873,12 +921,16 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
     if (amount > _availableBalance) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('錢包餘額不足，可用 \$${_availableBalance.toStringAsFixed(0)}',
-              style: const TextStyle(fontSize: 18)),
+          content: Text(
+            '錢包餘額不足，可用 \$${_availableBalance.toStringAsFixed(0)}',
+            style: const TextStyle(fontSize: 18),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
-      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      _walletController.text = widget.walletAmount > 0
+          ? widget.walletAmount.toStringAsFixed(0)
+          : '';
       return;
     }
 
@@ -886,12 +938,16 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
     if (amount > total) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('折抵金額不可超過訂單總金額 \$${total.toStringAsFixed(0)}',
-              style: const TextStyle(fontSize: 18)),
+          content: Text(
+            '折抵金額不可超過訂單總金額 \$${total.toStringAsFixed(0)}',
+            style: const TextStyle(fontSize: 18),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
-      _walletController.text = widget.walletAmount > 0 ? widget.walletAmount.toStringAsFixed(0) : '';
+      _walletController.text = widget.walletAmount > 0
+          ? widget.walletAmount.toStringAsFixed(0)
+          : '';
       return;
     }
 
@@ -914,10 +970,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: const Text(
-            '選擇付款方式',
-            style: AppTextStyles.title,
-          ),
+          child: const Text('選擇付款方式', style: AppTextStyles.title),
         ),
         Expanded(
           child: ListView(
@@ -965,14 +1018,18 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text('錢包折抵 (可用 \$${_availableBalance.toStringAsFixed(0)})'),
+                            child: Text(
+                              '錢包折抵 (可用 \$${_availableBalance.toStringAsFixed(0)})',
+                            ),
                           ),
                           SizedBox(
                             width: 100,
                             child: TextField(
                               controller: _walletController,
                               keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: AppFontSizes.body),
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.body,
+                              ),
                               decoration: InputDecoration(
                                 hintText: '0',
                                 prefixText: '\$',
@@ -1019,7 +1076,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                             style: const TextStyle(
                               fontSize: AppFontSizes.title,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: AppColors.primary_1,
                             ),
                           ),
                         ],
@@ -1034,7 +1091,8 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                 final isSelected = widget.selectedPayment?.id == method.id;
 
                 return AccessibleGestureWrapper(
-                  label: '${method.name}，${method.description}${isSelected ? "，已選擇" : ""}',
+                  label:
+                      '${method.name}，${method.description}${isSelected ? "，已選擇" : ""}',
                   description: '點擊選擇此付款方式',
                   onTap: () {
                     widget.onPaymentSelected(method);
@@ -1043,22 +1101,34 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                     }
                   },
                   child: Card(
-                    color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : null,
+                    color: isSelected
+                        ? AppColors.primary_1.withValues(alpha: 0.2)
+                        : null,
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       child: Row(
                         children: [
                           Icon(
-                            isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                            color: isSelected ? AppColors.primary : Colors.grey,
+                            isSelected
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_off,
+                            color: isSelected
+                                ? AppColors.primary_1
+                                : Colors.grey,
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(method.name, style: AppTextStyles.subtitle),
-                                Text(method.description, style: AppTextStyles.body),
+                                Text(
+                                  method.name,
+                                  style: AppTextStyles.subtitle,
+                                ),
+                                Text(
+                                  method.description,
+                                  style: AppTextStyles.body,
+                                ),
                               ],
                             ),
                           ),
@@ -1073,7 +1143,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          color: AppColors.cardBackground,
+          color: AppColors.cardBackground_1,
           child: Row(
             children: [
               Expanded(
@@ -1082,7 +1152,9 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                   description: '返回選擇配送方式步驟',
                   onTap: widget.onPrevious,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey,
                       borderRadius: BorderRadius.circular(8),
@@ -1102,14 +1174,19 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: AccessibleGestureWrapper(
-                  label: '確認結帳按鈕${widget.selectedPayment == null ? "，請先選擇付款方式" : ""}',
+                  label:
+                      '確認結帳按鈕${widget.selectedPayment == null ? "，請先選擇付款方式" : ""}',
                   description: '完成付款並送出訂單',
                   enabled: widget.selectedPayment != null,
                   onTap: widget.selectedPayment != null ? widget.onNext : null,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
-                      color: widget.selectedPayment != null ? AppColors.primary : Colors.grey,
+                      color: widget.selectedPayment != null
+                          ? AppColors.primary_1
+                          : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -1166,7 +1243,10 @@ class _Step5CompleteState extends State<_Step5Complete> {
   Future<void> _createOrder() async {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
-      final automationService = Provider.of<OrderAutomationService>(context, listen: false);
+      final automationService = Provider.of<OrderAutomationService>(
+        context,
+        listen: false,
+      );
 
       final discount = widget.selectedCoupon?.discount ?? 0.0;
       final shippingFee = widget.selectedShipping?.fee ?? 0.0;
@@ -1203,7 +1283,10 @@ class _Step5CompleteState extends State<_Step5Complete> {
         final userId = authProvider.userId;
 
         if (userId != null) {
-          final success = await db.useWalletBalance(userId, widget.walletAmount);
+          final success = await db.useWalletBalance(
+            userId,
+            widget.walletAmount,
+          );
           if (!success) {
             if (kDebugMode) {
               print('⚠️ [CheckoutPage] 錢包扣款失敗，但訂單已建立');
@@ -1271,9 +1354,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
     }
 
     if (_createdOrder == null) {
-      return const Center(
-        child: Text('建立訂單失敗', style: AppTextStyles.title),
-      );
+      return const Center(child: Text('建立訂單失敗', style: AppTextStyles.title));
     }
 
     final order = _createdOrder!;
@@ -1286,148 +1367,150 @@ class _Step5CompleteState extends State<_Step5Complete> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-            const SizedBox(height: AppSpacing.md),
-            const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 100,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              '結帳完成！',
-              style: TextStyle(
-                fontSize: AppFontSizes.title,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            AccessibleSpeakWrapper(
-              label: '訂單編號 ${order.orderNumber}',
-              child: Text(
-                '訂單編號: ${order.orderNumber}',
-                style: const TextStyle(
-                  fontSize: AppFontSizes.subtitle,
-                  color: AppColors.primary,
+              const SizedBox(height: AppSpacing.md),
+              const Icon(Icons.check_circle, color: Colors.green, size: 100),
+              const SizedBox(height: AppSpacing.md),
+              const Text(
+                '結帳完成！',
+                style: TextStyle(
+                  fontSize: AppFontSizes.title,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AccessibleGestureWrapper(
-              label: '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元',
-              description: '點擊可再次朗讀訂單摘要',
-              onTap: () {
-                if (accessibilityService.shouldUseCustomTTS) {
-                  final summaryText = '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元';
-                  ttsHelper.speak(summaryText);
-                }
-              },
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    children: [
-                      const Text('訂單摘要', style: AppTextStyles.subtitle),
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('商品數量'),
-                          Text('${widget.items.length} 項'),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('付款方式'),
-                          Text(widget.selectedPayment?.name ?? '未選擇'),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('配送方式'),
-                          Text(widget.selectedShipping?.name ?? '未選擇'),
-                        ],
-                      ),
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '總金額',
-                            style: TextStyle(
-                              fontSize: AppFontSizes.subtitle,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '\$${order.total.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: AppFontSizes.subtitle,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AccessibleGestureWrapper(
-              label: '查看訂單按鈕',
-              description: '前往歷史訂單頁面',
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/orders');
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  '查看訂單',
-                  style: TextStyle(
-                    color: Colors.white,
+              const SizedBox(height: AppSpacing.sm),
+              AccessibleSpeakWrapper(
+                label: '訂單編號 ${order.orderNumber}',
+                child: Text(
+                  '訂單編號: ${order.orderNumber}',
+                  style: const TextStyle(
                     fontSize: AppFontSizes.subtitle,
+                    color: AppColors.primary_1,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AccessibleGestureWrapper(
-              label: '回首頁按鈕',
-              description: '返回首頁',
-              onTap: () {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: Colors.grey,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  '回首頁',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: AppFontSizes.subtitle,
-                    fontWeight: FontWeight.bold,
+              const SizedBox(height: AppSpacing.lg),
+              AccessibleGestureWrapper(
+                label:
+                    '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元',
+                description: '點擊可再次朗讀訂單摘要',
+                onTap: () {
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    final summaryText =
+                        '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元';
+                    ttsHelper.speak(summaryText);
+                  }
+                },
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        const Text('訂單摘要', style: AppTextStyles.subtitle),
+                        const Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('商品數量'),
+                            Text('${widget.items.length} 項'),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('付款方式'),
+                            Text(widget.selectedPayment?.name ?? '未選擇'),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('配送方式'),
+                            Text(widget.selectedShipping?.name ?? '未選擇'),
+                          ],
+                        ),
+                        const Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '總金額',
+                              style: TextStyle(
+                                fontSize: AppFontSizes.subtitle,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '\$${order.total.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.subtitle,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary_1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: AppSpacing.lg),
+              AccessibleGestureWrapper(
+                label: '查看訂單按鈕',
+                description: '前往歷史訂單頁面',
+                onTap: () {
+                  Navigator.pushReplacementNamed(context, '/orders');
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary_1,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '查看訂單',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: AppFontSizes.subtitle,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AccessibleGestureWrapper(
+                label: '回首頁按鈕',
+                description: '返回首頁',
+                onTap: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/',
+                    (route) => false,
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '回首頁',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: AppFontSizes.subtitle,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.xl),
             ],
           ),
