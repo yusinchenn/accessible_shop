@@ -187,110 +187,119 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
 
   /// 步驟 1: 電子郵件輸入
   Widget _buildEmailStep() {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(height: AppSpacing.lg),
-            // Logo
-            Icon(Icons.shopping_bag, size: 100, color: AppColors.text_2),
-            SizedBox(height: AppSpacing.md),
-            Text(
-              'Accessible Shop',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.extraLargeTitle.copyWith(
-                color: AppColors.text_2,
-              ),
-            ),
-            SizedBox(height: AppSpacing.xl),
-
-            // 步驟指示
-            Text(
-              '步驟 1/2：輸入電子郵件',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.subtitle_2,
-              ),
-            ),
-            SizedBox(height: AppSpacing.lg),
-
-            // Email 輸入框
-            TextField(
-              controller: _emailController,
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                labelText: '電子郵件',
-                labelStyle: AppTextStyles.body.copyWith(
-                  color: AppColors.subtitle_2,
-                ),
-                prefixIcon: Icon(
-                  Icons.email,
-                  size: 32,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        // 單擊非按鈕非輸入框區域，重新朗讀頁面說明
+        _announceCurrentPage();
+      },
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'Accessible Shop',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.extraLargeTitle.copyWith(
                   color: AppColors.text_2,
                 ),
-                filled: true,
-                fillColor: AppColors.background_2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.primary_2, width: 3),
+              ),
+              SizedBox(height: AppSpacing.xl),
+
+              // 步驟指示
+              Text(
+                '步驟 1/2：輸入電子郵件',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.subtitle.copyWith(
+                  color: AppColors.subtitle_2,
                 ),
               ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              onTap: () => ttsHelper.speak('電子郵件輸入框'),
-              onChanged: (value) {
-                if (value.isEmpty) {
-                  ttsHelper.speak('電子郵件已清空');
-                }
-              },
-            ),
-            SizedBox(height: AppSpacing.xl),
+              SizedBox(height: AppSpacing.lg),
 
-            // 下一步按鈕（雙擊確認）
-            DoubleClickButton(
-              onConfirm: _goToPasswordStep,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.primary_2,
-                  borderRadius: BorderRadius.circular(12),
+              // Email 輸入框
+              TextField(
+                controller: _emailController,
+                style: AppTextStyles.body,
+                decoration: InputDecoration(
+                  labelText: '電子郵件',
+                  labelStyle: AppTextStyles.body.copyWith(
+                    color: AppColors.subtitle_2,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.email,
+                    size: 32,
+                    color: AppColors.text_2,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.background_2,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary_2, width: 3),
+                  ),
                 ),
-                child: Text(
-                  '下一步',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.title.copyWith(
-                    color: AppColors.bottonText_2,
-                    fontWeight: FontWeight.bold,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                onTap: () => ttsHelper.speak('電子郵件輸入框'),
+                onChanged: (value) {
+                  if (value.isEmpty) {
+                    ttsHelper.speak('電子郵件已清空');
+                  }
+                },
+              ),
+              SizedBox(height: AppSpacing.xl),
+
+              // 下一步按鈕（雙擊確認）
+              DoubleClickButton(
+                onConfirm: _goToPasswordStep,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary_2,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '下一步',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.title.copyWith(
+                      color: AppColors.bottonText_2,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
 
-            // 切換模式
-            TextButton(
-              onPressed: _toggleMode,
-              child: Text(
-                _isLoginMode ? '還沒有帳號？立即註冊' : '已有帳號？立即登入',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.text_2,
-                  fontWeight: FontWeight.w600,
+              // 切換模式（雙擊確認）
+              DoubleClickButton(
+                onConfirm: _toggleMode,
+                buttonText: _isLoginMode ? '註冊入口' : '登入入口',
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Text(
+                    _isLoginMode ? '還沒有帳號？立即註冊' : '已有帳號？立即登入',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.text_2,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: AppSpacing.lg),
-          ],
+              SizedBox(height: AppSpacing.lg),
+            ],
+          ),
         ),
       ),
     );
@@ -298,140 +307,147 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
 
   /// 步驟 2: 密碼輸入
   Widget _buildPasswordStep() {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(height: AppSpacing.xl),
-            // 步驟指示
-            Text(
-              '步驟 2/2：輸入密碼',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.subtitle_2,
-              ),
-            ),
-            SizedBox(height: AppSpacing.lg),
-
-            // 顯示已輸入的電子郵件（純文字）
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.email, size: 28, color: AppColors.text_2),
-                SizedBox(width: AppSpacing.sm),
-                Flexible(
-                  child: Text(
-                    _emailController.text,
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.text_2,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.xl),
-
-            // 密碼輸入框
-            TextField(
-              controller: _passwordController,
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                labelText: '密碼（至少 6 個字元）',
-                labelStyle: AppTextStyles.body.copyWith(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        // 單擊非按鈕非輸入框區域，重新朗讀頁面說明
+        _announceCurrentPage();
+      },
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: AppSpacing.xl),
+              // 步驟指示
+              Text(
+                '步驟 2/2：輸入密碼',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.subtitle.copyWith(
                   color: AppColors.subtitle_2,
                 ),
-                prefixIcon: Icon(Icons.lock, size: 32, color: AppColors.text_2),
-                filled: true,
-                fillColor: AppColors.background_2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.primary_2, width: 3),
-                ),
               ),
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              onTap: () => ttsHelper.speak('密碼輸入框'),
-              onChanged: (value) {
-                if (value.isEmpty) {
-                  ttsHelper.speak('密碼已清空');
-                }
-              },
-            ),
-            SizedBox(height: AppSpacing.xl),
+              SizedBox(height: AppSpacing.lg),
 
-            // 登入/註冊按鈕（雙擊確認）
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                if (authProvider.isLoading) {
-                  return Container(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary_2,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: AppSpacing.md),
-                        Text(
-                          _isLoginMode ? '登入中...' : '註冊中...',
-                          style: AppTextStyles.title.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return DoubleClickButton(
-                  onConfirm: _submit,
-                  buttonText: _isLoginMode ? '登入' : '註冊',
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.text_2,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              // 顯示已輸入的電子郵件（純文字）
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.email, size: 28, color: AppColors.text_2),
+                  SizedBox(width: AppSpacing.sm),
+                  Flexible(
                     child: Text(
-                      _isLoginMode ? '登入' : '註冊',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.title.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      _emailController.text,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text_2,
                       ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                );
-              },
-            ),
-            SizedBox(height: AppSpacing.xl),
-          ],
+                ],
+              ),
+              SizedBox(height: AppSpacing.xl),
+
+              // 密碼輸入框
+              TextField(
+                controller: _passwordController,
+                style: AppTextStyles.body,
+                decoration: InputDecoration(
+                  labelText: '密碼（至少 6 個字元）',
+                  labelStyle: AppTextStyles.body.copyWith(
+                    color: AppColors.subtitle_2,
+                  ),
+                  prefixIcon: Icon(Icons.lock, size: 32, color: AppColors.text_2),
+                  filled: true,
+                  fillColor: AppColors.background_2,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary_2, width: 3),
+                  ),
+                ),
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onTap: () => ttsHelper.speak('密碼輸入框'),
+                onChanged: (value) {
+                  if (value.isEmpty) {
+                    ttsHelper.speak('密碼已清空');
+                  }
+                },
+              ),
+              SizedBox(height: AppSpacing.xl),
+
+              // 登入/註冊按鈕（雙擊確認）
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  if (authProvider.isLoading) {
+                    return Container(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary_2,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: AppSpacing.md),
+                          Text(
+                            _isLoginMode ? '登入中...' : '註冊中...',
+                            style: AppTextStyles.title.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return DoubleClickButton(
+                    onConfirm: _submit,
+                    buttonText: _isLoginMode ? '登入' : '註冊',
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.text_2,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _isLoginMode ? '登入' : '註冊',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.title.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: AppSpacing.xl),
+            ],
+          ),
         ),
       ),
     );
@@ -463,8 +479,9 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
 
     if (_lastTapTime != null &&
         now.difference(_lastTapTime!) < const Duration(milliseconds: 500)) {
-      // 雙擊 - 執行動作
+      // 雙擊 - 打斷舊語音，然後執行動作
       _lastTapTime = null;
+      ttsHelper.stop(); // 停止當前語音
       widget.onConfirm();
     } else {
       // 單擊 - 朗讀提示
