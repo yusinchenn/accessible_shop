@@ -74,6 +74,16 @@ class _SearchInputPageState extends State<SearchInputPage> {
     );
   }
 
+  /// 處理推薦商品按鈕點擊
+  void _onRecommendedProducts() {
+    _searchFocusNode.unfocus(); // 關閉鍵盤
+    Navigator.pushReplacementNamed(
+      context,
+      '/search',
+      arguments: '__recommended__', // 使用特殊標記來識別推薦商品模式
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -88,20 +98,44 @@ class _SearchInputPageState extends State<SearchInputPage> {
       appBar: AppBar(
         title: const Text('搜尋'),
         centerTitle: true,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
+              const SizedBox(height: AppSpacing.xl),
               const Icon(
                 Icons.search,
                 size: 80,
                 color: AppColors.primary,
               ),
               const SizedBox(height: AppSpacing.xl),
+              GestureDetector(
+                onTap: () {
+                  // 單擊朗讀
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    ttsHelper.speak('推薦商品按鈕');
+                  }
+                },
+                onDoubleTap: _onRecommendedProducts,
+                child: OutlinedButton(
+                  onPressed: () {}, // 禁用預設行為，使用 GestureDetector 處理
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: AppSpacing.md,
+                    ),
+                  ),
+                  child: const Text(
+                    '推薦商品',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               TextField(
                 controller: _searchController,
                 focusNode: _searchFocusNode,

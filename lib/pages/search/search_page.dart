@@ -19,11 +19,18 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late final PageController _pageController;
-  List<Product> _products = [];
+  List<Product> _products = []; // 當前顯示的商品列表
+  List<Product> _allProducts = []; // 所有可用的商品列表（用於分頁載入）
   Map<int, Store> _storesMap = {}; // 商家資料 Map (storeId -> Store)
   String _searchKeyword = ''; // 用戶搜尋關鍵字
   int _currentPageIndex = 0; // 當前頁面索引
   bool _loading = true;
+  bool _isRecommendedMode = false; // 是否為推薦商品模式
+  bool _isNoResultRecommend = false; // 是否為搜尋無結果後顯示推薦商品
+
+  // 分頁相關
+  static const int _pageSize = 20; // 每次載入的商品數量
+  int _currentLoadedCount = 0; // 已載入的商品數量
 
   @override
   void initState() {
@@ -39,6 +46,11 @@ class _SearchPageState extends State<SearchPage> {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args != null && args is String && _searchKeyword.isEmpty) {
       _searchKeyword = args;
+      // 檢查是否為推薦商品模式
+      if (_searchKeyword == '__recommended__') {
+        _isRecommendedMode = true;
+        _searchKeyword = ''; // 清空關鍵字
+      }
       _loadProducts();
     }
   }
@@ -50,46 +62,56 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
 
-      if (kDebugMode) {
-        print('🔍 [SearchPage] 開始搜尋關鍵字: "$_searchKeyword"');
-      }
-
-      // 使用智能搜尋方法（支援模糊搜尋與優先級排序）
-      List<Product> searchResults = await db.searchProducts(_searchKeyword);
-
       // 載入所有商家資料
       final stores = await db.getStores();
       final storesMap = {for (var store in stores) store.id: store};
 
-      if (kDebugMode) {
-        print('🔍 [SearchPage] 搜尋結果數量: ${searchResults.length}');
-        print('🔍 [SearchPage] 載入商家數量: ${stores.length}');
-        if (searchResults.isNotEmpty) {
-          print('🔍 [SearchPage] 前 3 筆結果:');
-          for (var i = 0; i < searchResults.length && i < 3; i++) {
-            final storeName = storesMap[searchResults[i].storeId]?.name ?? '未知商家';
-            print('   ${i + 1}. ${searchResults[i].name} (分類: ${searchResults[i].category}, 商家: $storeName)');
+      List<Product> searchResults;
+
+      if (_isRecommendedMode) {
+        // 推薦商品模式：載入所有商品並隨機排序
+        if (kDebugMode) {
+          print('🔍 [SearchPage] 推薦商品模式');
+        }
+        searchResults = await db.getProducts();
+        searchResults.shuffle(); // 隨機排序
+      } else {
+        // 一般搜尋模式
+        if (kDebugMode) {
+          print('🔍 [SearchPage] 開始搜尋關鍵字: "$_searchKeyword"');
+        }
+        searchResults = await db.searchProducts(_searchKeyword);
+
+        // 如果搜尋無結果，則顯示隨機推薦商品
+        if (searchResults.isEmpty && _searchKeyword.isNotEmpty) {
+          if (kDebugMode) {
+            print('🔍 [SearchPage] 搜尋無結果，顯示推薦商品');
           }
+          searchResults = await db.getProducts();
+          searchResults.shuffle(); // 隨機排序
+          _isNoResultRecommend = true;
         }
       }
 
+      if (kDebugMode) {
+        print('🔍 [SearchPage] 總商品數量: ${searchResults.length}');
+        print('🔍 [SearchPage] 載入商家數量: ${stores.length}');
+      }
+
+      // 儲存所有商品，並只載入第一頁
+      _allProducts = searchResults;
+      _currentLoadedCount = 0;
+      _loadNextPage(); // 載入第一頁
+
       setState(() {
-        _products = searchResults;
         _storesMap = storesMap;
         _loading = false;
       });
 
-      // 進入頁面時朗讀搜尋結果
-      if (_products.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _speakSearchResult();
-        });
-      } else {
-        // 沒有搜尋結果時也播報
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ttsHelper.speak('找不到相關商品，請嘗試其他關鍵字');
-        });
-      }
+      // 進入頁面時朗讀結果
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _speakSearchResult();
+      });
     } catch (e) {
       setState(() => _loading = false);
       if (kDebugMode) {
@@ -98,17 +120,51 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  /// 載入下一頁商品
+  void _loadNextPage() {
+    if (_currentLoadedCount >= _allProducts.length) return;
+
+    final endIndex = (_currentLoadedCount + _pageSize).clamp(0, _allProducts.length);
+    final nextPageProducts = _allProducts.sublist(_currentLoadedCount, endIndex);
+
+    setState(() {
+      _products.addAll(nextPageProducts);
+      _currentLoadedCount = endIndex;
+    });
+
+    if (kDebugMode) {
+      print('📄 [SearchPage] 已載入 $_currentLoadedCount / ${_allProducts.length} 個商品');
+    }
+  }
+
   void _onPageChanged() {
     final int? currentPage = _pageController.page?.round();
     if (currentPage != null && currentPage != _currentPageIndex) {
       _currentPageIndex = currentPage;
       _speakProductCard(currentPage);
+
+      // 當滑到接近末尾時，載入下一頁
+      if (currentPage >= _products.length - 5 && _currentLoadedCount < _allProducts.length) {
+        _loadNextPage();
+      }
     }
   }
 
   Future<void> _speakSearchResult() async {
-    final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
-    final searchText = '搜尋 $keyword 的結果';
+    String searchText;
+
+    if (_isRecommendedMode) {
+      // 推薦商品模式
+      searchText = '推薦商品搜尋結果';
+    } else if (_isNoResultRecommend) {
+      // 搜尋無結果，顯示推薦商品
+      searchText = '搜尋$_searchKeyword的商品，沒有結果，以下為推薦商品';
+    } else {
+      // 一般搜尋結果
+      final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
+      searchText = '搜尋 $keyword 的結果';
+    }
+
     await ttsHelper.speak(searchText);
   }
 
@@ -148,11 +204,21 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
+    // 根據不同模式顯示不同標題
+    String title;
+    if (_isRecommendedMode) {
+      title = '推薦商品';
+    } else if (_isNoResultRecommend) {
+      title = '搜尋 $_searchKeyword';
+    } else {
+      final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
+      title = '搜尋 $keyword';
+    }
+
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('搜尋 $keyword'),
+        title: Text(title),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
