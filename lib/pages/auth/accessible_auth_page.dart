@@ -170,6 +170,7 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background,
+      enableGlobalGestures: false, // 登入頁面禁用全域手勢，防止未登入時跳轉
       appBar: AppBar(
         title: Text(
           _isLoginMode ? '登入' : '註冊',

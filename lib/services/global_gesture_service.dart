@@ -3,7 +3,9 @@
 // 全域手勢服務：提供全域導航手勢支援
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/tts_helper.dart';
+import '../providers/auth_provider.dart';
 import 'accessibility_service.dart';
 
 /// 全域手勢類型
@@ -52,6 +54,16 @@ class GlobalGestureService {
   /// 處理兩指上滑（回首頁）
   Future<void> handleTwoFingerSwipeUp(BuildContext context) async {
     debugPrint('[GlobalGesture] 偵測到兩指上滑 - 回首頁');
+
+    // 檢查登入狀態
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      debugPrint('[GlobalGesture] 未登入，無法導航到首頁');
+      if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {
+        ttsHelper.speak('請先登入');
+      }
+      return;
+    }
 
     // 語音提示
     if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {

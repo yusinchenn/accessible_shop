@@ -276,6 +276,22 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
 class AppRouter extends StatelessWidget {
   const AppRouter({super.key});
 
+  /// 構建受保護的路由（需要登入才能訪問）
+  Widget _buildProtectedRoute(BuildContext context, Widget page) {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      debugPrint('[路由守衛] 未登入，導向登入頁面');
+      // 未登入時，導向登入頁面
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
+        }
+      });
+      return const AccessibleAuthPage();
+    }
+    return page;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -322,25 +338,25 @@ class AppRouter extends StatelessWidget {
         },
       ),
 
-      /// 路由註冊
+      /// 路由註冊（所有路由都受保護，需要登入）
       routes: {
         '/auth': (context) => const AccessibleAuthPage(),
-        '/home': (context) => const HomePage(),
-        '/product': (context) => const ProductDetailPage(),
-        '/product_detail': (context) => const ProductDetailPage(),
-        '/cart': (context) => const ShoppingCartPage(),
-        '/comparison': (context) => const ComparisonPage(),
-        '/checkout': (context) => const CheckoutPage(),
-        '/orders': (context) => const OrderHistoryPage(),
-        '/order-detail': (context) => const OrderDetailPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/search': (context) => const SearchPage(),
-        '/search_input': (context) => const SearchInputPage(),
-        '/dev-tools': (context) => const DevToolsPage(),
-        '/gesture-demo': (context) => const GestureDemoPage(),
-        '/short_videos': (context) => const ShortVideosPage(),
-        '/notifications': (context) => const NotificationsPage(),
-        '/wallet': (context) => const WalletPage(),
+        '/home': (context) => _buildProtectedRoute(context, const HomePage()),
+        '/product': (context) => _buildProtectedRoute(context, const ProductDetailPage()),
+        '/product_detail': (context) => _buildProtectedRoute(context, const ProductDetailPage()),
+        '/cart': (context) => _buildProtectedRoute(context, const ShoppingCartPage()),
+        '/comparison': (context) => _buildProtectedRoute(context, const ComparisonPage()),
+        '/checkout': (context) => _buildProtectedRoute(context, const CheckoutPage()),
+        '/orders': (context) => _buildProtectedRoute(context, const OrderHistoryPage()),
+        '/order-detail': (context) => _buildProtectedRoute(context, const OrderDetailPage()),
+        '/settings': (context) => _buildProtectedRoute(context, const SettingsPage()),
+        '/search': (context) => _buildProtectedRoute(context, const SearchPage()),
+        '/search_input': (context) => _buildProtectedRoute(context, const SearchInputPage()),
+        '/dev-tools': (context) => _buildProtectedRoute(context, const DevToolsPage()),
+        '/gesture-demo': (context) => _buildProtectedRoute(context, const GestureDemoPage()),
+        '/short_videos': (context) => _buildProtectedRoute(context, const ShortVideosPage()),
+        '/notifications': (context) => _buildProtectedRoute(context, const NotificationsPage()),
+        '/wallet': (context) => _buildProtectedRoute(context, const WalletPage()),
       },
 
       /// 動態路由（需要參數的頁面）
@@ -350,7 +366,10 @@ class AppRouter extends StatelessWidget {
           final storeId = settings.arguments as int?;
           if (storeId != null) {
             return MaterialPageRoute(
-              builder: (context) => StorePage(storeId: storeId),
+              builder: (context) => _buildProtectedRoute(
+                context,
+                StorePage(storeId: storeId),
+              ),
               settings: settings,
             );
           }
