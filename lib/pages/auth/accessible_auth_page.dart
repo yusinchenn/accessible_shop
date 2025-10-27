@@ -146,6 +146,11 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
       );
     } else if (success) {
       ttsHelper.speak(_isLoginMode ? '登入成功' : '註冊成功');
+      // 登入/註冊成功後，導航到首頁並清除所有導航堆疊
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/home',
+        (route) => false,
+      );
     }
   }
 

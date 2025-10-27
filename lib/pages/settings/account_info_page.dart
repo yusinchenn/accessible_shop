@@ -24,6 +24,8 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
   bool _isLoading = true;
   bool _isSaving = false;
   DateTime? _selectedBirthday;
+  DateTime? _lastLogoutTapTime; // 用於檢測雙擊登出
+  DateTime? _lastSaveTapTime; // 用於檢測雙擊儲存
 
   @override
   void initState() {
@@ -82,6 +84,9 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
 
   /// 儲存使用者資料
   Future<void> _saveUserProfile() async {
+    // 移除輸入框焦點
+    FocusScope.of(context).unfocus();
+
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.userId;
 
@@ -182,34 +187,19 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
     await _loadUserProfile();
   }
 
-  /// 登出確認對話框
-  Future<void> _showLogoutDialog() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('確認登出', style: TextStyle(fontSize: 24)),
-        content: const Text('確定要登出嗎？', style: TextStyle(fontSize: 20)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消', style: TextStyle(fontSize: 20)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('登出', style: TextStyle(color: Colors.red, fontSize: 20)),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout == true && mounted) {
-      await context.read<AuthProvider>().signOut();
-      if (mounted) {
-        // 只在自訂模式播放語音
-        if (accessibilityService.shouldUseCustomTTS) {
-          ttsHelper.speak("已登出");
-        }
+  /// 登出功能
+  Future<void> _logout() async {
+    await context.read<AuthProvider>().signOut();
+    if (mounted) {
+      // 只在自訂模式播放語音
+      if (accessibilityService.shouldUseCustomTTS) {
+        ttsHelper.speak("已登出");
       }
+      // 導航到登入頁面，並清除所有導航堆疊
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/auth',
+        (route) => false,
+      );
     }
   }
 
@@ -262,31 +252,56 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // 儲存按鈕
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _saveUserProfile,
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.save, size: 24),
-                      label: Text(
-                        _isSaving ? '儲存中...' : '儲存資料',
-                        style: const TextStyle(fontSize: 20),
+                  GestureDetector(
+                    onTap: () {
+                      if (_isSaving) return;
+
+                      final now = DateTime.now();
+
+                      // 檢測雙擊
+                      if (_lastSaveTapTime != null &&
+                          now.difference(_lastSaveTapTime!) < const Duration(milliseconds: 500)) {
+                        // 雙擊 - 執行儲存
+                        _lastSaveTapTime = null;
+                        _saveUserProfile();
+                      } else {
+                        // 單擊 - 朗讀提示
+                        _lastSaveTapTime = now;
+                        if (accessibilityService.shouldUseCustomTTS) {
+                          ttsHelper.speak('儲存資料按鈕');
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: _isSaving ? AppColors.primary.withValues(alpha: 0.6) : AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _isSaving
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.save, size: 24, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isSaving ? '儲存中...' : '儲存資料',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -315,31 +330,56 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
                   const SizedBox(height: AppSpacing.xl),
 
                   // 登出按鈕
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: authProvider.isLoading ? null : _showLogoutDialog,
-                      icon: authProvider.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.logout, size: 24),
-                      label: Text(
-                        authProvider.isLoading ? '登出中...' : '登出',
-                        style: const TextStyle(fontSize: 20),
+                  GestureDetector(
+                    onTap: () {
+                      if (authProvider.isLoading) return;
+
+                      final now = DateTime.now();
+
+                      // 檢測雙擊
+                      if (_lastLogoutTapTime != null &&
+                          now.difference(_lastLogoutTapTime!) < const Duration(milliseconds: 500)) {
+                        // 雙擊 - 執行登出
+                        _lastLogoutTapTime = null;
+                        _logout();
+                      } else {
+                        // 單擊 - 朗讀提示
+                        _lastLogoutTapTime = now;
+                        if (accessibilityService.shouldUseCustomTTS) {
+                          ttsHelper.speak('登出按鈕');
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: authProvider.isLoading ? Colors.red.withValues(alpha: 0.6) : Colors.red,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          authProvider.isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.logout, size: 24, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            authProvider.isLoading ? '登出中...' : '登出',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
