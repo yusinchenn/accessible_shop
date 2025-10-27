@@ -33,6 +33,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0              # Flutter 專案建議 Lint 規則
   build_runner: ^2.4.13              # 代碼生成工具
   isar_generator: ^3.1.0+1           # Isar 代碼生成插件
+  flutter_launcher_icons: ^0.14.2    # 應用程式圖標生成工具
 
 # ------------------ Flutter 專屬設定 ------------------
 flutter:
@@ -41,7 +42,18 @@ flutter:
   # 資源檔案 (圖片/字體) 範例，使用時取消註解並填入路徑
   assets:
     - .env                             # 環境變數檔案
+    - assets/images/app_icon.png       # 應用程式圖標
   # fonts:
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
+
+# ------------------ 應用程式圖標配置 ------------------
+flutter_launcher_icons:
+  android: true                        # 生成 Android 圖標
+  ios: true                            # 生成 iOS 圖標
+  image_path: "assets/images/app_icon.png"  # 圖標來源路徑
+  remove_alpha_ios: true               # iOS 移除透明通道
+  # Android 適應性圖標設定（可選）
+  adaptive_icon_background: "#FFFFFF"  # 背景色
+  adaptive_icon_foreground: "assets/images/app_icon.png"  # 前景圖
