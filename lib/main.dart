@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -59,6 +60,17 @@ class AccessibleShopApp extends StatelessWidget {
     return MaterialApp(
       title: 'Accessible Shop',
       debugShowCheckedModeBanner: false,
+      // 添加本地化支援
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'TW'), // 繁體中文
+        Locale('en', 'US'), // 英文
+      ],
+      locale: const Locale('zh', 'TW'), // 預設語言
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -297,6 +309,17 @@ class AppRouter extends StatelessWidget {
     return MaterialApp(
       title: 'Accessible Shop',
       debugShowCheckedModeBanner: false,
+      // 添加本地化支援
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'TW'), // 繁體中文
+        Locale('en', 'US'), // 英文
+      ],
+      locale: const Locale('zh', 'TW'), // 預設語言
       theme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.background,

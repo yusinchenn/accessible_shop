@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter                     # Flutter SDK 核心
+  flutter_localizations:             # Flutter 本地化支援
+    sdk: flutter
   cupertino_icons: ^1.0.8            # iOS Cupertino Icon 套件
   provider: ^6.1.5+1                 # 狀態管理
   isar: ^3.1.0+1                     # 本地資料庫核心
@@ -19,7 +21,7 @@ dependencies:
   speech_to_text: ^7.3.0             # 語音轉文字
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0
-  intl: ^0.19.0                      # 國際化與日期格式化
+  intl: ^0.20.2                      # 國際化與日期格式化
   dio: ^5.9.0
   flutter_dotenv: ^5.2.1             # 環境變數管理
 

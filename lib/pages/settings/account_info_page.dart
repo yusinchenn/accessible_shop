@@ -152,12 +152,10 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
       lastDate: now,
       locale: const Locale('zh', 'TW'),
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            textTheme: Theme.of(context).textTheme.copyWith(
-              headlineMedium: const TextStyle(fontSize: 24),
-              bodyLarge: const TextStyle(fontSize: 18),
-            ),
+        // 使用 MediaQuery 來調整字體大小，避免遮蔽 MaterialLocalizations
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: const TextScaler.linear(1.2),
           ),
           child: child!,
         );
