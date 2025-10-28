@@ -105,24 +105,6 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
     return mainStatus;
   }
 
-  /// 取得訂單狀態的顏色
-  Color _getStatusColor(OrderMainStatus status) {
-    switch (status) {
-      case OrderMainStatus.pendingPayment:
-        return Colors.orange;
-      case OrderMainStatus.pendingShipment:
-        return Colors.blue;
-      case OrderMainStatus.pendingDelivery:
-        return Colors.purple;
-      case OrderMainStatus.completed:
-        return Colors.green;
-      case OrderMainStatus.returnRefund:
-        return Colors.red;
-      case OrderMainStatus.invalid:
-        return Colors.grey;
-    }
-  }
-
   /// 完成訂單（僅限已簽收的訂單）
   Future<void> _completeOrder(Order order) async {
     final success = await _orderStatusService.completeOrder(order.id);
@@ -144,10 +126,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
-      backgroundColor: AppColors.background_1,
+      backgroundColor: AppColors.background_2,
       appBar: AppBar(
-        title: const Text('歷史訂單'),
+        title: Text(
+          '歷史訂單',
+          style: AppTextStyles.title.copyWith(color: AppColors.text_2),
+        ),
         automaticallyImplyLeading: false,
+        backgroundColor: AppColors.background_2,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -158,18 +144,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
+          labelStyle: const TextStyle(fontSize: 24),
+          unselectedLabelStyle: const TextStyle(fontSize: 24),
           tabs: _statusTabs.map((status) {
             return Tab(text: status.displayName);
           }).toList(),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(), // 禁用左右滑動
-        children: _statusTabs.map((status) {
-          return _buildOrderList();
-        }).toList(),
-      ),
+      body: _buildOrderList(),
     );
   }
 
@@ -182,7 +164,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.list_alt, size: 80, color: AppColors.primary_1),
             SizedBox(height: AppSpacing.md),
             Text('目前沒有訂單', style: AppTextStyles.subtitle),
@@ -202,7 +184,6 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       itemBuilder: (context, index) {
         final order = _orders[index];
         final statusText = _getDetailedStatusText(order);
-        final statusColor = _getStatusColor(order.mainStatus);
         final dateStr =
             '${order.createdAt.year}-'
             '${order.createdAt.month.toString().padLeft(2, '0')}-'
@@ -252,14 +233,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                           vertical: AppSpacing.xs,
                         ),
                         decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.2),
+                          color: AppColors.blockBackground_2,
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: statusColor, width: 1),
+                          border: Border.all(color: AppColors.secondery_2, width: 1),
                         ),
                         child: Text(
                           statusText,
-                          style: TextStyle(
-                            color: statusColor,
+                          style: const TextStyle(
+                            color: AppColors.secondery_2,
                             fontSize: AppFontSizes.small,
                             fontWeight: FontWeight.bold,
                           ),
@@ -287,7 +268,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                         style: const TextStyle(
                           fontSize: AppFontSizes.subtitle,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primary_1,
+                          color: AppColors.primary_2,
                         ),
                       ),
                     ],
