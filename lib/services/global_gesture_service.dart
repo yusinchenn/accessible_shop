@@ -65,14 +65,7 @@ class GlobalGestureService {
       return;
     }
 
-    // 語音提示
-    if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {
-      await ttsHelper.speak('回到首頁');
-      // 等待語音播報完成後再導航，避免與首頁進入語音衝突
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-
-    // 導航到首頁（移除所有路由）
+    // 直接導航到首頁（移除所有路由）
     if (context.mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
     }
@@ -84,14 +77,7 @@ class GlobalGestureService {
 
     // 檢查是否可以返回
     if (Navigator.of(context).canPop()) {
-      // 語音提示
-      if (_config.enableVoiceFeedback && accessibilityService.shouldUseCustomTTS) {
-        await ttsHelper.speak('返回上一頁');
-        // 等待語音播報完成後再導航
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
-
-      // 返回上一頁
+      // 直接返回上一頁
       if (context.mounted) {
         Navigator.of(context).pop();
       }
