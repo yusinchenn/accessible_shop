@@ -96,10 +96,17 @@ class _SearchInputPageState extends State<SearchInputPage> {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
       appBar: AppBar(
-        title: const Text('搜尋'),
+        title: GestureDetector(
+          onTap: () {
+            if (accessibilityService.shouldUseCustomTTS) {
+              ttsHelper.speak('搜尋輸入頁面，由上到下包含推薦商品按鈕、搜尋輸入欄位、搜尋按鈕');
+            }
+          },
+          child: const Text('搜尋', style: TextStyle(color: AppColors.text_2)),
+        ),
         centerTitle: true,
-        automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -118,15 +125,21 @@ class _SearchInputPageState extends State<SearchInputPage> {
                   }
                 },
                 onDoubleTap: _onRecommendedProducts,
-                child: OutlinedButton(
-                  onPressed: () {}, // 禁用預設行為，使用 GestureDetector 處理
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xl,
-                      vertical: AppSpacing.md,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.botton_2,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: const Text(
+                    '推薦商品>',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      color: AppColors.bottonText_2,
                     ),
                   ),
-                  child: const Text('推薦商品', style: TextStyle(fontSize: 24)),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -140,19 +153,39 @@ class _SearchInputPageState extends State<SearchInputPage> {
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.all(AppSpacing.md),
                 ),
+                onTap: () {
+                  // 單擊朗讀
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    ttsHelper.speak('搜尋輸入框');
+                  }
+                },
                 onSubmitted: _onSearchSubmit,
                 textInputAction: TextInputAction.search,
               ),
               const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
-                onPressed: () => _onSearchSubmit(_searchController.text),
-                style: ElevatedButton.styleFrom(
+              GestureDetector(
+                onTap: () {
+                  // 單擊朗讀
+                  if (accessibilityService.shouldUseCustomTTS) {
+                    ttsHelper.speak('搜尋按鈕');
+                  }
+                },
+                onDoubleTap: () => _onSearchSubmit(_searchController.text),
+                child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xl,
                     vertical: AppSpacing.md,
                   ),
+                  decoration: BoxDecoration(
+                    color: AppColors.botton_2,
+                    borderRadius: BorderRadius.circular(AppBorders.buttonBorderRadius),
+                  ),
+                  child: const Text(
+                    '搜尋',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 24, color: AppColors.bottonText_2),
+                  ),
                 ),
-                child: const Text('搜尋', style: TextStyle(fontSize: 24)),
               ),
             ],
           ),
