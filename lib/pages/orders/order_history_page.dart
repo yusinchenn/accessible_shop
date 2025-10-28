@@ -197,6 +197,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
           child: InkWell(
             onTap: () {
               ttsHelper.speak(
+                '商家 ${order.storeName}，'
                 '訂單編號 ${order.orderNumber}，'
                 '日期 $dateStr，'
                 '金額 ${order.total.toStringAsFixed(0)} 元，'
@@ -216,6 +217,26 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 商家名稱
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.store,
+                        size: 18,
+                        color: AppColors.subtitle_1,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        order.storeName,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.body,
+                          color: AppColors.subtitle_1,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

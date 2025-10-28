@@ -256,7 +256,7 @@ $reviewsText
 
   /// 加入購物車
   Future<void> _addToCart() async {
-    if (_product == null) return;
+    if (_product == null || _store == null) return;
 
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
@@ -267,6 +267,8 @@ $reviewsText
         productName: _product!.name,
         price: _product!.price,
         specification: specification,
+        storeId: _store!.id,
+        storeName: _store!.name,
         quantity: _quantity,
       );
 
@@ -305,7 +307,7 @@ $reviewsText
 
   /// 直接購買
   Future<void> _buyNow() async {
-    if (_product == null) return;
+    if (_product == null || _store == null) return;
 
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
@@ -317,6 +319,8 @@ $reviewsText
         productName: _product!.name,
         price: _product!.price,
         specification: specification,
+        storeId: _store!.id,
+        storeName: _store!.name,
         quantity: _quantity,
       );
 

@@ -11,6 +11,12 @@ class Order {
   /// 訂單編號（如 "20250117-0001"）
   late String orderNumber;
 
+  /// 所屬商家 ID
+  late int storeId;
+
+  /// 所屬商家名稱
+  late String storeName;
+
   /// 訂單建立時間
   late DateTime createdAt;
 

@@ -220,12 +220,71 @@ class DatabaseService extends ChangeNotifier {
 
   /// 取得所有購物車項目
   Future<List<CartItem>> getCartItems() async {
-    final isar = await _isarFuture;
-    // 取得所有購物車項目
-    final items = await isar.cartItems.where().findAll();
-    // 按 ID 降序排序，新加入的商品顯示在前面
-    items.sort((a, b) => b.id.compareTo(a.id));
-    return items;
+    try {
+      final isar = await _isarFuture;
+      // 取得所有購物車項目
+      final items = await isar.cartItems.where().findAll();
+
+      // 過濾掉無效的項目（缺少必要欄位）
+      final validItems = <CartItem>[];
+      final invalidIds = <int>[];
+
+      for (var item in items) {
+        try {
+          // 檢查必要欄位是否存在且有效
+          if (item.storeId > 0 && item.storeName.isNotEmpty) {
+            validItems.add(item);
+          } else {
+            invalidIds.add(item.id);
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ [DatabaseService] 發現無效的購物車項目 ID ${item.id}: $e');
+          }
+          invalidIds.add(item.id);
+        }
+      }
+
+      // 如果有無效項目，清理資料庫
+      if (invalidIds.isNotEmpty) {
+        if (kDebugMode) {
+          print('⚠️ [DatabaseService] 發現 ${invalidIds.length} 個無效項目，正在清理...');
+        }
+        await _cleanInvalidCartItems(invalidIds);
+      }
+
+      // 按 ID 降序排序，新加入的商品顯示在前面
+      validItems.sort((a, b) => b.id.compareTo(a.id));
+      return validItems;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [DatabaseService] 讀取購物車失敗: $e');
+        print('   建議清空購物車並重試');
+      }
+      return [];
+    }
+  }
+
+  /// 清理無效的購物車項目
+  Future<void> _cleanInvalidCartItems(List<int> invalidIds) async {
+    try {
+      final isar = await _isarFuture;
+
+      await isar.writeTxn(() async {
+        for (var id in invalidIds) {
+          await isar.cartItems.delete(id);
+          if (kDebugMode) {
+            print('🗑️ [DatabaseService] 已刪除無效項目 ID: $id');
+          }
+        }
+      });
+
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [DatabaseService] 清理無效項目失敗: $e');
+      }
+    }
   }
 
   /// 加入商品到購物車
@@ -235,6 +294,8 @@ class DatabaseService extends ChangeNotifier {
     required String productName,
     required double price,
     required String specification,
+    required int storeId,
+    required String storeName,
     int quantity = 1,
   }) async {
     final isar = await _isarFuture;
@@ -263,6 +324,8 @@ class DatabaseService extends ChangeNotifier {
         // 新增項目
         final newItem = CartItem()
           ..productId = productId
+          ..storeId = storeId
+          ..storeName = storeName
           ..name = productName
           ..specification = specification
           ..unitPrice = price
@@ -271,7 +334,7 @@ class DatabaseService extends ChangeNotifier {
 
         await isar.cartItems.put(newItem);
         if (kDebugMode) {
-          print('🛒 [DatabaseService] 新增購物車項目: $productName ($specification) x$quantity');
+          print('🛒 [DatabaseService] 新增購物車項目: $productName ($specification) x$quantity, 商家: $storeName');
         }
       }
     });
@@ -419,9 +482,15 @@ class DatabaseService extends ChangeNotifier {
         ? OrderMainStatus.pendingPayment
         : OrderMainStatus.pendingShipment;
 
+    // 取得商家資訊（假設購物車商品都來自同一個商家）
+    final storeId = cartItems.isNotEmpty ? cartItems.first.storeId : 0;
+    final storeName = cartItems.isNotEmpty ? cartItems.first.storeName : '未知商家';
+
     // 建立訂單
     final order = Order()
       ..orderNumber = orderNumber
+      ..storeId = storeId
+      ..storeName = storeName
       ..createdAt = DateTime.now()
       ..status = 'pending' // 舊版狀態，保留兼容性
       ..mainStatus = initialStatus
@@ -501,6 +570,90 @@ class DatabaseService extends ChangeNotifier {
 
     notifyListeners();
     return order;
+  }
+
+  /// 按商家分組建立訂單
+  /// 將購物車商品按商家分組，為每個商家創建獨立訂單
+  /// 返回所有創建的訂單列表
+  Future<List<Order>> createOrdersByStore({
+    required List<CartItem> cartItems,
+    int? couponId,
+    String? couponName,
+    double discount = 0.0,
+    required int shippingMethodId,
+    required String shippingMethodName,
+    required double shippingFee,
+    required int paymentMethodId,
+    required String paymentMethodName,
+    required bool isCashOnDelivery,
+    String? deliveryType,
+  }) async {
+    // 按商家 ID 分組購物車項目
+    final Map<int, List<CartItem>> itemsByStore = {};
+    for (var item in cartItems) {
+      if (!itemsByStore.containsKey(item.storeId)) {
+        itemsByStore[item.storeId] = [];
+      }
+      itemsByStore[item.storeId]!.add(item);
+    }
+
+    if (kDebugMode) {
+      print('📦 [DatabaseService] 購物車商品分組: 共 ${itemsByStore.length} 個商家');
+      itemsByStore.forEach((storeId, items) {
+        final storeName = items.first.storeName;
+        print('   - 商家 $storeName (ID: $storeId): ${items.length} 項商品');
+      });
+    }
+
+    // 計算每個商家應分攤的優惠和運費
+    final totalSubtotal = cartItems.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.unitPrice * item.quantity),
+    );
+
+    final List<Order> createdOrders = [];
+
+    // 為每個商家創建訂單
+    for (var entry in itemsByStore.entries) {
+      final storeItems = entry.value;
+      final storeSubtotal = storeItems.fold<double>(
+        0.0,
+        (sum, item) => sum + (item.unitPrice * item.quantity),
+      );
+
+      // 按商品金額比例分攤優惠券折扣
+      final storeDiscount = totalSubtotal > 0
+          ? (discount * storeSubtotal / totalSubtotal)
+          : 0.0;
+
+      // 按商品金額比例分攤運費
+      final storeShippingFee = totalSubtotal > 0
+          ? (shippingFee * storeSubtotal / totalSubtotal)
+          : 0.0;
+
+      // 為該商家創建訂單
+      final order = await createOrder(
+        cartItems: storeItems,
+        couponId: couponId,
+        couponName: couponName,
+        discount: storeDiscount,
+        shippingMethodId: shippingMethodId,
+        shippingMethodName: shippingMethodName,
+        shippingFee: storeShippingFee,
+        paymentMethodId: paymentMethodId,
+        paymentMethodName: paymentMethodName,
+        isCashOnDelivery: isCashOnDelivery,
+        deliveryType: deliveryType,
+      );
+
+      createdOrders.add(order);
+    }
+
+    if (kDebugMode) {
+      print('✅ [DatabaseService] 成功創建 ${createdOrders.length} 個訂單');
+    }
+
+    return createdOrders;
   }
 
   /// 取得所有訂單（按時間倒序）

@@ -18,7 +18,6 @@ class ShoppingCartPage extends StatefulWidget {
 }
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
-  final PageController _pageController = PageController();
   bool _showMoreActionsOverlay = false;
   CartItem? _overlayTargetItem;
   bool _announceScheduled = false;
@@ -97,6 +96,15 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
             return const Center(child: Text("購物車是空的！"));
           }
 
+          // 按商家分組
+          final Map<int, List<CartItem>> itemsByStore = {};
+          for (var item in items) {
+            if (!itemsByStore.containsKey(item.storeId)) {
+              itemsByStore[item.storeId] = [];
+            }
+            itemsByStore[item.storeId]!.add(item);
+          }
+
           return Stack(
             children: [
               Column(
@@ -167,23 +175,73 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       },
                     ),
                   ),
+                  // 按商家分組顯示商品
                   Expanded(
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: items.length,
-                      onPageChanged: (index) {
-                        ttsHelper.speak(items[index].name);
-                      },
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                          ),
-                          child: ShoppingCartItemCard(
-                            item: item,
-                            cartData: cartData,
-                            onShowMoreActions: _showMoreActions,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      itemCount: itemsByStore.length,
+                      itemBuilder: (context, storeIndex) {
+                        final storeEntry = itemsByStore.entries.elementAt(storeIndex);
+                        final storeItems = storeEntry.value;
+                        final storeName = storeItems.first.storeName;
+                        final storeSubtotal = storeItems.fold<double>(
+                          0.0,
+                          (sum, item) => sum + (item.unitPrice * item.quantity),
+                        );
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 商家標題
+                              GestureDetector(
+                                onTap: () {
+                                  ttsHelper.speak('商家 $storeName，共 ${storeItems.length} 項商品，小計 ${storeSubtotal.toStringAsFixed(0)} 元');
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.blockBackground_2,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(12),
+                                      topRight: Radius.circular(12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.store, size: 20),
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Expanded(
+                                        child: Text(
+                                          storeName,
+                                          style: const TextStyle(
+                                            fontSize: AppFontSizes.body,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '\$${storeSubtotal.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: AppFontSizes.body,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary_2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // 商家的商品列表
+                              ...storeItems.map((item) => ShoppingCartItemCard(
+                                    item: item,
+                                    cartData: cartData,
+                                    onShowMoreActions: _showMoreActions,
+                                  )),
+                            ],
                           ),
                         );
                       },
@@ -350,6 +408,7 @@ class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(item.name, style: AppTextStyles.title),
@@ -362,7 +421,7 @@ class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text("數量: ${item.quantity}", style: AppTextStyles.body),
-              const Spacer(),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(

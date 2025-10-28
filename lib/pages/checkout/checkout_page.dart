@@ -1230,7 +1230,7 @@ class _Step5Complete extends StatefulWidget {
 }
 
 class _Step5CompleteState extends State<_Step5Complete> {
-  Order? _createdOrder;
+  List<Order>? _createdOrders;
   bool _isCreatingOrder = true;
 
   @override
@@ -1239,7 +1239,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
     _createOrder();
   }
 
-  /// 建立訂單
+  /// 建立訂單（支援多商家自動分單）
   Future<void> _createOrder() async {
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
@@ -1262,8 +1262,8 @@ class _Step5CompleteState extends State<_Step5Complete> {
         deliveryType = 'home_delivery'; // 宅配
       }
 
-      // 建立訂單
-      final order = await db.createOrder(
+      // 使用新的按商家分組建立訂單方法
+      final orders = await db.createOrdersByStore(
         cartItems: widget.items,
         couponId: widget.selectedCoupon?.id,
         couponName: widget.selectedCoupon?.name,
@@ -1299,18 +1299,25 @@ class _Step5CompleteState extends State<_Step5Complete> {
       // 購物車 Provider 會自動監聽資料庫變化並重新載入
       await db.clearSelectedCartItems();
 
-      // 觸發訂單自動化服務
-      await automationService.onOrderCreated(order);
+      // 觸發訂單自動化服務（為每個訂單）
+      for (var order in orders) {
+        await automationService.onOrderCreated(order);
+      }
 
       setState(() {
-        _createdOrder = order;
+        _createdOrders = orders;
         _isCreatingOrder = false;
       });
 
       // 朗讀結帳完成訊息（只在自訂模式）
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (accessibilityService.shouldUseCustomTTS) {
-          ttsHelper.speak('結帳完成，訂單編號 ${order.orderNumber}，感謝您的購買');
+          if (orders.length == 1) {
+            ttsHelper.speak('結帳完成，訂單編號 ${orders.first.orderNumber}，感謝您的購買');
+          } else {
+            final orderNumbers = orders.map((o) => o.orderNumber).join('、');
+            ttsHelper.speak('結帳完成，已為您建立 ${orders.length} 個訂單，編號：$orderNumbers，感謝您的購買');
+          }
         }
       });
     } catch (e, stackTrace) {
@@ -1353,11 +1360,12 @@ class _Step5CompleteState extends State<_Step5Complete> {
       );
     }
 
-    if (_createdOrder == null) {
+    if (_createdOrders == null || _createdOrders!.isEmpty) {
       return const Center(child: Text('建立訂單失敗', style: AppTextStyles.title));
     }
 
-    final order = _createdOrder!;
+    final orders = _createdOrders!;
+    final totalAmount = orders.fold<double>(0.0, (sum, order) => sum + order.total);
 
     return PopScope(
       canPop: false,
@@ -1378,26 +1386,73 @@ class _Step5CompleteState extends State<_Step5Complete> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              AccessibleSpeakWrapper(
-                label: '訂單編號 ${order.orderNumber}',
-                child: Text(
-                  '訂單編號: ${order.orderNumber}',
+              // 顯示訂單數量提示
+              if (orders.length > 1) ...[
+                Text(
+                  '已為您建立 ${orders.length} 個訂單',
                   style: const TextStyle(
-                    fontSize: AppFontSizes.subtitle,
-                    color: AppColors.primary_1,
-                    fontWeight: FontWeight.bold,
+                    fontSize: AppFontSizes.body,
+                    color: AppColors.subtitle_1,
                   ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              // 顯示所有訂單編號
+              ...orders.map((order) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: AccessibleSpeakWrapper(
+                      label: '${order.storeName} 訂單編號 ${order.orderNumber}',
+                      child: Card(
+                        color: AppColors.blockBackground_2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      order.storeName,
+                                      style: const TextStyle(
+                                        fontSize: AppFontSizes.body,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '訂單: ${order.orderNumber}',
+                                      style: const TextStyle(
+                                        fontSize: AppFontSizes.small,
+                                        color: AppColors.subtitle_1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '\$${order.total.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: AppFontSizes.subtitle,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary_2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )),
               const SizedBox(height: AppSpacing.lg),
               AccessibleGestureWrapper(
                 label:
-                    '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元',
+                    '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${totalAmount.toStringAsFixed(0)}元',
                 description: '點擊可再次朗讀訂單摘要',
                 onTap: () {
                   if (accessibilityService.shouldUseCustomTTS) {
                     final summaryText =
-                        '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${order.total.toStringAsFixed(0)}元';
+                        '訂單摘要，商品數量${widget.items.length}項，付款方式${widget.selectedPayment?.name ?? "未選擇"}，配送方式${widget.selectedShipping?.name ?? "未選擇"}，總金額${totalAmount.toStringAsFixed(0)}元';
                     ttsHelper.speak(summaryText);
                   }
                 },
@@ -1413,6 +1468,14 @@ class _Step5CompleteState extends State<_Step5Complete> {
                           children: [
                             const Text('商品數量'),
                             Text('${widget.items.length} 項'),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('訂單數量'),
+                            Text('${orders.length} 個'),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -1443,7 +1506,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
                               ),
                             ),
                             Text(
-                              '\$${order.total.toStringAsFixed(0)}',
+                              '\$${totalAmount.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontSize: AppFontSizes.subtitle,
                                 fontWeight: FontWeight.bold,
