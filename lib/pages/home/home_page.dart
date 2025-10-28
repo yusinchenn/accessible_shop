@@ -14,6 +14,178 @@ import '../../models/order_status.dart'; // 匯入訂單狀態枚舉
 import '../../models/notification.dart'; // 匯入通知模型
 import '../../models/cart_item.dart'; // 匯入購物車項目模型
 
+/// 文字變色波浪動畫 Widget，由前往後輪流高亮每個字符
+class ColorWaveText extends StatefulWidget {
+  final String text; // 要顯示的完整文字
+  final TextStyle? baseStyle; // 基礎文字樣式
+  final Color baseColor; // 基礎文字顏色
+  final Color highlightColor; // 高亮文字顏色
+  final Duration duration; // 每個字符高亮的持續時間
+
+  const ColorWaveText({
+    super.key,
+    required this.text,
+    this.baseStyle,
+    this.baseColor = AppColors.subtitle_1,
+    this.highlightColor = AppColors.accent_1,
+    this.duration = const Duration(milliseconds: 500),
+  });
+
+  @override
+  State<ColorWaveText> createState() => _ColorWaveTextState();
+}
+
+class _ColorWaveTextState extends State<ColorWaveText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _highlightIndex;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 計算總動畫時長 = 字符數 * 每個字符的持續時間
+    final totalDuration = widget.duration * widget.text.length;
+
+    _controller = AnimationController(
+      duration: totalDuration,
+      vsync: this,
+    );
+
+    // 創建高亮索引動畫（從 0 到文字長度-1）
+    _highlightIndex = StepTween(
+      begin: 0,
+      end: widget.text.length,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.linear,
+      ),
+    );
+
+    // 循環播放動畫
+    _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _highlightIndex,
+      builder: (context, child) {
+        final currentIndex = _highlightIndex.value % widget.text.length;
+
+        return RichText(
+          text: TextSpan(
+            children: List.generate(widget.text.length, (index) {
+              final isHighlight = index == currentIndex;
+              return TextSpan(
+                text: widget.text[index],
+                style: (widget.baseStyle ?? const TextStyle(fontSize: 24))
+                    .copyWith(
+                  color: isHighlight ? widget.highlightColor : widget.baseColor,
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 打字機動畫 Widget，逐字顯示文字並帶有閃爍游標
+class TypingAnimationText extends StatefulWidget {
+  final String text; // 要顯示的完整文字
+  final TextStyle? style; // 文字樣式
+  final Duration typingSpeed; // 每個字符的顯示速度
+  final Duration pauseDuration; // 完整顯示後的暫停時間
+
+  const TypingAnimationText({
+    super.key,
+    required this.text,
+    this.style,
+    this.typingSpeed = const Duration(milliseconds: 300),
+    this.pauseDuration = const Duration(milliseconds: 2000),
+  });
+
+  @override
+  State<TypingAnimationText> createState() => _TypingAnimationTextState();
+}
+
+class _TypingAnimationTextState extends State<TypingAnimationText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _characterCount;
+  bool _showCursor = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 計算總動畫時長 = (字符數 * 打字速度) + 暫停時間
+    final totalDuration =
+        widget.typingSpeed * widget.text.length + widget.pauseDuration;
+
+    _controller = AnimationController(duration: totalDuration, vsync: this);
+
+    // 創建字符數量動畫（從 0 到文字長度）
+    _characterCount = StepTween(begin: 0, end: widget.text.length).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(
+          0.0,
+          widget.typingSpeed.inMilliseconds *
+              widget.text.length /
+              totalDuration.inMilliseconds,
+          curve: Curves.linear,
+        ),
+      ),
+    );
+
+    // 循環播放動畫
+    _controller.repeat();
+
+    // 游標閃爍效果
+    _startCursorBlink();
+  }
+
+  void _startCursorBlink() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _showCursor = !_showCursor;
+        });
+        _startCursorBlink();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _characterCount,
+      builder: (context, child) {
+        final displayText = widget.text.substring(0, _characterCount.value);
+        final cursor = _showCursor ? '│' : '    ';
+
+        return Text('$displayText$cursor', style: widget.style);
+      },
+    );
+  }
+}
+
 /// 定義商店入口卡片的資料結構，用於儲存每個卡片的標題、圖示、路由和內容建構函數
 class ShopEntryItem {
   final String title; // 卡片顯示的標題文字
@@ -67,9 +239,11 @@ class _HomePageState extends State<HomePage> {
       icon: Icons.search, // 搜尋圖示
       route: '/search_input', // 導航到搜尋輸入頁面
       contentBuilder: (context) => const Center(
-        child: Text(
-          '搜尋商品',
-          style: TextStyle(fontSize: 24, color: AppColors.text_1),
+        child: TypingAnimationText(
+          text: '搜尋商品',
+          style: TextStyle(fontSize: 24, color: AppColors.accent_1),
+          typingSpeed: Duration(milliseconds: 300),
+          pauseDuration: Duration(milliseconds: 2000),
         ),
       ),
     ),
@@ -89,17 +263,35 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               '待付款：$_pendingPaymentCount',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                color: _pendingPaymentCount > 0
+                    ? AppColors.accent_1
+                    : AppColors.subtitle_1,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               '待出貨：$_pendingShipmentCount',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                color: _pendingShipmentCount > 0
+                    ? AppColors.accent_1
+                    : AppColors.subtitle_1,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               '待收貨：$_pendingReceiptCount',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                color: _pendingReceiptCount > 0
+                    ? AppColors.accent_1
+                    : AppColors.subtitle_1,
+              ),
             ),
           ],
         ),
@@ -113,11 +305,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text('帳號資訊', style: TextStyle(fontSize: 20)),
+            Text('帳號資訊', style: TextStyle(fontSize: 24)),
             SizedBox(height: AppSpacing.sm),
-            Text('APP設定', style: TextStyle(fontSize: 20)),
+            Text('APP設定', style: TextStyle(fontSize: 24)),
             SizedBox(height: AppSpacing.sm),
-            Text('幫助與客服', style: TextStyle(fontSize: 20)),
+            Text('幫助與客服', style: TextStyle(fontSize: 24)),
           ],
         ),
       ),
@@ -126,7 +318,15 @@ class _HomePageState extends State<HomePage> {
       title: '短影音',
       icon: Icons.video_library,
       route: '/short_videos',
-      contentBuilder: (context) => const Center(child: Text('短影音入口')),
+      contentBuilder: (context) => const Center(
+        child: ColorWaveText(
+          text: '短影音入口',
+          baseStyle: TextStyle(fontSize: 24),
+          baseColor: AppColors.subtitle_1,
+          highlightColor: AppColors.accent_1,
+          duration: Duration(milliseconds: 500),
+        ),
+      ),
     ),
     ShopEntryItem(
       title: '通知',
@@ -156,7 +356,7 @@ class _HomePageState extends State<HomePage> {
     if (_cartItems.isEmpty) {
       return const Text(
         '購物車是空的',
-        style: TextStyle(fontSize: 20, color: AppColors.text_1),
+        style: TextStyle(fontSize: 24, color: AppColors.text_1),
       );
     }
 
@@ -169,7 +369,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
               cartItem.name,
-              style: const TextStyle(fontSize: 20),
+              style: const TextStyle(fontSize: 24, color: AppColors.accent_1),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -187,7 +387,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _cartItems[0].name,
-            style: const TextStyle(fontSize: 20),
+            style: const TextStyle(fontSize: 24, color: AppColors.accent_1),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -197,7 +397,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _cartItems[1].name,
-            style: const TextStyle(fontSize: 20),
+            style: const TextStyle(fontSize: 24, color: AppColors.accent_1),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -208,9 +408,9 @@ class _HomePageState extends State<HomePage> {
           child: Text(
             '+${_totalCartItemCount - 2}',
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.text_1,
+              color: AppColors.accent_1,
             ),
             textAlign: TextAlign.center,
           ),
@@ -224,7 +424,7 @@ class _HomePageState extends State<HomePage> {
     if (_notifications.isEmpty) {
       return const Text(
         '目前沒有通知',
-        style: TextStyle(fontSize: 20, color: AppColors.text_1),
+        style: TextStyle(fontSize: 24, color: AppColors.subtitle_1),
       );
     }
 
@@ -237,7 +437,12 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Text(
               notification.title,
-              style: const TextStyle(fontSize: 20),
+              style: TextStyle(
+                fontSize: 24,
+                color: notification.isRead
+                    ? AppColors.subtitle_1
+                    : AppColors.accent_1,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -255,7 +460,12 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _notifications[0].title,
-            style: const TextStyle(fontSize: 20),
+            style: TextStyle(
+              fontSize: 24,
+              color: _notifications[0].isRead
+                  ? AppColors.subtitle_1
+                  : AppColors.accent_1,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -265,7 +475,12 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             _notifications[1].title,
-            style: const TextStyle(fontSize: 20),
+            style: TextStyle(
+              fontSize: 24,
+              color: _notifications[1].isRead
+                  ? AppColors.subtitle_1
+                  : AppColors.accent_1,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -495,13 +710,24 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  /// 處理 AppBar 點擊事件，朗讀頁面指引
+  void _onAppBarTap() {
+    // 只在自訂模式播放語音
+    if (accessibilityService.shouldUseCustomTTS) {
+      ttsHelper.speak('首頁，包含搜尋、購物車、訂單、帳號、短影音、通知入口，左右滑動切換項目，單擊朗讀項目，雙擊進入項目');
+    }
+  }
+
   /// 構建頁面 UI，使用 Scaffold 和 PageView 顯示卡片
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1, // 套用背景色
       appBar: AppBar(
-        title: const Text('首頁'), // 顯示固定文字「首頁」
+        title: GestureDetector(
+          onTap: _onAppBarTap, // 點擊 AppBar 標題時朗讀頁面指引
+          child: const Text('首頁'), // 顯示固定文字「首頁」
+        ),
         centerTitle: true, // 標題居中
         automaticallyImplyLeading: false,
       ),
@@ -556,6 +782,7 @@ class _HomePageState extends State<HomePage> {
                               mainAxisAlignment:
                                   MainAxisAlignment.center, // 內容垂直居中
                               children: [
+                                const SizedBox(height: AppSpacing.md), // 增加圖示與卡片上邊的間隔
                                 Icon(
                                   _entryItems[actualIndex].icon, // 顯示卡片圖示
                                   size: 60, // 圖示大小
