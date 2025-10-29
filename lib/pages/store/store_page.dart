@@ -7,6 +7,7 @@ import '../../services/database_service.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/product_card.dart';
+import '../../widgets/global_gesture_wrapper.dart';
 
 /// 商家頁面
 /// 顯示商家資訊、關注/訊息按鈕，以及該商家的所有商品
@@ -140,7 +141,7 @@ class _StorePageState extends State<StorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
       appBar: AppBar(
         title: GestureDetector(
