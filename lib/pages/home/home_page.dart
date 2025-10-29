@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 import '../../utils/app_constants.dart'; // 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
+import '../../widgets/custom_joke_appbar.dart'; // 匯入自定義笑話 AppBar
 import '../../services/accessibility_service.dart'; // 匯入無障礙服務
 import '../../services/database_service.dart'; // 匯入資料庫服務
 import '../../models/order_status.dart'; // 匯入訂單狀態枚舉
@@ -723,11 +724,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1, // 套用背景色
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: _onAppBarTap, // 點擊 AppBar 標題時朗讀頁面指引
-          child: const Text('首頁'), // 顯示固定文字「首頁」
-        ),
+      appBar: CustomJokeAppBar(
+        title: '首頁', // 顯示固定文字「首頁」
+        onTap: _onAppBarTap, // 短按時朗讀頁面指引，長按2秒會說笑話
         centerTitle: true, // 標題居中
         automaticallyImplyLeading: false,
       ),
