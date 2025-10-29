@@ -85,7 +85,14 @@ class _ComparisonPageState extends State<ComparisonPage> {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
       appBar: AppBar(
-        title: const Text('商品比較'),
+        title: GestureDetector(
+          onTap: () {
+            ttsHelper.speak(
+              "商品比較頁面，右上可移除全部比較商品，中間有AI比較分析結果，左滑可察看選取商品項目，下方有重新AI比較按紐",
+            );
+          },
+          child: const Text('商品比較'),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Consumer<ComparisonProvider>(
@@ -137,7 +144,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                           vertical: AppSpacing.sm,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AppColors.accent_2,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Row(
@@ -246,7 +253,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                             vertical: AppSpacing.md,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            color: AppColors.secondery_2,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Row(
@@ -281,9 +288,10 @@ class _ComparisonPageState extends State<ComparisonPage> {
   Widget _buildComparisonCard(ComparisonProvider provider) {
     return Card(
       elevation: 6,
+      color: AppColors.aiBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.blue, width: 3),
+        side: const BorderSide(color: AppColors.secondery_2, width: 3),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -294,7 +302,11 @@ class _ComparisonPageState extends State<ComparisonPage> {
             // 標題
             Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Colors.blue, size: 32),
+                const Icon(
+                  Icons.auto_awesome,
+                  color: AppColors.secondery_2,
+                  size: 32,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 GestureDetector(
                   onTap: () => ttsHelper.speak("AI 智能比較分析"),
@@ -303,7 +315,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                     style: TextStyle(
                       fontSize: AppFontSizes.title,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: AppColors.secondery_2,
                     ),
                   ),
                 ),
@@ -332,7 +344,9 @@ class _ComparisonPageState extends State<ComparisonPage> {
               height: 60,
               child: CircularProgressIndicator(
                 strokeWidth: 6,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.secondery_2,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -343,7 +357,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 style: TextStyle(
                   fontSize: AppFontSizes.body,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: AppColors.secondery_2,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -359,7 +373,11 @@ class _ComparisonPageState extends State<ComparisonPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 60),
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.accent_2,
+              size: 60,
+            ),
             const SizedBox(height: AppSpacing.lg),
             GestureDetector(
               onTap: () => ttsHelper.speak("比較失敗：${provider.comparisonError}"),
@@ -367,7 +385,7 @@ class _ComparisonPageState extends State<ComparisonPage> {
                 "比較失敗\n\n${provider.comparisonError}",
                 style: const TextStyle(
                   fontSize: AppFontSizes.body,
-                  color: Colors.red,
+                  color: AppColors.accent_2,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -448,7 +466,7 @@ class ComparisonItemCard extends StatelessWidget {
         elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Colors.orange, width: 3),
+          side: const BorderSide(color: AppColors.text_2, width: 3),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -577,7 +595,7 @@ class ComparisonItemCard extends StatelessWidget {
                           vertical: AppSpacing.md,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AppColors.accent_2,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         alignment: Alignment.center,
@@ -635,7 +653,7 @@ class ComparisonItemCard extends StatelessWidget {
                 "確定",
                 style: TextStyle(
                   fontSize: AppFontSizes.body,
-                  color: Colors.red,
+                  color: AppColors.accent_2,
                 ),
               ),
             ),
