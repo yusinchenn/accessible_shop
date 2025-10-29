@@ -39,8 +39,11 @@ class TtsHelper {
   // 語音佇列相關
   final Queue<_SpeechTask> _queue = Queue<_SpeechTask>();
   bool _isProcessing = false;
-  Completer<void>? _currentSpeechCompleter;
   _SpeechTask? _currentTask;
+
+  // 語音播放狀態追蹤
+  Completer<void>? _speechStartCompleter;
+  Completer<void>? _speechCompleteCompleter;
 
   TtsHelper() {
     _initFuture = _init();
@@ -51,8 +54,30 @@ class TtsHelper {
       await _flutterTts.setLanguage("zh-TW");
       await _flutterTts.setSpeechRate(0.45);
       await _flutterTts.setPitch(1.0);
+
+      // 設置語音開始的回調
+      _flutterTts.setStartHandler(() {
+        debugPrint('[TTS] 🚀 Start handler triggered');
+        if (_speechStartCompleter != null && !_speechStartCompleter!.isCompleted) {
+          _speechStartCompleter!.complete();
+          debugPrint('[TTS] ▶️ Speech started - completer resolved');
+        } else {
+          debugPrint('[TTS] ⚠️ Start handler called but completer is null or already completed');
+        }
+      });
+
+      // 設置語音完成的回調
+      _flutterTts.setCompletionHandler(() {
+        debugPrint('[TTS] 🎉 Completion handler triggered');
+        if (_speechCompleteCompleter != null && !_speechCompleteCompleter!.isCompleted) {
+          _speechCompleteCompleter!.complete();
+          debugPrint('[TTS] ✅ Speech completed - completer resolved');
+        } else {
+          debugPrint('[TTS] ⚠️ Completion handler called but completer is null or already completed');
+        }
+      });
+
       _initialized = true;
-      // 開啟 debug print 可協助追蹤
       debugPrint('[TTS] initialized');
     } catch (e) {
       debugPrint('[TTS] init error: $e');
@@ -142,54 +167,58 @@ class TtsHelper {
         }
       }
 
-      debugPrint('[TTS] executing: $text (${task.type})');
-
-      final completer = Completer<void>();
-      _currentSpeechCompleter = completer;
-
-      _flutterTts.setCompletionHandler(() {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      });
+      debugPrint('[TTS] 🎯 executing: $text (${task.type})');
 
       try {
         // 只在手動任務時調用 stop，自動任務不調用 stop 避免打斷前一個任務
         if (task.type == _SpeechType.manual) {
           await _flutterTts.stop();
           // 手動任務 stop 後等待一下，確保停止完成
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 50));
         }
 
+        // 創建新的 completer 用於追蹤這次語音播放
+        _speechStartCompleter = Completer<void>();
+        _speechCompleteCompleter = Completer<void>();
+
+        // 開始播放語音
         await _flutterTts.speak(text);
 
-        // 根據文字長度動態計算超時時間（避免固定 3 秒造成過長間隔）
-        // 語速 0.45，平均每個字約需 200-250ms，加上 1000ms 緩衝（增加緩衝時間）
-        final estimatedMilliseconds = (text.length * 300 / 0.45).toInt() + 1000;
-        // 確保超時時間在合理範圍內（最少 2000ms，最多 20000ms）
-        final timeoutDuration = Duration(
-          milliseconds: estimatedMilliseconds.clamp(2000, 20000),
-        );
-
-        await completer.future.timeout(
-          timeoutDuration,
+        // 等待語音開始播放（最多等待 1 秒）
+        await _speechStartCompleter!.future.timeout(
+          const Duration(milliseconds: 1000),
           onTimeout: () {
-            if (!completer.isCompleted) {
-              completer.complete();
-              debugPrint('[TTS] timeout for: $text (${timeoutDuration.inMilliseconds}ms)');
-            }
+            debugPrint('[TTS] ⚠️ Start timeout for: $text');
           },
         );
 
-        // 完成後增加額外的等待時間，確保 TTS 真正完成
-        await Future.delayed(const Duration(milliseconds: 500));
-      } catch (e) {
-        debugPrint('[TTS] execution error for "$text": $e');
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
+        debugPrint('[TTS] 🔊 Speech playing: $text');
 
-      _currentSpeechCompleter = null;
-      debugPrint('[TTS] completed: $text');
+        // 等待語音播放完成（主要依賴 completion handler，timeout 只是最後的保險）
+        // 設置一個很長的 timeout（60秒），正常情況下 completion handler 會先觸發
+        await _speechCompleteCompleter!.future.timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            debugPrint('[TTS] ⏱️ Complete timeout (60s) - completion handler 可能失效');
+          },
+        );
+
+        debugPrint('[TTS] ✅ Task completed: $text');
+
+        // 清理 completer
+        _speechStartCompleter = null;
+        _speechCompleteCompleter = null;
+
+        // 在自動朗讀的文字之間增加短暫間隔
+        if (task.type == _SpeechType.automatic && i < task.texts.length - 1) {
+          await Future.delayed(const Duration(milliseconds: 200));
+        }
+      } catch (e) {
+        debugPrint('[TTS] ❌ execution error for "$text": $e');
+        _speechStartCompleter = null;
+        _speechCompleteCompleter = null;
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
     }
   }
 
@@ -206,9 +235,20 @@ class TtsHelper {
     // 停止當前播放
     _flutterTts.stop();
 
-    if (_currentSpeechCompleter != null && !_currentSpeechCompleter!.isCompleted) {
-      _currentSpeechCompleter!.complete();
+    // 如果當前任務存在，將其標記為中斷
+    if (_currentTask != null && !_currentTask!.completer.isCompleted) {
+      _currentTask!.completer.completeError(Exception('Interrupted by manual operation'));
     }
+
+    // 清理語音播放狀態追蹤
+    if (_speechStartCompleter != null && !_speechStartCompleter!.isCompleted) {
+      _speechStartCompleter!.complete();
+    }
+    if (_speechCompleteCompleter != null && !_speechCompleteCompleter!.isCompleted) {
+      _speechCompleteCompleter!.complete();
+    }
+    _speechStartCompleter = null;
+    _speechCompleteCompleter = null;
 
     _isProcessing = false;
     _currentTask = null;

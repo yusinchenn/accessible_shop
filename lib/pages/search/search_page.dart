@@ -152,22 +152,34 @@ class _SearchPageState extends State<SearchPage> {
   void _onPageChanged() {
     final int? currentPage = _pageController.page?.round();
     if (currentPage != null && currentPage != _currentPageIndex) {
+      if (kDebugMode) {
+        print('📄 [SearchPage] 頁面變更: $_currentPageIndex -> $currentPage (自動朗讀: $_isAutoReading, 自動索引: $_autoReadIndex)');
+      }
+
       _currentPageIndex = currentPage;
 
       // 檢查是否為手動滑動（不是自動朗讀觸發的）
+      // 條件：正在自動朗讀 且 當前頁面不等於自動朗讀索引
       final isManualSwipe = _isAutoReading && currentPage != _autoReadIndex;
 
       if (isManualSwipe) {
         // 手動滑動時停止自動朗讀
         if (kDebugMode) {
-          print('👆 [SearchPage] 偵測到手動滑動，停止自動朗讀');
+          print('👆 [SearchPage] 偵測到手動滑動（頁面=$currentPage, 預期=$_autoReadIndex），停止自動朗讀');
         }
         _stopAutoRead();
       }
 
       // 只有在非自動朗讀狀態下才朗讀（避免打斷自動朗讀）
       if (!_isAutoReading) {
+        if (kDebugMode) {
+          print('🔊 [SearchPage] 手動模式，朗讀頁面 $currentPage');
+        }
         _speakProductCard(currentPage);
+      } else {
+        if (kDebugMode) {
+          print('🤖 [SearchPage] 自動朗讀模式，跳過手動朗讀');
+        }
       }
 
       // 當滑到接近末尾時，載入下一頁
@@ -194,6 +206,28 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     await ttsHelper.speak(searchText);
+  }
+
+  /// AppBar 點擊時朗讀頁面說明和使用方式
+  Future<void> _speakAppBarInfo() async {
+    String searchInfo;
+
+    if (_isRecommendedMode) {
+      // 推薦商品模式
+      searchInfo = '推薦商品';
+    } else if (_isNoResultRecommend) {
+      // 搜尋無結果，顯示推薦商品
+      searchInfo = '$_searchKeyword，沒有結果，以下為推薦商品';
+    } else {
+      // 一般搜尋結果
+      final keyword = _searchKeyword.isEmpty ? '商品' : _searchKeyword;
+      searchInfo = keyword;
+    }
+
+    final appBarText =
+        '搜尋$searchInfo的結果。單擊朗讀商品，雙擊進入商品，左滑下一項商品。左下角有自動朗讀按鈕，雙擊可自動朗讀';
+
+    await ttsHelper.speak(appBarText);
   }
 
   Future<void> _speakProductCard(int index) async {
@@ -227,65 +261,99 @@ class _SearchPageState extends State<SearchPage> {
       _autoReadIndex = 0;
     });
 
+    if (kDebugMode) {
+      print('🎬 [SearchPage] 開始自動朗讀，共 ${_products.length} 個商品');
+    }
+
     // 跳轉到第一個商品
     await _pageController.animateToPage(
       0,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
     );
 
-    _autoReadNext();
+    // 等待頁面切換完成
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    // 使用循環方式依序朗讀每個商品
+    await _autoReadLoop();
   }
 
-  /// 自動朗讀下一個商品
-  Future<void> _autoReadNext() async {
-    if (!_isAutoReading || _autoReadIndex >= _products.length) {
-      _stopAutoRead();
-      return;
-    }
-
+  /// 自動朗讀循環（依序朗讀所有商品）
+  Future<void> _autoReadLoop() async {
     try {
-      // 朗讀當前商品（使用 speakQueue 確保朗讀完成後再繼續）
-      final product = _products[_autoReadIndex];
-      final productText = _getProductCardText(product);
+      // 從第一個商品開始，依序朗讀到最後一個
+      for (int i = 0; i < _products.length; i++) {
+        // 檢查是否被中斷
+        if (!_isAutoReading) {
+          if (kDebugMode) {
+            print('⚠️ [SearchPage] 自動朗讀被中斷於商品 $i');
+          }
+          break;
+        }
 
-      if (kDebugMode) {
-        print('🔊 [SearchPage] 自動朗讀商品 $_autoReadIndex: ${product.name}');
+        _autoReadIndex = i;
+        final product = _products[i];
+        final productText = _getProductCardText(product);
+
+        if (kDebugMode) {
+          print('🔊 [SearchPage] 正在朗讀商品 $i/${_products.length}: ${product.name}');
+        }
+
+        // 朗讀當前商品（使用 speakQueue，會等待朗讀真正完成）
+        await ttsHelper.speakQueue([productText]);
+
+        // 再次檢查是否被中斷
+        if (!_isAutoReading) {
+          if (kDebugMode) {
+            print('⚠️ [SearchPage] 朗讀完成後發現被中斷');
+          }
+          break;
+        }
+
+        if (kDebugMode) {
+          print('✅ [SearchPage] 商品 $i 朗讀完成');
+        }
+
+        // 如果不是最後一個商品，則切換到下一個
+        if (i < _products.length - 1) {
+          if (kDebugMode) {
+            print('➡️ [SearchPage] 切換到商品 ${i + 1}');
+          }
+
+          // 在切換頁面之前先更新索引，讓 _onPageChanged 知道這是自動切換
+          _autoReadIndex = i + 1;
+
+          await _pageController.animateToPage(
+            i + 1,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+          );
+
+          // 等待頁面切換動畫完成（縮短等待時間，因為 TTS 已經確保完成）
+          await Future.delayed(const Duration(milliseconds: 150));
+
+          // 檢查是否在頁面切換過程中被中斷
+          if (!_isAutoReading) {
+            if (kDebugMode) {
+              print('⚠️ [SearchPage] 頁面切換後發現被中斷');
+            }
+            break;
+          }
+        }
       }
 
-      await ttsHelper.speakQueue([productText]);
-
-      // 檢查是否被中斷
-      if (!_isAutoReading) return;
-
-      // 等待較長時間後再切換，確保 TTS 真正完成播放
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // 再次檢查是否被中斷
-      if (!_isAutoReading) return;
-
-      // 移動到下一個商品
-      _autoReadIndex++;
-      if (_autoReadIndex < _products.length) {
-        await _pageController.animateToPage(
-          _autoReadIndex,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-
-        // 繼續朗讀下一個
-        _autoReadNext();
-      } else {
-        // 所有商品朗讀完成
+      // 如果完成所有商品朗讀（沒有被中斷）
+      if (_isAutoReading) {
         if (kDebugMode) {
-          print('✅ [SearchPage] 自動朗讀完成');
+          print('🎉 [SearchPage] 所有商品自動朗讀完成');
         }
         _stopAutoRead();
       }
     } catch (e) {
       // 朗讀被打斷（手動操作）
       if (kDebugMode) {
-        print('⚠️ [SearchPage] 自動朗讀被打斷: $e');
+        print('❌ [SearchPage] 自動朗讀發生錯誤: $e');
       }
       _stopAutoRead();
     }
@@ -299,17 +367,25 @@ class _SearchPageState extends State<SearchPage> {
     ttsHelper.stop();
   }
 
-  /// 處理自動朗讀按鈕的點擊（單擊朗讀按鈕文字，雙擊開始自動朗讀）
+  /// 處理自動朗讀按鈕的點擊（單擊朗讀按鈕文字，雙擊從頭開始自動朗讀）
   Future<void> _onAutoReadButtonTap() async {
     await ttsHelper.speak('自動朗讀按鈕');
   }
 
   void _onAutoReadButtonDoubleTap() {
+    // 雙擊總是從頭開始自動朗讀
+    // 先停止並清空所有現有的朗讀（包括自動和手動）
     if (_isAutoReading) {
       _stopAutoRead();
-    } else {
-      _startAutoRead();
     }
+    ttsHelper.stop(); // 清空所有朗讀佇列
+
+    if (kDebugMode) {
+      print('🎬 [SearchPage] 雙擊自動朗讀按鈕，從頭開始');
+    }
+
+    // 從頭開始自動朗讀
+    _startAutoRead();
   }
 
   /// 處理商品卡片的手勢（添加自動朗讀打斷功能）
@@ -353,7 +429,7 @@ class _SearchPageState extends State<SearchPage> {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
       appBar: AppBar(
-        title: Text(title),
+        title: GestureDetector(onTap: _speakAppBarInfo, child: Text(title)),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
