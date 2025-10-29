@@ -117,7 +117,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
     if (order.mainStatus == OrderMainStatus.pendingDelivery &&
         order.logisticsStatus != LogisticsStatus.none) {
-      return '$mainStatus - ${order.logisticsStatus.displayName}';
+      // 只顯示物流狀態，避免文字過長導致 overflow
+      return order.logisticsStatus.displayName;
     }
 
     return mainStatus;
@@ -357,9 +358,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                               ),
                                               style: OutlinedButton.styleFrom(
                                                 foregroundColor:
-                                                    AppColors.primary_1,
+                                                    AppColors.botton_1,
                                                 side: const BorderSide(
-                                                  color: AppColors.primary_1,
+                                                  color: AppColors.botton_1,
                                                 ),
                                                 padding:
                                                     const EdgeInsets.symmetric(

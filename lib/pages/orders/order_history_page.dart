@@ -8,6 +8,7 @@ import '../../services/order_status_service.dart';
 import '../../services/order_review_service.dart';
 import '../../models/order.dart';
 import '../../models/order_status.dart';
+import '../../main.dart' show routeObserver;
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({super.key});
@@ -17,7 +18,7 @@ class OrderHistoryPage extends StatefulWidget {
 }
 
 class _OrderHistoryPageState extends State<OrderHistoryPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   List<Order> _orders = [];
   final Map<int, List<OrderItem>> _orderItems = {}; // 訂單項目快取
   bool _isLoading = true;
@@ -56,6 +57,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       _reviewService = OrderReviewService(_db);
       _isInitialized = true;
       _loadOrders();
+
+      // 訂閱路由觀察器
+      routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
     }
   }
 
@@ -63,7 +67,23 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    // 取消訂閱路由觀察器
+    routeObserver.unsubscribe(this);
     super.dispose();
+  }
+
+  /// 當其他頁面彈出並返回到此頁面時調用
+  @override
+  void didPopNext() {
+    // 停止所有正在播放的語音
+    ttsHelper.stop();
+
+    // 朗讀返回訊息
+    Future.delayed(const Duration(milliseconds: 100), () async {
+      final incompleteCount = await _countIncompleteOrders();
+      final unreviewedCount = await _countUnreviewedOrders();
+      ttsHelper.speak('返回訂單頁面。有$incompleteCount個未完成項目，有$unreviewedCount個未評論項目');
+    });
   }
 
   void _onTabChanged() {

@@ -38,6 +38,9 @@ import 'providers/comparison_provider.dart';
 // 匯入常數
 import 'utils/app_constants.dart';
 
+// 全域 RouteObserver，用於監聽頁面狀態變化
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() async {
   // 確保 Flutter binding 已初始化
   WidgetsFlutterBinding.ensureInitialized();
@@ -238,6 +241,8 @@ class AppRouter extends StatelessWidget {
     return MaterialApp(
       title: 'Accessible Shop',
       debugShowCheckedModeBanner: false,
+      // 添加路由觀察器
+      navigatorObservers: [routeObserver],
       // 添加本地化支援
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
