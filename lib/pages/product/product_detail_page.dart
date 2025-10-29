@@ -341,16 +341,16 @@ $reviewsText
         quantity: _quantity,
       );
 
-      // 等待購物車 provider 重新載入
-      await cartProvider.reload();
+      // 等待一小段時間讓 DatabaseService 的監聽器觸發 provider reload
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // 清除所有購物車項目的選取狀態
       await db.clearAllCartItemSelections();
 
-      // 再次重新載入以確保狀態更新
-      await cartProvider.reload();
+      // 等待一小段時間讓狀態更新
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      // 獲取剛加入的購物車項目並設為選取
+      // 直接從資料庫獲取最新的購物車項目（不依賴 provider 狀態）
       final cartItems = await db.getCartItems();
 
       if (kDebugMode) {
@@ -373,24 +373,53 @@ $reviewsText
 
       final newItem = matchingItems.first;
 
+      if (kDebugMode) {
+        print('🛒 [ProductDetail] 找到商品: ${newItem.name}, id: ${newItem.id}, 選取狀態: ${newItem.isSelected}');
+      }
+
       // 設置該項目為選取狀態
       if (!newItem.isSelected) {
         await db.toggleCartItemSelection(newItem.id);
-        // 等待購物車 provider 重新載入以確保選取狀態更新
-        await cartProvider.reload();
+        // 等待狀態更新
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        if (kDebugMode) {
+          print('🛒 [ProductDetail] 已設置選取狀態');
+        }
       }
+
+      // 最後再次確認購物車狀態
+      final finalCartItems = await db.getCartItems();
+      final selectedCount = finalCartItems.where((item) => item.isSelected).length;
 
       if (kDebugMode) {
-        print('🛒 [ProductDetail] 已選取項目: ${newItem.name}, id: ${newItem.id}');
+        print('🛒 [ProductDetail] 最終確認 - 購物車項目: ${finalCartItems.length}, 已選取: $selectedCount');
+        for (var item in finalCartItems) {
+          if (item.isSelected) {
+            print('  ✓ ${item.name}, 規格: ${item.specification}');
+          }
+        }
       }
 
+      if (selectedCount == 0) {
+        throw Exception('沒有選取的商品');
+      }
+
+      // 強制刷新 provider 以確保 UI 同步
+      await cartProvider.reload();
+
       ttsHelper.speak('前往結帳');
+
+      // 等待一小段時間確保所有狀態更新完成
+      await Future.delayed(const Duration(milliseconds: 150));
 
       // 導航到結帳頁面
       if (mounted) {
         await Navigator.pushNamed(context, '/checkout').then((_) {
           // 從結帳頁面返回時，重新朗讀商品詳情
-          _speakProductDetail();
+          if (mounted) {
+            _speakProductDetail();
+          }
         });
       }
     } catch (e) {
