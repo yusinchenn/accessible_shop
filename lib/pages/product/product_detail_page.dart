@@ -409,10 +409,10 @@ $reviewsText
                   vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary_2 : Colors.grey[200],
+                  color: isSelected ? AppColors.text_2 : Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary_2 : Colors.grey[400]!,
+                    color: isSelected ? AppColors.text_2 : Colors.grey[400]!,
                     width: 2,
                   ),
                 ),
@@ -462,10 +462,10 @@ $reviewsText
                   vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accent_2 : Colors.grey[200],
+                  color: isSelected ? AppColors.text_2 : Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? AppColors.accent_2 : Colors.grey[400]!,
+                    color: isSelected ? AppColors.text_2 : Colors.grey[400]!,
                     width: 2,
                   ),
                 ),
@@ -489,81 +489,62 @@ $reviewsText
 
   /// 建立單價顯示區域
   Widget _buildPriceDisplay() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 單價標題
-          GestureDetector(
-            onTap: () => _ttsHelper.speak('單價'),
-            child: const Text(
-              '單價',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppColors.text_2,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 單價標題
+        GestureDetector(
+          onTap: () => _ttsHelper.speak('單價'),
+          child: const Text(
+            '單價',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text_2,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
+        ),
+        const SizedBox(height: AppSpacing.sm),
 
-          // 單價金額
-          GestureDetector(
-            onTap: () => _ttsHelper.speak(
-              '單價 ${_currentUnitPrice.toStringAsFixed(0)} 元',
-            ),
-            child: Row(
-              children: [
+        // 單價金額
+        GestureDetector(
+          onTap: () =>
+              _ttsHelper.speak('單價 ${_currentUnitPrice.toStringAsFixed(0)} 元'),
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                '\$${_currentUnitPrice.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary_2,
+                ),
+              ),
+              if (_quantity > 1) ...[
                 Text(
-                  '\$${_currentUnitPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary_2,
+                  '× $_quantity',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[700],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                if (_quantity > 1) ...[
-                  Text(
-                    '× $_quantity',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
+                Text(
+                  '= \$${_totalPrice.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.accent_2,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    '= \$${_totalPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accent_2,
-                    ),
-                  ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
-
-          // 提示文字（未來功能預告）
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '註：不同規格或數量可能享有優惠價格',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -599,7 +580,7 @@ $reviewsText
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: _quantity > 1 ? AppColors.primary_2 : Colors.grey[300],
+                  color: _quantity > 1 ? Colors.grey[400] : Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -620,7 +601,7 @@ $reviewsText
                   vertical: AppSpacing.md,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.subtitle_2, width: 2),
+                  border: Border.all(color: Colors.grey[400]!, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -648,9 +629,7 @@ $reviewsText
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: _quantity < 99
-                      ? AppColors.primary_2
-                      : Colors.grey[300],
+                  color: _quantity < 99 ? Colors.grey[400] : Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -677,7 +656,12 @@ $reviewsText
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
       appBar: AppBar(
-        title: Text(_product?.name ?? '商品詳情'),
+        title: Text(
+          _product?.name ?? '商品詳情',
+          style: TextStyle(
+            color: AppColors.text_2, // 設定文字顏色
+          ),
+        ),
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
@@ -692,135 +676,63 @@ $reviewsText
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 商品圖片
+                    // 商品圖片（寬度適應父元素）
                     GestureDetector(
                       onTap: () => _ttsHelper.speak('商品圖片'),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.grey[200],
-                          ),
-                          child: _product!.imageUrl != null
-                              ? Image.network(
-                                  _product!.imageUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (c, e, s) => const Icon(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey[200],
+                            ),
+                            child: _product!.imageUrl != null
+                                ? Image.network(
+                                    _product!.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => const Icon(
+                                      Icons.image,
+                                      size: 80,
+                                      color: Colors.grey,
+                                    ),
+                                  )
+                                : const Icon(
                                     Icons.image,
                                     size: 80,
                                     color: Colors.grey,
                                   ),
-                                )
-                              : const Icon(
-                                  Icons.image,
-                                  size: 80,
-                                  color: Colors.grey,
-                                ),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
 
-                    // 商品名稱
+                    // 商品名稱（寬度100%適應父元素）
                     GestureDetector(
                       onTap: () => _ttsHelper.speak('商品名稱，${_product!.name}'),
-                      child: Text(
-                        _product!.name,
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.text_2,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          _product!.name,
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.text_2,
+                          ),
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.md),
 
-                    // 商家名稱
-                    if (_store != null)
-                      GestureDetector(
-                        onTap: () {
-                          _ttsHelper.speak(
-                            '商家，${_store!.name}，評分${_store!.rating.toStringAsFixed(1)}顆星。雙擊可進入商家頁面。',
-                          );
-                        },
-                        onDoubleTap: () {
-                          // 語音提示導航
-                          _ttsHelper.speak('前往${_store!.name}商家頁面');
-
-                          // 導航到商家頁面（使用直接導航）
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  StorePage(storeId: _store!.id),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.grey[300]!,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.store,
-                                size: 20,
-                                color: Colors.blue,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  _store!.name,
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    color: Colors.blue,
-                                    decoration: TextDecoration.underline,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              if (_store!.rating > 0) ...[
-                                const Icon(
-                                  Icons.star,
-                                  size: 18,
-                                  color: Colors.amber,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _store!.rating.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.chevron_right,
-                                size: 20,
-                                color: Colors.blue,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (_store != null) const SizedBox(height: AppSpacing.md),
-
-                    // 價格、分類和售出次數
+                    // 價格（置左）+ 已售出數量（置右）
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // 價格（置左）
                         GestureDetector(
                           onTap: () => _ttsHelper.speak(
                             '價格 ${_product!.price.toStringAsFixed(0)} 元',
@@ -834,9 +746,8 @@ $reviewsText
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.md),
 
-                        // 售出次數標籤
+                        // 已售出數量（置右）
                         GestureDetector(
                           onTap: () =>
                               _ttsHelper.speak('已售出 $randomSoldCount 件'),
@@ -874,35 +785,47 @@ $reviewsText
                             ),
                           ),
                         ),
-
-                        // if (_product!.category != null) ...[
-                        //   const SizedBox(width: AppSpacing.sm),
-                        //   GestureDetector(
-                        //     onTap: () =>
-                        //         _ttsHelper.speak('分類，${_product!.category}'),
-                        //     child: Container(
-                        //       padding: const EdgeInsets.symmetric(
-                        //         horizontal: AppSpacing.sm,
-                        //         vertical: AppSpacing.xs,
-                        //       ),
-                        //       decoration: BoxDecoration(
-                        //         color: AppColors.accent,
-                        //         borderRadius: BorderRadius.circular(8),
-                        //       ),
-                        //       child: Text(
-                        //         _product!.category!,
-                        //         style: const TextStyle(
-                        //           fontSize: 22,
-                        //           color: Colors.white,
-                        //           fontWeight: FontWeight.w500,
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ],
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 分隔線
+                    const Divider(thickness: 1),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // 標籤（類別標籤，未來可加入多個標籤）（置左排列）
+                    if (_product!.category != null)
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        alignment: WrapAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: () =>
+                                _ttsHelper.speak('分類，${_product!.category}'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent_1,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _product!.category!,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (_product!.category != null)
+                      const SizedBox(height: AppSpacing.md),
 
                     // 分隔線
                     const Divider(thickness: 1),
@@ -933,6 +856,8 @@ $reviewsText
                           color: AppColors.text_2,
                           height: 1.5,
                         ),
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
@@ -942,13 +867,13 @@ $reviewsText
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    // 單價顯示（動態）
-                    _buildPriceDisplay(),
+                    // 數量選擇
+                    _buildQuantitySelector(),
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    // 數量選擇
-                    _buildQuantitySelector(),
+                    // 單價顯示（動態）
+                    _buildPriceDisplay(),
 
                     const SizedBox(height: AppSpacing.xl),
 
@@ -965,17 +890,19 @@ $reviewsText
                                 vertical: AppSpacing.md,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.accent_2,
+                                color: AppColors.botton_2,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Center(
                                 child: Text(
                                   '加入購物車',
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 28,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
@@ -1000,10 +927,12 @@ $reviewsText
                                 child: Text(
                                   '直接購買',
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 28,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
@@ -1014,7 +943,88 @@ $reviewsText
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // 評分與評論區域
+                    // 商店（含商店名稱和商店評分）（寬度適應父元素）
+                    if (_store != null)
+                      GestureDetector(
+                        onTap: () {
+                          _ttsHelper.speak(
+                            '商家，${_store!.name}，評分${_store!.rating.toStringAsFixed(1)}顆星。雙擊可進入商家頁面。',
+                          );
+                        },
+                        onDoubleTap: () {
+                          // 語音提示導航
+                          _ttsHelper.speak('前往${_store!.name}商家頁面');
+
+                          // 導航到商家頁面（使用直接導航）
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StorePage(storeId: _store!.id),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.store,
+                                size: 24,
+                                color: AppColors.secondery_2,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _store!.name,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    color: AppColors.secondery_2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              if (_store!.rating > 0) ...[
+                                const Icon(
+                                  Icons.star,
+                                  size: 20,
+                                  color: Colors.amber,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _store!.rating.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: AppColors.subtitle_2,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 24,
+                                color: AppColors.secondery_2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (_store != null) const SizedBox(height: AppSpacing.xl),
+
+                    // 評論區域
                     _buildReviewsSection(),
                   ],
                 ),
@@ -1025,10 +1035,6 @@ $reviewsText
 
   /// 建立評論區域
   Widget _buildReviewsSection() {
-    if (_reviews.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     // 計算有文字內容的評論數量
     final reviewsWithText = _reviews
         .where((r) => r.comment.trim().isNotEmpty)
@@ -1045,98 +1051,141 @@ $reviewsText
 
         // 評論標題與統計
         GestureDetector(
-          onTap: () => _ttsHelper.speak(
-            '商品評價，平均${_product!.averageRating.toStringAsFixed(1)}顆星，共${_reviews.length}則評論',
-          ),
-          child: Row(
-            children: [
-              const Text(
-                '商品評價',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.text_2,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.star, color: Colors.amber, size: 28),
-              const SizedBox(width: 4),
-              Text(
-                _product!.averageRating.toStringAsFixed(1),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.text_2,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '(${_reviews.length}則評論)',
-                style: const TextStyle(fontSize: 24, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-
-        // AI 整理按鈕（當有超過 10 則有文字的評論時顯示）
-        if (canGenerateAiSummary && _aiReviewSummary == null)
-          Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: GestureDetector(
-              onTap: () => _ttsHelper.speak('AI 整理評論按鈕'),
-              onDoubleTap: _isGeneratingAiSummary
-                  ? null
-                  : _generateAiReviewSummary,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: _isGeneratingAiSummary
-                      ? Colors.deepPurple.shade300
-                      : Colors.deepPurple,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          onTap: () {
+            if (_reviews.isEmpty) {
+              _ttsHelper.speak('商品評價，尚無評論');
+            } else {
+              _ttsHelper.speak(
+                '商品評價，平均${_product!.averageRating.toStringAsFixed(1)}顆星，共${_reviews.length}則評論',
+              );
+            }
+          },
+          child: _reviews.isEmpty
+              ? const Text(
+                  '商品評價',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text_2,
+                  ),
+                )
+              : Row(
                   children: [
-                    if (_isGeneratingAiSummary)
-                      const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    else
-                      const Icon(
-                        Icons.auto_awesome,
-                        size: 28,
-                        color: Colors.white,
+                    const Text(
+                      '商品評價',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text_2,
                       ),
+                    ),
                     const SizedBox(width: AppSpacing.sm),
+                    const Icon(Icons.star, color: Colors.amber, size: 28),
+                    const SizedBox(width: 4),
                     Text(
-                      _isGeneratingAiSummary ? '正在生成 AI 摘要...' : 'AI 整理評論',
+                      _product!.averageRating.toStringAsFixed(1),
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.text_2,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '(${_reviews.length}則評論)',
+                      style: const TextStyle(fontSize: 24, color: Colors.grey),
+                    ),
                   ],
+                ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // 如果沒有評論，顯示「尚無評論」
+        if (_reviews.isEmpty)
+          GestureDetector(
+            onTap: () => _ttsHelper.speak('尚無評論'),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  '尚無評論',
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             ),
           ),
 
-        // AI 摘要卡片（如果已生成）
-        if (_aiReviewSummary != null) _buildAiSummaryCard(),
+        // 如果有評論，顯示 AI 整理按鈕和評論列表
+        if (_reviews.isNotEmpty) ...[
+          // AI 整理按鈕（當有超過 10 則有文字的評論時顯示）
+          if (canGenerateAiSummary && _aiReviewSummary == null)
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: GestureDetector(
+                onTap: () => _ttsHelper.speak('AI 整理評論按鈕'),
+                onDoubleTap: _isGeneratingAiSummary
+                    ? null
+                    : _generateAiReviewSummary,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: _isGeneratingAiSummary
+                        ? Colors.deepPurple.shade300
+                        : Colors.deepPurple,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isGeneratingAiSummary)
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      else
+                        const Icon(
+                          Icons.auto_awesome,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        _isGeneratingAiSummary ? '正在生成 AI 摘要...' : 'AI 整理評論',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
-        // 評論列表
-        ..._reviews.map((review) => _buildReviewCard(review)),
+          // AI 摘要卡片（如果已生成）
+          if (_aiReviewSummary != null) _buildAiSummaryCard(),
+
+          // 評論列表
+          ..._reviews.map((review) => _buildReviewCard(review)),
+        ],
       ],
     );
   }
@@ -1225,6 +1274,8 @@ $reviewsText
                 color: AppColors.text_2,
                 height: 1.5,
               ),
+              softWrap: true,
+              overflow: TextOverflow.visible,
             ),
             const SizedBox(height: AppSpacing.sm),
 
@@ -1359,6 +1410,8 @@ $reviewsText
                 color: AppColors.text_2,
                 height: 1.4,
               ),
+              softWrap: true,
+              overflow: TextOverflow.visible,
             ),
           ],
         ),
