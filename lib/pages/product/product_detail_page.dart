@@ -291,15 +291,6 @@ $reviewsText
               style: const TextStyle(fontSize: 24),
             ),
             duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: '查看購物車',
-              onPressed: () {
-                Navigator.pushNamed(context, '/cart').then((_) {
-                  // 從購物車頁面返回時，重新朗讀商品詳情
-                  _speakProductDetail();
-                });
-              },
-            ),
           ),
         );
       }
