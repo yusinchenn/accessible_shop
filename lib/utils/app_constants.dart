@@ -15,10 +15,12 @@ import 'package:flutter/material.dart';
 /// 顏色常數
 class AppColors {
   static const primary_1 = Color(0xFFFFF8F0);
+  static const secondery_1 = Color(0xFF6ea4bb);
   static const accent_1 = Color(0xFFbc6546);
   static const background_1 = Color(0xFFbf9e71);
   static const text_1 = Color(0xFF3b3425);
   static const subtitle_1 = Color(0xFF707070);
+  static const blockBackground_1 = Color(0xFFbed7d1);
   static const cardBackground_1 = Color(0xFFFFF8F0);
   static const botton_1 = Color(0xFF3b3425);
   static const bottonText_1 = Color(0xFFFFF8F0);

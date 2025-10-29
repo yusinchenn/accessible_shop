@@ -131,7 +131,9 @@ class TtsHelper {
 
   /// 執行單個任務（播放所有文字）
   Future<void> _executeTask(_SpeechTask task) async {
-    for (final text in task.texts) {
+    for (int i = 0; i < task.texts.length; i++) {
+      final text = task.texts[i];
+
       // 只有自動播放才檢查任務是否被中斷，手動操作直接執行
       if (task.type == _SpeechType.automatic) {
         if (!_isProcessing || _currentTask != task) {
@@ -152,15 +154,21 @@ class TtsHelper {
       });
 
       try {
-        await _flutterTts.stop();
+        // 只在手動任務時調用 stop，自動任務不調用 stop 避免打斷前一個任務
+        if (task.type == _SpeechType.manual) {
+          await _flutterTts.stop();
+          // 手動任務 stop 後等待一下，確保停止完成
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+
         await _flutterTts.speak(text);
 
         // 根據文字長度動態計算超時時間（避免固定 3 秒造成過長間隔）
-        // 語速 0.45，平均每個字約需 200-250ms，加上 300ms 緩衝
-        final estimatedMilliseconds = (text.length * 250 / 0.45).toInt() + 300;
-        // 確保超時時間在合理範圍內（最少 1000ms，最多 10000ms）
+        // 語速 0.45，平均每個字約需 200-250ms，加上 1000ms 緩衝（增加緩衝時間）
+        final estimatedMilliseconds = (text.length * 300 / 0.45).toInt() + 1000;
+        // 確保超時時間在合理範圍內（最少 2000ms，最多 20000ms）
         final timeoutDuration = Duration(
-          milliseconds: estimatedMilliseconds.clamp(1000, 10000),
+          milliseconds: estimatedMilliseconds.clamp(2000, 20000),
         );
 
         await completer.future.timeout(
@@ -172,6 +180,9 @@ class TtsHelper {
             }
           },
         );
+
+        // 完成後增加額外的等待時間，確保 TTS 真正完成
+        await Future.delayed(const Duration(milliseconds: 500));
       } catch (e) {
         debugPrint('[TTS] execution error for "$text": $e');
         await Future.delayed(const Duration(milliseconds: 300));
