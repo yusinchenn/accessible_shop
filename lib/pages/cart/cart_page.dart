@@ -93,7 +93,17 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         builder: (context, cartData, _) {
           final items = cartData.items;
           if (items.isEmpty) {
-            return const Center(child: Text("購物車是空的！"));
+            return Center(
+              child: Text(
+                "購物車跟胃一樣！\n都需要被填滿",
+                textAlign: TextAlign.left, // 文字置中
+                style: TextStyle(
+                  color: AppColors.text_1, // 文字顏色
+                  fontSize: 26, // 文字大小（可自行調整）
+                  fontWeight: FontWeight.w500, // 可選：讓字體稍微加粗
+                ),
+              ),
+            );
           }
 
           // 按商家分組
@@ -178,10 +188,14 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   // 按商家分組顯示商品
                   Expanded(
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
                       itemCount: itemsByStore.length,
                       itemBuilder: (context, storeIndex) {
-                        final storeEntry = itemsByStore.entries.elementAt(storeIndex);
+                        final storeEntry = itemsByStore.entries.elementAt(
+                          storeIndex,
+                        );
                         final storeItems = storeEntry.value;
                         final storeName = storeItems.first.storeName;
                         final storeSubtotal = storeItems.fold<double>(
@@ -198,7 +212,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                               // 商家標題
                               GestureDetector(
                                 onTap: () {
-                                  ttsHelper.speak('商家 $storeName，共 ${storeItems.length} 項商品，小計 ${storeSubtotal.toStringAsFixed(0)} 元');
+                                  ttsHelper.speak(
+                                    '商家 $storeName，共 ${storeItems.length} 項商品，小計 ${storeSubtotal.toStringAsFixed(0)} 元',
+                                  );
                                 },
                                 child: Container(
                                   width: double.infinity,
@@ -236,11 +252,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                 ),
                               ),
                               // 商家的商品列表
-                              ...storeItems.map((item) => ShoppingCartItemCard(
-                                    item: item,
-                                    cartData: cartData,
-                                    onShowMoreActions: _showMoreActions,
-                                  )),
+                              ...storeItems.map(
+                                (item) => ShoppingCartItemCard(
+                                  item: item,
+                                  cartData: cartData,
+                                  onShowMoreActions: _showMoreActions,
+                                ),
+                              ),
                             ],
                           ),
                         );

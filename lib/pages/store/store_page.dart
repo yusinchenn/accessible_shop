@@ -5,6 +5,7 @@ import '../../models/store.dart';
 import '../../models/product.dart';
 import '../../services/database_service.dart';
 import '../../utils/tts_helper.dart';
+import '../../utils/app_constants.dart';
 import '../../widgets/product_card.dart';
 
 /// 商家頁面
@@ -76,7 +77,7 @@ class _StorePageState extends State<StorePage> {
     }
   }
 
-  /// 語音提示商家頁面資訊
+  /// 語音提示商家頁面資訊（進入頁面時自動播放）
   void _announceStorePage() {
     if (_store == null) return;
 
@@ -86,7 +87,35 @@ class _StorePageState extends State<StorePage> {
         '評分 ${_store!.rating.toStringAsFixed(1)} 顆星，'
         '${_store!.followersCount} 位粉絲。'
         '共有 ${_products.length} 項商品。'
-        '下方有關注和訊息按鈕。';
+        '下方有關注和搜尋按鈕。';
+
+    ttsHelper.speak(announcement);
+  }
+
+  /// AppBar 點擊時朗讀頁面說明
+  void _speakAppBarInfo() {
+    if (_store == null) return;
+
+    final announcement =
+        '商家頁面，${_store!.name}，'
+        '頁面由上到下包含商家資訊、關注與搜尋按鈕、商家商品，'
+        '單擊朗讀，雙擊商家商品項目可進入商品詳情頁面';
+
+    ttsHelper.speak(announcement);
+  }
+
+  /// 朗讀商家資訊區塊
+  void _speakStoreInfo() {
+    if (_store == null) return;
+
+    final description = _store!.description != null && _store!.description!.isNotEmpty
+        ? _store!.description!
+        : '';
+
+    final announcement =
+        '${_store!.name}，'
+        '評分 ${_store!.rating.toStringAsFixed(1)} 顆星，'
+        '粉絲數 ${_store!.followersCount}${description.isNotEmpty ? "，$description" : ""}';
 
     ttsHelper.speak(announcement);
   }
@@ -100,20 +129,24 @@ class _StorePageState extends State<StorePage> {
     ).showSnackBar(const SnackBar(content: Text('關注功能尚未實作')));
   }
 
-  /// 處理訊息按鈕點擊
-  void _handleMessagePressed() {
-    ttsHelper.speak('訊息功能，尚未實作');
+  /// 處理搜尋按鈕點擊
+  void _handleSearchPressed() {
+    ttsHelper.speak('搜尋功能，尚未實作');
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('訊息功能尚未實作')));
+    ).showSnackBar(const SnackBar(content: Text('搜尋功能尚未實作')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background_1,
       appBar: AppBar(
-        title: Text(_store?.name ?? '商家'),
+        title: GestureDetector(
+          onTap: _speakAppBarInfo,
+          child: Text(_store?.name ?? '商家'),
+        ),
         automaticallyImplyLeading: false, // 移除返回按鈕和關閉按鈕
       ),
       body: _isLoading
@@ -130,20 +163,16 @@ class _StorePageState extends State<StorePage> {
 
                 // 商品列表標題
                 SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey[300]!, width: 1),
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 8.0,
                     ),
                     child: Text(
                       '商家商品 (${_products.length})',
                       style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        fontSize: 26,
+                        color: AppColors.text_1,
                       ),
                     ),
                   ),
@@ -160,7 +189,7 @@ class _StorePageState extends State<StorePage> {
                         ),
                       )
                     : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        padding: EdgeInsets.zero,
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate((
                             context,
@@ -168,13 +197,32 @@ class _StorePageState extends State<StorePage> {
                           ) {
                             final product = _products[index];
                             return GestureDetector(
+                              onTap: () {
+                                // 單擊朗讀商品資訊
+                                final priceText = '價格 ${product.price.toStringAsFixed(0)} 元';
+                                final ratingText = product.reviewCount > 0
+                                    ? '，評分 ${product.averageRating.toStringAsFixed(1)} 顆星，${product.reviewCount} 則評論'
+                                    : '';
+                                final descriptionText = product.description != null && product.description!.isNotEmpty
+                                    ? '，${product.description}'
+                                    : '';
+
+                                ttsHelper.speak(
+                                  '${product.name}，$priceText$ratingText$descriptionText',
+                                );
+                              },
                               onDoubleTap: () {
                                 // 雙擊商品卡片導航到商品詳情頁面
+                                ttsHelper.stop(); // 停止當前語音
                                 Navigator.pushNamed(
                                   context,
                                   '/product',
                                   arguments: product.id,
-                                );
+                                ).then((_) {
+                                  // 從商品詳情頁返回時，停止舊語音並朗讀商家頁面
+                                  ttsHelper.stop();
+                                  _announceStorePage();
+                                });
                               },
                               child: ProductCard(
                                 product: product,
@@ -194,15 +242,16 @@ class _StorePageState extends State<StorePage> {
 
   /// 建立商家資訊標題區塊
   Widget _buildStoreHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.blue[50], // 改為淡藍色背景，更容易辨識
-        border: Border(
-          bottom: BorderSide(color: Colors.blue[200]!, width: 2), // 更明顯的分隔線
+    return GestureDetector(
+      onTap: _speakStoreInfo,
+      child: Container(
+        margin: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: AppColors.botton_1,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 商家圖片和基本資訊
@@ -211,42 +260,48 @@ class _StorePageState extends State<StorePage> {
             children: [
               // 商家圖片
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(35),
                 child: _store!.imageUrl != null
                     ? Image.network(
                         _store!.imageUrl!,
-                        width: 120, // 增大圖片尺寸
-                        height: 120,
+                        width: 70,
+                        height: 70,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            width: 120,
-                            height: 120,
+                            width: 70,
+                            height: 70,
                             decoration: BoxDecoration(
-                              color: Colors.blue[100], // 改為藍色系
-                              border: Border.all(color: Colors.blue[300]!, width: 2),
-                              borderRadius: BorderRadius.circular(8),
+                              color: AppColors.bottonText_1,
+                              border: Border.all(
+                                color: AppColors.bottonText_1,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(35),
                             ),
                             child: const Icon(
                               Icons.store,
-                              size: 60,
-                              color: Colors.blue, // 改為藍色圖示
+                              size: 35,
+                              color: AppColors.botton_1,
                             ),
                           );
                         },
                       )
                     : Container(
-                        width: 120,
-                        height: 120,
+                        width: 70,
+                        height: 70,
                         decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          border: Border.all(color: Colors.blue[300]!, width: 2),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.bottonText_1,
+                          border: Border.all(
+                            color: AppColors.bottonText_1,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(35),
                         ),
                         child: const Icon(
                           Icons.store,
-                          size: 60,
-                          color: Colors.blue,
+                          size: 35,
+                          color: AppColors.botton_1,
                         ),
                       ),
               ),
@@ -262,42 +317,45 @@ class _StorePageState extends State<StorePage> {
                     Text(
                       _store!.name,
                       style: const TextStyle(
-                        fontSize: 36, // 增大字體
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black, // 明確設定為黑色
+                        color: AppColors.bottonText_1,
                       ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // 星等
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.orange, size: 32), // 改為橘色，更醒目
-                        const SizedBox(width: 6),
-                        Text(
-                          _store!.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 30, // 增大字體
-                            fontWeight: FontWeight.bold, // 加粗
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
                     ),
 
                     const SizedBox(height: 8),
 
-                    // 粉絲數
+                    // 評分和粉絲數併排
                     Row(
                       children: [
-                        const Icon(Icons.people, size: 30, color: Colors.blue), // 改為藍色
-                        const SizedBox(width: 6),
+                        // 星等
+                        const Icon(
+                          Icons.star,
+                          color: AppColors.bottonText_1,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _store!.rating.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.bottonText_1,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // 粉絲數
+                        const Icon(
+                          Icons.people,
+                          size: 18,
+                          color: AppColors.bottonText_1,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           '${_formatFollowerCount(_store!.followersCount)} 粉絲',
                           style: const TextStyle(
-                            fontSize: 28, // 增大字體
-                            color: Colors.black87, // 改為深灰色
+                            fontSize: 18,
+                            color: AppColors.bottonText_1,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -316,15 +374,15 @@ class _StorePageState extends State<StorePage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white, // 白色背景讓文字更清晰
+                color: AppColors.botton_1,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!, width: 1),
+                border: Border.all(color: AppColors.bottonText_1, width: 1),
               ),
               child: Text(
                 _store!.description!,
                 style: const TextStyle(
-                  fontSize: 28, // 增大字體
-                  color: Colors.black, // 改為純黑色
+                  fontSize: 18,
+                  color: AppColors.bottonText_1,
                   height: 1.5,
                 ),
               ),
@@ -332,43 +390,72 @@ class _StorePageState extends State<StorePage> {
           ],
         ],
       ),
+      ),
     );
   }
 
   /// 建立關注和訊息按鈕
   Widget _buildActionButtons() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: Row(
         children: [
           // 關注按鈕
           Expanded(
             child: ElevatedButton.icon(
               onPressed: _handleFollowPressed,
-              icon: const Icon(Icons.favorite_border, size: 28, color: Colors.white),
-              label: const Text('關注', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                backgroundColor: Colors.red, // 紅色背景
-                foregroundColor: Colors.white,
-                elevation: 4,
+              icon: const Icon(
+                Icons.favorite_border,
+                size: 20,
+                color: AppColors.botton_1,
+              ),
+              label: const Text(
+                '關注',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.botton_1,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.botton_1, width: 2),
+                backgroundColor: AppColors.bottonText_1,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
 
           const SizedBox(width: 12),
 
-          // 訊息按鈕
+          // 搜尋按鈕
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: _handleMessagePressed,
-              icon: const Icon(Icons.message, size: 28, color: Colors.blue),
-              label: const Text('訊息', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue)),
+              onPressed: _handleSearchPressed,
+              icon: const Icon(
+                Icons.search,
+                size: 20,
+                color: AppColors.botton_1,
+              ),
+              label: const Text(
+                '搜尋',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.botton_1,
+                ),
+              ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                side: const BorderSide(color: Colors.blue, width: 2), // 藍色邊框
-                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.botton_1, width: 2),
+                backgroundColor: AppColors.bottonText_1,
                 elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
