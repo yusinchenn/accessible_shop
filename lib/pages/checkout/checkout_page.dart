@@ -517,7 +517,7 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                                     Text(
                                       '未達最低消費 \$${coupon.minAmount.toStringAsFixed(0)}',
                                       style: TextStyle(
-                                        color: Colors.red,
+                                        color: AppColors.accent_1,
                                         fontSize: AppFontSizes.small,
                                       ),
                                     ),
@@ -527,7 +527,7 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                             Text(
                               '-\$${coupon.discount.toStringAsFixed(0)}',
                               style: const TextStyle(
-                                color: Colors.red,
+                                color: AppColors.accent_1,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -582,7 +582,7 @@ class _Step2SelectCouponState extends State<_Step2SelectCoupon> {
                       vertical: AppSpacing.md,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary_1,
+                      color: AppColors.botton_1,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -758,8 +758,8 @@ class _Step3SelectShippingState extends State<_Step3SelectShipping> {
                     ),
                     decoration: BoxDecoration(
                       color: widget.selectedShipping != null
-                          ? AppColors.primary_1
-                          : Colors.grey,
+                          ? AppColors.botton_1
+                          : AppColors.primary_1,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
@@ -1000,7 +1000,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                             Text('優惠券 (${widget.selectedCoupon!.name})'),
                             Text(
                               '-\$${discount.toStringAsFixed(0)}',
-                              style: const TextStyle(color: Colors.red),
+                              style: const TextStyle(color: AppColors.accent_1),
                             ),
                           ],
                         ),
@@ -1185,7 +1185,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                     ),
                     decoration: BoxDecoration(
                       color: widget.selectedPayment != null
-                          ? AppColors.primary_1
+                          ? AppColors.botton_1
                           : Colors.grey,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -1316,7 +1316,9 @@ class _Step5CompleteState extends State<_Step5Complete> {
             ttsHelper.speak('結帳完成，訂單編號 ${orders.first.orderNumber}，感謝您的購買');
           } else {
             final orderNumbers = orders.map((o) => o.orderNumber).join('、');
-            ttsHelper.speak('結帳完成，已為您建立 ${orders.length} 個訂單，編號：$orderNumbers，感謝您的購買');
+            ttsHelper.speak(
+              '結帳完成，已為您建立 ${orders.length} 個訂單，編號：$orderNumbers，感謝您的購買',
+            );
           }
         }
       });
@@ -1335,7 +1337,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('建立訂單失敗: $e', style: const TextStyle(fontSize: 24)),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.accent_1,
           ),
         );
         if (accessibilityService.shouldUseCustomTTS) {
@@ -1365,7 +1367,10 @@ class _Step5CompleteState extends State<_Step5Complete> {
     }
 
     final orders = _createdOrders!;
-    final totalAmount = orders.fold<double>(0.0, (sum, order) => sum + order.total);
+    final totalAmount = orders.fold<double>(
+      0.0,
+      (sum, order) => sum + order.total,
+    );
 
     return PopScope(
       canPop: false,
@@ -1398,52 +1403,54 @@ class _Step5CompleteState extends State<_Step5Complete> {
                 const SizedBox(height: AppSpacing.sm),
               ],
               // 顯示所有訂單編號
-              ...orders.map((order) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                    child: AccessibleSpeakWrapper(
-                      label: '${order.storeName} 訂單編號 ${order.orderNumber}',
-                      child: Card(
-                        color: AppColors.blockBackground_2,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.sm),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      order.storeName,
-                                      style: const TextStyle(
-                                        fontSize: AppFontSizes.body,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+              ...orders.map(
+                (order) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: AccessibleSpeakWrapper(
+                    label: '${order.storeName} 訂單編號 ${order.orderNumber}',
+                    child: Card(
+                      color: AppColors.cardBackground_1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    order.storeName,
+                                    style: const TextStyle(
+                                      fontSize: AppFontSizes.body,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    Text(
-                                      '訂單: ${order.orderNumber}',
-                                      style: const TextStyle(
-                                        fontSize: AppFontSizes.small,
-                                        color: AppColors.subtitle_1,
-                                      ),
+                                  ),
+                                  Text(
+                                    '訂單: ${order.orderNumber}',
+                                    style: const TextStyle(
+                                      fontSize: AppFontSizes.small,
+                                      color: AppColors.subtitle_1,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                '\$${order.total.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: AppFontSizes.subtitle,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary_2,
-                                ),
+                            ),
+                            Text(
+                              '\$${order.total.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: AppFontSizes.subtitle,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary_2,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  )),
+                  ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.lg),
               AccessibleGestureWrapper(
                 label:
@@ -1531,7 +1538,7 @@ class _Step5CompleteState extends State<_Step5Complete> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppColors.primary_1,
+                    color: AppColors.botton_1,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.center,
