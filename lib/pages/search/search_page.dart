@@ -27,6 +27,7 @@ class _SearchPageState extends State<SearchPage> {
   bool _loading = true;
   bool _isRecommendedMode = false; // 是否為推薦商品模式
   bool _isNoResultRecommend = false; // 是否為搜尋無結果後顯示推薦商品
+  bool _hasLoadedProducts = false; // 是否已載入商品（防止重複載入）
 
   // 分頁相關
   static const int _pageSize = 20; // 每次載入的商品數量
@@ -35,6 +36,7 @@ class _SearchPageState extends State<SearchPage> {
   // 自動朗讀相關
   bool _isAutoReading = false; // 是否正在自動朗讀
   int _autoReadIndex = 0; // 自動朗讀的當前索引
+  bool _isSpeakingSearchResult = false; // 是否正在朗讀搜尋結果
 
   @override
   void initState() {
@@ -48,13 +50,14 @@ class _SearchPageState extends State<SearchPage> {
     super.didChangeDependencies();
     // 從路由參數獲取搜尋關鍵字
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args != null && args is String && _searchKeyword.isEmpty) {
+    if (args != null && args is String && !_hasLoadedProducts) {
       _searchKeyword = args;
       // 檢查是否為推薦商品模式
       if (_searchKeyword == '__recommended__') {
         _isRecommendedMode = true;
         _searchKeyword = ''; // 清空關鍵字
       }
+      _hasLoadedProducts = true; // 標記已載入
       _loadProducts();
     }
   }
@@ -153,7 +156,9 @@ class _SearchPageState extends State<SearchPage> {
     final int? currentPage = _pageController.page?.round();
     if (currentPage != null && currentPage != _currentPageIndex) {
       if (kDebugMode) {
-        print('📄 [SearchPage] 頁面變更: $_currentPageIndex -> $currentPage (自動朗讀: $_isAutoReading, 自動索引: $_autoReadIndex)');
+        print(
+          '📄 [SearchPage] 頁面變更: $_currentPageIndex -> $currentPage (自動朗讀: $_isAutoReading, 自動索引: $_autoReadIndex)',
+        );
       }
 
       _currentPageIndex = currentPage;
@@ -165,20 +170,22 @@ class _SearchPageState extends State<SearchPage> {
       if (isManualSwipe) {
         // 手動滑動時停止自動朗讀
         if (kDebugMode) {
-          print('👆 [SearchPage] 偵測到手動滑動（頁面=$currentPage, 預期=$_autoReadIndex），停止自動朗讀');
+          print(
+            '👆 [SearchPage] 偵測到手動滑動（頁面=$currentPage, 預期=$_autoReadIndex），停止自動朗讀',
+          );
         }
         _stopAutoRead();
       }
 
-      // 只有在非自動朗讀狀態下才朗讀（避免打斷自動朗讀）
-      if (!_isAutoReading) {
+      // 只有在非自動朗讀且非搜尋結果朗讀狀態下才朗讀（避免打斷）
+      if (!_isAutoReading && !_isSpeakingSearchResult) {
         if (kDebugMode) {
           print('🔊 [SearchPage] 手動模式，朗讀頁面 $currentPage');
         }
         _speakProductCard(currentPage);
       } else {
         if (kDebugMode) {
-          print('🤖 [SearchPage] 自動朗讀模式，跳過手動朗讀');
+          print('🤖 [SearchPage] 自動朗讀或搜尋結果朗讀模式，跳過手動朗讀');
         }
       }
 
@@ -191,6 +198,16 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _speakSearchResult() async {
+    // 如果已經在朗讀搜尋結果，直接返回
+    if (_isSpeakingSearchResult) {
+      if (kDebugMode) {
+        print('🔊 [SearchPage] 已在朗讀搜尋結果，跳過');
+      }
+      return;
+    }
+
+    _isSpeakingSearchResult = true; // 標記正在朗讀搜尋結果
+
     String searchText;
 
     if (_isRecommendedMode) {
@@ -205,7 +222,22 @@ class _SearchPageState extends State<SearchPage> {
       searchText = '搜尋 $keyword 的結果';
     }
 
+    if (kDebugMode) {
+      print('🔊 [SearchPage] 開始朗讀搜尋結果: $searchText');
+    }
+
     await ttsHelper.speak(searchText);
+
+    // 使用 Future.delayed 並在延遲後清除標記
+    // 這樣即使頁面切換，標記也會在合理時間後被清除
+    Future.delayed(const Duration(milliseconds: 3000), () {
+      if (mounted) {
+        _isSpeakingSearchResult = false;
+        if (kDebugMode) {
+          print('🔊 [SearchPage] 搜尋結果朗讀標記已清除');
+        }
+      }
+    });
   }
 
   /// AppBar 點擊時朗讀頁面說明和使用方式
@@ -249,7 +281,11 @@ class _SearchPageState extends State<SearchPage> {
 
   /// 導航到商品詳情頁面
   void _navigateToProductDetail(Product product) {
-    Navigator.pushNamed(context, '/product', arguments: product.id);
+    Navigator.pushNamed(context, '/product', arguments: product.id).then((_) {
+      // 從商品詳情頁面返回時，清除標記並重新朗讀搜尋結果
+      _isSpeakingSearchResult = false; // 清除標記
+      _speakSearchResult();
+    });
   }
 
   /// 開始自動朗讀（從第一個商品開始）
@@ -297,7 +333,9 @@ class _SearchPageState extends State<SearchPage> {
         final productText = _getProductCardText(product);
 
         if (kDebugMode) {
-          print('🔊 [SearchPage] 正在朗讀商品 $i/${_products.length}: ${product.name}');
+          print(
+            '🔊 [SearchPage] 正在朗讀商品 $i/${_products.length}: ${product.name}',
+          );
         }
 
         // 朗讀當前商品（使用 speakQueue，會等待朗讀真正完成）
@@ -488,7 +526,7 @@ class _SearchPageState extends State<SearchPage> {
                       height: 96,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.blockBackground_1,
+                        color: AppColors.secondery_1,
                         border: Border.all(
                           color: AppColors.secondery_1,
                           width: 3,
@@ -497,7 +535,7 @@ class _SearchPageState extends State<SearchPage> {
                       child: Icon(
                         _isAutoReading ? Icons.pause : Icons.play_arrow,
                         size: 48,
-                        color: AppColors.secondery_1,
+                        color: Colors.white,
                       ),
                     ),
                   ),

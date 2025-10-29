@@ -34,6 +34,8 @@ class AppColors {
   static const blockBackground_2 = Color(0xFFbed7d1);
   static const botton_2 = Color(0xFFbf9e71);
   static const bottonText_2 = Color(0xFFFFF8F0);
+
+  static const aiBackground = Color(0xFFDFE9F1);
 }
 
 /// 字體大小常數 (針對年長者優化，字體加大)
