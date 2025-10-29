@@ -86,7 +86,14 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1, // 套用背景色
       appBar: AppBar(
-        title: const Text('購物車'),
+        title: GestureDetector(
+          onTap: () {
+            ttsHelper.speak(
+              '購物車頁面。上方為查看比較按紐，中間為購物車商品項目，可以上下滑動，下方為結帳按紐。購物車項目下方包含減少和增加數量按紐。購物車項目單擊朗讀內容，雙擊選取結帳，長按更多功能。更多功能包含瀏覽商品頁面、加入/移除比較、刪除商品',
+            );
+          },
+          child: const Text('購物車'),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Consumer<ShoppingCartData>(
@@ -151,7 +158,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                               horizontal: AppSpacing.md,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange,
+                              color: AppColors.secondery_1,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
@@ -220,7 +227,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: const BoxDecoration(
-                                    color: AppColors.blockBackground_2,
+                                    color: AppColors.botton_1,
                                     borderRadius: BorderRadius.only(
                                       topLeft: Radius.circular(12),
                                       topRight: Radius.circular(12),
@@ -228,7 +235,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.store, size: 20),
+                                      const Icon(
+                                        Icons.store,
+                                        size: 20,
+                                        color: AppColors.bottonText_1,
+                                      ),
                                       const SizedBox(width: AppSpacing.xs),
                                       Expanded(
                                         child: Text(
@@ -236,6 +247,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                           style: const TextStyle(
                                             fontSize: AppFontSizes.body,
                                             fontWeight: FontWeight.bold,
+                                            color: AppColors.bottonText_1,
                                           ),
                                         ),
                                       ),
@@ -244,7 +256,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                         style: const TextStyle(
                                           fontSize: AppFontSizes.body,
                                           fontWeight: FontWeight.bold,
-                                          color: AppColors.primary_2,
+                                          color: AppColors.bottonText_1,
                                         ),
                                       ),
                                     ],
@@ -420,7 +432,7 @@ class _ShoppingCartItemCardState extends State<ShoppingCartItemCard> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: item.isSelected
-              ? const BorderSide(color: Colors.blue, width: 6)
+              ? const BorderSide(color: Colors.green, width: 6)
               : BorderSide.none,
         ),
         child: Padding(
@@ -549,7 +561,7 @@ class MoreActionsOverlay extends StatelessWidget {
                       child: Text(
                         "${item.name} - 更多操作",
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.text_1,
                           fontSize: AppFontSizes.title,
                           fontWeight: FontWeight.bold,
                         ),
@@ -561,7 +573,7 @@ class MoreActionsOverlay extends StatelessWidget {
                     _buildLargeActionButton(
                       label: "瀏覽商品頁面",
                       icon: Icons.visibility,
-                      color: AppColors.primary_1,
+                      color: AppColors.background_1,
                       onTap: () => ttsHelper.speak("瀏覽商品頁面按鈕"),
                       onDoubleTap: () {
                         ttsHelper.speak("開啟${item.name}商品頁面");
@@ -587,7 +599,9 @@ class MoreActionsOverlay extends StatelessWidget {
                           icon: isInComparison
                               ? Icons.check_circle
                               : Icons.compare_arrows,
-                          color: isInComparison ? Colors.green : Colors.orange,
+                          color: isInComparison
+                              ? Colors.green
+                              : AppColors.secondery_1,
                           onTap: () => ttsHelper.speak(
                             isInComparison ? "加入比較按鈕，目前已加入，雙擊移除" : "加入比較按鈕",
                           ),
@@ -617,7 +631,7 @@ class MoreActionsOverlay extends StatelessWidget {
                     _buildLargeActionButton(
                       label: "刪除商品",
                       icon: Icons.delete,
-                      color: Colors.red,
+                      color: AppColors.accent_1,
                       onTap: () => ttsHelper.speak("刪除商品按鈕"),
                       onDoubleTap: () async {
                         await cartData.removeItem(item.id);
@@ -632,7 +646,7 @@ class MoreActionsOverlay extends StatelessWidget {
                     _buildLargeActionButton(
                       label: "取消",
                       icon: Icons.close,
-                      color: Colors.grey,
+                      color: AppColors.subtitle_1,
                       onTap: () => ttsHelper.speak("取消按鈕"),
                       onDoubleTap: () {
                         ttsHelper.speak("關閉更多操作");
