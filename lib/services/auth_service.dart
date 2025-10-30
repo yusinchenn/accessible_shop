@@ -66,17 +66,31 @@ class AuthService {
       case 'invalid-email':
         return '電子郵件格式不正確';
       case 'user-not-found':
-        return '找不到此使用者';
+        return '找不到此使用者，請確認電子郵件是否正確';
       case 'wrong-password':
-        return '密碼錯誤';
+        return '密碼錯誤，請重新輸入';
+      case 'invalid-credential':
+        return '登入資訊不正確，請檢查電子郵件和密碼';
+      case 'invalid-verification-code':
+        return '驗證碼無效';
+      case 'invalid-verification-id':
+        return '驗證 ID 無效';
       case 'user-disabled':
         return '此帳號已被停用';
       case 'too-many-requests':
         return '嘗試次數過多，請稍後再試';
       case 'operation-not-allowed':
-        return '此登入方式未啟用';
+        return '此登入方式未啟用，請聯繫管理員';
+      case 'expired-action-code':
+        return '驗證碼已過期，請重新申請';
+      case 'invalid-action-code':
+        return '驗證碼無效或已使用';
+      case 'network-request-failed':
+        return '網路連線失敗，請檢查網路狀態';
+      case 'requires-recent-login':
+        return '此操作需要重新登入';
       default:
-        return '發生錯誤：${e.message}';
+        return '登入失敗：${e.message ?? '未知錯誤'}';
     }
   }
 }

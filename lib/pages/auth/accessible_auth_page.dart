@@ -90,7 +90,32 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
     );
 
     await Future.delayed(const Duration(milliseconds: 400));
-    ttsHelper.speakQueue(['密碼輸入頁面', '請輸入密碼', '至少需要 6 個字元']);
+    ttsHelper.speakQueue([
+      '密碼輸入頁面',
+      '您的電子郵件是：$email',
+      '如需修改，請點擊上方的電子郵件',
+      '請輸入密碼',
+      '至少需要 6 個字元',
+    ]);
+  }
+
+  Future<void> _goBackToEmailStep() async {
+    // 返回 email 步驟，不清空 email 讓用戶可以修改
+    _passwordController.clear();
+
+    setState(() => _currentStep = 0);
+    _pageController.animateToPage(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+
+    await Future.delayed(const Duration(milliseconds: 400));
+    ttsHelper.speakQueue([
+      '返回電子郵件輸入',
+      '請修改您的電子郵件',
+      '目前的電子郵件是：${_emailController.text}',
+    ]);
   }
 
   Future<void> _submit() async {
@@ -242,11 +267,17 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
+                    borderSide: BorderSide(
+                      color: AppColors.subtitle_2,
+                      width: 2,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.primary_2, width: 3),
+                    borderSide: BorderSide(
+                      color: AppColors.primary_2,
+                      width: 3,
+                    ),
                   ),
                 ),
                 keyboardType: TextInputType.emailAddress,
@@ -255,6 +286,10 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                 onChanged: (value) {
                   if (value.isEmpty) {
                     ttsHelper.speak('電子郵件已清空');
+                  } else if (value.length > 50) {
+                    ttsHelper.speak('電子郵件地址過長，請檢查是否正確');
+                  } else if (value.length > 30 && !value.contains('@')) {
+                    ttsHelper.speak('電子郵件格式可能有誤，請檢查');
                   }
                 },
               ),
@@ -331,24 +366,45 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
               ),
               SizedBox(height: AppSpacing.lg),
 
-              // 顯示已輸入的電子郵件（純文字）
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.email, size: 28, color: AppColors.text_2),
-                  SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: Text(
-                      _emailController.text,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text_2,
-                      ),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
+              // 顯示已輸入的電子郵件（可點擊修改）
+              DoubleClickButton(
+                onConfirm: _goBackToEmailStep,
+                buttonText: '電子郵件：${_emailController.text}，點擊可修改',
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background_2,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primary_2.withValues(alpha: 0.5),
+                      width: 2,
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.email, size: 28, color: AppColors.text_2),
+                      SizedBox(width: AppSpacing.sm),
+                      Flexible(
+                        child: Text(
+                          _emailController.text,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text_2,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.xs),
+                      Icon(Icons.edit, size: 20, color: AppColors.primary_2),
+                    ],
+                  ),
+                ),
               ),
               SizedBox(height: AppSpacing.xl),
 
@@ -361,7 +417,11 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                   labelStyle: AppTextStyles.body.copyWith(
                     color: AppColors.subtitle_2,
                   ),
-                  prefixIcon: Icon(Icons.lock, size: 32, color: AppColors.text_2),
+                  prefixIcon: Icon(
+                    Icons.lock,
+                    size: 32,
+                    color: AppColors.text_2,
+                  ),
                   filled: true,
                   fillColor: AppColors.background_2,
                   border: OutlineInputBorder(
@@ -370,11 +430,17 @@ class _AccessibleAuthPageState extends State<AccessibleAuthPage> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.subtitle_2, width: 2),
+                    borderSide: BorderSide(
+                      color: AppColors.subtitle_2,
+                      width: 2,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.primary_2, width: 3),
+                    borderSide: BorderSide(
+                      color: AppColors.primary_2,
+                      width: 3,
+                    ),
                   ),
                 ),
                 obscureText: true,
