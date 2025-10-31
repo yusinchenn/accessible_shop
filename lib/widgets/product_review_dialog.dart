@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/app_constants.dart';
 import '../utils/tts_helper.dart';
 import '../models/order.dart';
 import '../models/product_review.dart';
 import '../services/order_review_service.dart';
+import 'accessible_star_rating.dart';
+import 'global_gesture_wrapper.dart';
 
 /// 商品評論對話框
 class ProductReviewDialog extends StatefulWidget {
@@ -40,7 +43,7 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final mode = _isEditMode ? '編輯' : '新增';
-      ttsHelper.speak('$mode商品評論，請選擇星級評分');
+      ttsHelper.speak('$mode商品評論，請在評分區域滑動來選擇評分');
     });
   }
 
@@ -48,6 +51,26 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  /// 朗讀評論對話框完整內容
+  void _speakDialogContent() {
+    final mode = _isEditMode ? '編輯' : '新增';
+    String content = '評論撰寫區，$mode商品評論。';
+    content += '商品名稱：${widget.orderItem.productName}，';
+    content += '規格：${widget.orderItem.specification}。';
+
+    if (_rating > 0) {
+      content += '當前評分：${_rating.toInt()} 分，滿分 5 分。';
+    } else {
+      content += '尚未評分。';
+    }
+
+    content += '請先選擇評分，在評分區域按住螢幕並左右滑動來改變評分，1分最低，5分最高。';
+    content += '評分後可以選擇性輸入評論內容，最多500字。';
+    content += '完成後雙擊發布評論按鈕即可提交。';
+
+    ttsHelper.speak(content);
   }
 
   Future<void> _submitReview() async {
@@ -111,173 +134,213 @@ class _ProductReviewDialogState extends State<ProductReviewDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 標題
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: GlobalGestureWrapper(
+        enabled: true,
+        onlyInCustomMode: false,
+        child: GestureDetector(
+          onTap: () {
+            // 點擊非輸入區域時，取消輸入框焦點
+            FocusScope.of(context).unfocus();
+            // 朗讀對話框內容
+            _speakDialogContent();
+          },
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _isEditMode ? '編輯商品評論' : '商品評論',
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.title,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      ttsHelper.speak('關閉');
-                      Navigator.of(context).pop();
-                    },
-                    tooltip: '關閉',
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-
-              // 商品資訊
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.background_2,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.orderItem.productName,
-                      style: const TextStyle(
-                        fontSize: AppFontSizes.subtitle,
-                        fontWeight: FontWeight.bold,
+                  // 標題
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _isEditMode ? '編輯商品評論' : '商品評論',
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.title,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      widget.orderItem.specification,
-                      style: const TextStyle(
-                        color: AppColors.subtitle_2,
-                        fontSize: AppFontSizes.body,
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          ttsHelper.speak('關閉');
+                          Navigator.of(context).pop();
+                        },
+                        tooltip: '關閉',
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 評分選擇
-              const Text(
-                '評分 *',
-                style: TextStyle(
-                  fontSize: AppFontSizes.subtitle,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  final starValue = index + 1.0;
-                  final isFilled = starValue <= _rating;
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _rating = starValue);
-                      ttsHelper.speak('$starValue 星');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        isFilled ? Icons.star : Icons.star_border,
-                        size: 48,
-                        color: isFilled ? Colors.amber : Colors.grey,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              if (_rating > 0)
-                Center(
-                  child: Text(
-                    '$_rating 星',
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.body,
-                      color: AppColors.subtitle_2,
-                    ),
+                    ],
                   ),
-                ),
-              const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.md),
 
-              // 評論內容（選填）
-              const Text(
-                '評論內容（選填）',
-                style: TextStyle(
-                  fontSize: AppFontSizes.subtitle,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _commentController,
-                maxLines: 5,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: '分享您的使用心得...',
-                  hintStyle: const TextStyle(
-                    color: AppColors.subtitle_2,
-                    fontSize: AppFontSizes.body,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: AppColors.background_2,
-                ),
-                style: const TextStyle(fontSize: AppFontSizes.body),
-                onTap: () {
-                  ttsHelper.speak('輸入評論內容');
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 提交按鈕
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitReview,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary_2,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
+                  // 商品資訊
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.background_2,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          _isEditMode ? '更新評論' : '發布評論',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.orderItem.productName,
                           style: const TextStyle(
                             fontSize: AppFontSizes.subtitle,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          widget.orderItem.specification,
+                          style: const TextStyle(
+                            color: AppColors.subtitle_2,
+                            fontSize: AppFontSizes.body,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // 評分選擇
+                  const Text(
+                    '評分 *',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.subtitle,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AccessibleStarRating(
+                    rating: _rating,
+                    onRatingChanged: (value) {
+                      setState(() => _rating = value);
+                    },
+                    starSize: 48,
+                    spacing: 12,
+                    enableHapticFeedback: true,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // 評論內容（選填）
+                  const Text(
+                    '評論內容（選填）',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.subtitle,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Semantics(
+                    textField: true,
+                    label: '評論內容輸入框，選填，最多500字',
+                    hint: '輸入您的使用心得',
+                    child: TextField(
+                      controller: _commentController,
+                      maxLines: 5,
+                      maxLength: 500,
+                      decoration: InputDecoration(
+                        hintText: '分享您的使用心得...',
+                        hintStyle: const TextStyle(
+                          color: AppColors.subtitle_2,
+                          fontSize: AppFontSizes.body,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.background_2,
+                        counterStyle: const TextStyle(
+                          fontSize: AppFontSizes.body,
+                          color: AppColors.subtitle_2,
+                        ),
+                      ),
+                      style: const TextStyle(fontSize: AppFontSizes.body),
+                      onTap: () {
+                        ttsHelper.speak('輸入評論內容，最多500字');
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // 提交按鈕
+                  Semantics(
+                    button: true,
+                    label: _isEditMode ? '更新評論按鈕' : '發布評論按鈕',
+                    hint: _isSubmitting ? '提交中' : '雙擊提交評論',
+                    enabled: !_isSubmitting,
+                    child: GestureDetector(
+                      onTap: _isSubmitting
+                          ? null
+                          : () {
+                              final buttonText = _isEditMode ? '更新評論' : '發布評論';
+                              String announcement = '$buttonText按鈕，';
+                              announcement +=
+                                  '商品：${widget.orderItem.productName}，';
+
+                              if (_rating > 0) {
+                                announcement +=
+                                    '評分：${_rating.toInt()} 分，滿分 5 分，';
+                              } else {
+                                announcement += '尚未評分，';
+                              }
+
+                              final comment = _commentController.text.trim();
+                              if (comment.isNotEmpty) {
+                                announcement += '評論內容：$comment，';
+                              } else {
+                                announcement += '無評論內容，';
+                              }
+
+                              announcement += '雙擊提交';
+
+                              ttsHelper.speak(announcement);
+                              HapticFeedback.lightImpact();
+                            },
+                      onDoubleTap: _isSubmitting ? null : _submitReview,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: null, // 禁用默認行為，改用 GestureDetector
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isSubmitting
+                                ? AppColors.primary_2.withValues(alpha: 0.6)
+                                : AppColors.primary_2,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: _isSubmitting
+                                ? AppColors.primary_2.withValues(alpha: 0.6)
+                                : AppColors.primary_2,
+                            disabledForegroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  _isEditMode ? '更新評論' : '發布評論',
+                                  style: const TextStyle(
+                                    fontSize: AppFontSizes.subtitle,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

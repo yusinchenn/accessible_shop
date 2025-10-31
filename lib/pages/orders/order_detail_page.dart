@@ -87,6 +87,85 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     }
   }
 
+  /// 朗讀頁面完整內容
+  void _speakFullContent() {
+    if (_order == null) return;
+
+    String content = '訂單詳情頁面，';
+    content += '訂單編號 ${_order!.orderNumber}，';
+    content += '訂單狀態 ${_getDetailedStatusText(_order!)}，';
+    content += '共 ${_orderItems.length} 項商品，';
+    content += '總金額 ${_order!.total.toStringAsFixed(0)} 元。';
+    content += '雙擊商品項目可進入商品詳情頁面';
+
+    ttsHelper.speak(content);
+  }
+
+  /// 朗讀訂單狀態區塊
+  void _speakOrderStatus() {
+    if (_order == null) return;
+
+    String content = '訂單狀態區塊，';
+    content += '訂單狀態 ${_getDetailedStatusText(_order!)}，';
+    content += '訂單編號 ${_order!.orderNumber}，';
+    final dateStr = '${_order!.createdAt.year} 年 '
+        '${_order!.createdAt.month} 月 '
+        '${_order!.createdAt.day} 日';
+    content += '訂單日期 $dateStr';
+
+    ttsHelper.speak(content);
+  }
+
+  /// 朗讀商品明細區塊
+  void _speakProductList() {
+    if (_orderItems.isEmpty) return;
+
+    String content = '商品明細區塊，共 ${_orderItems.length} 項商品，';
+    for (var item in _orderItems) {
+      content += '${item.productName}，${item.specification}，'
+          '單價 ${item.unitPrice.toStringAsFixed(0)} 元，'
+          '數量 ${item.quantity}，'
+          '小計 ${item.subtotal.toStringAsFixed(0)} 元。';
+    }
+
+    ttsHelper.speak(content);
+  }
+
+  /// 朗讀付款與配送區塊
+  void _speakPaymentAndShipping() {
+    if (_order == null) return;
+
+    String content = '付款與配送區塊，';
+    content += '付款方式 ${_order!.paymentMethodName}，';
+    content += '配送方式 ${_order!.shippingMethodName}';
+
+    ttsHelper.speak(content);
+  }
+
+  /// 朗讀費用明細區塊
+  void _speakCostDetails() {
+    if (_order == null) return;
+
+    String content = '費用明細區塊，';
+    content += '商品小計 ${_order!.subtotal.toStringAsFixed(0)} 元，';
+    if (_order!.discount > 0) {
+      content += '優惠折扣 ${_order!.discount.toStringAsFixed(0)} 元，';
+    }
+    content += '運費 ${_order!.shippingFee.toStringAsFixed(0)} 元，';
+    content += '訂單總額 ${_order!.total.toStringAsFixed(0)} 元';
+
+    ttsHelper.speak(content);
+  }
+
+  /// 導航到商品詳情頁面
+  void _navigateToProductDetail(int productId) {
+    Navigator.pushNamed(
+      context,
+      '/product_detail',
+      arguments: productId,
+    );
+  }
+
   /// 顯示商品評論對話框
   Future<void> _showReviewDialog(OrderItem item) async {
     if (_reviewService == null || _order == null || !mounted) return;
@@ -153,6 +232,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_1,
         titleTextStyle: const TextStyle(color: AppColors.text_2),
+        onTap: _speakFullContent,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -165,66 +245,55 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 訂單狀態卡片
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  '訂單狀態',
-                                  style: AppTextStyles.subtitle,
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
-                                    vertical: AppSpacing.xs,
+                    GestureDetector(
+                      onTap: _speakOrderStatus,
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '訂單狀態',
+                                    style: AppTextStyles.subtitle,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(
-                                      _order!.mainStatus,
-                                    ).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.sm,
+                                      vertical: AppSpacing.xs,
+                                    ),
+                                    decoration: BoxDecoration(
                                       color: _getStatusColor(
                                         _order!.mainStatus,
+                                      ).withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: _getStatusColor(
+                                          _order!.mainStatus,
+                                        ),
+                                        width: 1,
                                       ),
-                                      width: 1,
+                                    ),
+                                    child: Text(
+                                      _getDetailedStatusText(_order!),
+                                      style: TextStyle(
+                                        color: _getStatusColor(
+                                          _order!.mainStatus,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: AppFontSizes.small,
+                                      ),
                                     ),
                                   ),
-                                  child: Text(
-                                    _getDetailedStatusText(_order!),
-                                    style: TextStyle(
-                                      color: _getStatusColor(
-                                        _order!.mainStatus,
-                                      ),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: AppFontSizes.small,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '訂單編號 ${_order!.orderNumber}',
+                                ],
                               ),
-                              child: _buildInfoRow('訂單編號', _order!.orderNumber),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            GestureDetector(
-                              onTap: () {
-                                final dateStr =
-                                    '${_order!.createdAt.year} 年 '
-                                    '${_order!.createdAt.month} 月 '
-                                    '${_order!.createdAt.day} 日';
-                                ttsHelper.speak('訂單日期 $dateStr');
-                              },
-                              child: _buildInfoRow(
+                              const Divider(),
+                              _buildInfoRow('訂單編號', _order!.orderNumber),
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildInfoRow(
                                 '訂單日期',
                                 '${_order!.createdAt.year}-'
                                     '${_order!.createdAt.month.toString().padLeft(2, '0')}-'
@@ -232,8 +301,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                     '${_order!.createdAt.hour.toString().padLeft(2, '0')}:'
                                     '${_order!.createdAt.minute.toString().padLeft(2, '0')}',
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -275,7 +344,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('商品明細', style: AppTextStyles.subtitle),
+                            GestureDetector(
+                              onTap: _speakProductList,
+                              child: const Text('商品明細', style: AppTextStyles.subtitle),
+                            ),
                             const Divider(),
                             ..._orderItems.map((item) {
                               return GestureDetector(
@@ -287,6 +359,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                     '數量 ${item.quantity}，'
                                     '小計 ${item.subtotal.toStringAsFixed(0)} 元',
                                   );
+                                },
+                                onDoubleTap: () {
+                                  _navigateToProductDetail(item.productId);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -346,29 +421,42 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                           builder: (context, snapshot) {
                                             final hasReviewed =
                                                 snapshot.data ?? false;
-                                            return OutlinedButton.icon(
-                                              onPressed: () =>
-                                                  _showReviewDialog(item),
-                                              icon: Icon(
-                                                hasReviewed
-                                                    ? Icons.edit
-                                                    : Icons.rate_review,
-                                                size: 18,
-                                              ),
-                                              label: Text(
-                                                hasReviewed ? '編輯評論' : '評論此商品',
-                                              ),
-                                              style: OutlinedButton.styleFrom(
-                                                foregroundColor:
-                                                    AppColors.botton_1,
-                                                side: const BorderSide(
+                                            final buttonText = hasReviewed ? '編輯評論' : '評論此商品';
+                                            return GestureDetector(
+                                              onTap: () {
+                                                ttsHelper.speak('$buttonText按鈕');
+                                              },
+                                              onDoubleTap: () {
+                                                _showReviewDialog(item);
+                                              },
+                                              child: OutlinedButton.icon(
+                                                onPressed: null, // 禁用默認的onPressed，改用GestureDetector
+                                                icon: Icon(
+                                                  hasReviewed
+                                                      ? Icons.edit
+                                                      : Icons.rate_review,
+                                                  size: 18,
                                                   color: AppColors.botton_1,
                                                 ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: AppSpacing.sm,
-                                                      vertical: AppSpacing.xs,
-                                                    ),
+                                                label: Text(
+                                                  buttonText,
+                                                  style: const TextStyle(
+                                                    color: AppColors.botton_1,
+                                                  ),
+                                                ),
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor:
+                                                      AppColors.botton_1,
+                                                  side: const BorderSide(
+                                                    color: AppColors.botton_1,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: AppSpacing.sm,
+                                                        vertical: AppSpacing.xs,
+                                                      ),
+                                                  disabledForegroundColor: AppColors.botton_1,
+                                                ),
                                               ),
                                             );
                                           },
@@ -387,34 +475,27 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     const SizedBox(height: AppSpacing.md),
 
                     // 付款與配送資訊
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('付款與配送', style: AppTextStyles.subtitle),
-                            const Divider(),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '付款方式 ${_order!.paymentMethodName}',
-                              ),
-                              child: _buildInfoRow(
+                    GestureDetector(
+                      onTap: _speakPaymentAndShipping,
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('付款與配送', style: AppTextStyles.subtitle),
+                              const Divider(),
+                              _buildInfoRow(
                                 '付款方式',
                                 _order!.paymentMethodName,
                               ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '配送方式 ${_order!.shippingMethodName}',
-                              ),
-                              child: _buildInfoRow(
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildInfoRow(
                                 '配送方式',
                                 _order!.shippingMethodName,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -422,52 +503,35 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     const SizedBox(height: AppSpacing.md),
 
                     // 費用明細
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('費用明細', style: AppTextStyles.subtitle),
-                            const Divider(),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '商品小計 ${_order!.subtotal.toStringAsFixed(0)} 元',
-                              ),
-                              child: _buildInfoRow(
+                    GestureDetector(
+                      onTap: _speakCostDetails,
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('費用明細', style: AppTextStyles.subtitle),
+                              const Divider(),
+                              _buildInfoRow(
                                 '商品小計',
                                 '\$${_order!.subtotal.toStringAsFixed(0)}',
                               ),
-                            ),
-                            if (_order!.discount > 0) ...[
-                              const SizedBox(height: AppSpacing.xs),
-                              GestureDetector(
-                                onTap: () => ttsHelper.speak(
-                                  '優惠折扣 ${_order!.discount.toStringAsFixed(0)} 元',
-                                ),
-                                child: _buildInfoRow(
+                              if (_order!.discount > 0) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                _buildInfoRow(
                                   '優惠折扣 (${_order!.couponName ?? ""})',
                                   '-\$${_order!.discount.toStringAsFixed(0)}',
                                   valueColor: Colors.red,
                                 ),
-                              ),
-                            ],
-                            const SizedBox(height: AppSpacing.xs),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '運費 ${_order!.shippingFee.toStringAsFixed(0)} 元',
-                              ),
-                              child: _buildInfoRow(
+                              ],
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildInfoRow(
                                 '運費',
                                 '\$${_order!.shippingFee.toStringAsFixed(0)}',
                               ),
-                            ),
-                            const Divider(),
-                            GestureDetector(
-                              onTap: () => ttsHelper.speak(
-                                '訂單總額 ${_order!.total.toStringAsFixed(0)} 元',
-                              ),
-                              child: Row(
+                              const Divider(),
+                              Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
@@ -488,8 +552,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
