@@ -27,6 +27,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
 
+  // 自動朗讀相關
+  bool _isAutoReading = false; // 是否正在自動朗讀
+  int _autoReadIndex = 0; // 當前朗讀的通知索引
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +92,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
   void _onNotificationTap(NotificationModel notification, int index) {
     if (_isAnnouncingEnter) return;
 
+    // 手動點擊時停止自動朗讀
+    if (_isAutoReading) {
+      _stopAutoRead();
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -106,6 +115,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     NotificationModel notification,
     int index,
   ) async {
+    // 手動雙擊時停止自動朗讀
+    if (_isAutoReading) {
+      _stopAutoRead();
+    }
+
     final db = Provider.of<DatabaseService>(context, listen: false);
 
     // 如果是訂單通知且有訂單 ID，跳轉到訂單詳情
@@ -169,18 +183,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  /// 取得通知類型對應的顏色
-  Color _getNotificationColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.order:
-        return Colors.blue;
-      case NotificationType.promotion:
-        return Colors.orange;
-      case NotificationType.system:
-        return Colors.grey;
-    }
-  }
-
   /// 格式化時間顯示
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
@@ -195,6 +197,96 @@ class _NotificationsPageState extends State<NotificationsPage> {
     } else {
       return '${timestamp.year}/${timestamp.month}/${timestamp.day}';
     }
+  }
+
+  /// 獲取未讀通知列表
+  List<NotificationModel> _getUnreadNotifications() {
+    return _notifications.where((n) => !n.isRead).toList();
+  }
+
+  /// 開始自動朗讀未讀通知
+  Future<void> _startAutoRead() async {
+    final unreadNotifications = _getUnreadNotifications();
+
+    if (unreadNotifications.isEmpty) {
+      // 沒有未讀通知時，朗讀提示訊息
+      await ttsHelper.speak('目前沒有未讀通知');
+      return;
+    }
+
+    setState(() {
+      _isAutoReading = true;
+      _autoReadIndex = 0;
+    });
+
+    // 開始自動朗讀循環
+    await _autoReadLoop(unreadNotifications);
+  }
+
+  /// 自動朗讀循環
+  Future<void> _autoReadLoop(List<NotificationModel> unreadNotifications) async {
+    try {
+      final db = Provider.of<DatabaseService>(context, listen: false);
+
+      for (int i = 0; i < unreadNotifications.length; i++) {
+        // 檢查是否被中斷
+        if (!_isAutoReading) break;
+
+        _autoReadIndex = i;
+        final notification = unreadNotifications[i];
+
+        // 朗讀通知內容
+        final notificationText = '未讀，${notification.title}，${notification.content}';
+        await ttsHelper.speakQueue([notificationText]);
+
+        // 再次檢查是否被中斷
+        if (!_isAutoReading) break;
+
+        // 標記為已讀
+        await db.markNotificationAsRead(notification.id);
+
+        // 等待一小段時間後繼續下一個
+        if (i < unreadNotifications.length - 1) {
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+
+        // 檢查是否在等待過程中被中斷
+        if (!_isAutoReading) break;
+      }
+
+      // 朗讀完成後重新載入通知列表並停止自動朗讀
+      if (_isAutoReading) {
+        await _loadNotifications();
+        _stopAutoRead();
+      }
+    } catch (e) {
+      _stopAutoRead();
+    }
+  }
+
+  /// 停止自動朗讀
+  void _stopAutoRead() {
+    setState(() {
+      _isAutoReading = false;
+    });
+    ttsHelper.stop();
+  }
+
+  /// 處理自動朗讀按鈕的單擊事件
+  Future<void> _onAutoReadButtonTap() async {
+    await ttsHelper.speak('自動朗讀未讀通知按鈕');
+  }
+
+  /// 處理自動朗讀按鈕的雙擊事件
+  void _onAutoReadButtonDoubleTap() {
+    // 如果正在朗讀，先停止
+    if (_isAutoReading) {
+      _stopAutoRead();
+    }
+    ttsHelper.stop(); // 清空所有朗讀佇列
+
+    // 開始自動朗讀
+    _startAutoRead();
   }
 
   @override
@@ -216,14 +308,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _notifications.isEmpty
-          ? const Center(child: Text('暫無通知', style: AppTextStyles.body))
-          : ListView.builder(
-              itemCount: _notifications.length,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              itemBuilder: (context, index) {
+      body: Stack(
+        children: [
+          // 主要內容
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _notifications.isEmpty
+              ? const Center(child: Text('暫無通知', style: AppTextStyles.body))
+              : ListView.builder(
+                  itemCount: _notifications.length,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemBuilder: (context, index) {
                 final notification = _notifications[index];
                 final isSelected = index == _selectedIndex;
 
@@ -234,9 +329,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   child: Card(
                     elevation: isSelected ? 8 : 2,
                     margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    color: notification.isRead
-                        ? Colors.white
-                        : AppColors.accent_2.withValues(alpha: 0.3),
+                    color: AppColors.botton_2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: isSelected
@@ -256,14 +349,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: _getNotificationColor(
-                                notification.type,
-                              ).withValues(alpha: 0.2),
+                              color: AppColors.background_2,
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Icon(
                               _getNotificationIcon(notification.type),
-                              color: _getNotificationColor(notification.type),
+                              color: AppColors.text_2,
                               size: 28,
                             ),
                           ),
@@ -279,6 +370,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       child: Text(
                                         notification.title,
                                         style: AppTextStyles.subtitle.copyWith(
+                                          color: AppColors.bottonText_2,
                                           fontWeight: notification.isRead
                                               ? FontWeight.normal
                                               : FontWeight.bold,
@@ -290,7 +382,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         width: 8,
                                         height: 8,
                                         decoration: const BoxDecoration(
-                                          color: Colors.red,
+                                          color: AppColors.accent_2,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -300,7 +392,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 Text(
                                   notification.content,
                                   style: AppTextStyles.body.copyWith(
-                                    color: Colors.grey[700],
+                                    color: AppColors.bottonText_2,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -311,7 +403,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     Text(
                                       _formatTimestamp(notification.timestamp),
                                       style: AppTextStyles.small.copyWith(
-                                        color: Colors.grey[500],
+                                        color: AppColors.bottonText_2,
                                       ),
                                     ),
                                     if (notification.type ==
@@ -321,13 +413,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       const Icon(
                                         Icons.arrow_forward,
                                         size: 16,
-                                        color: Colors.grey,
+                                        color: AppColors.bottonText_2,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         '查看訂單',
                                         style: AppTextStyles.small.copyWith(
-                                          color: AppColors.primary_2,
+                                          color: AppColors.bottonText_2,
                                         ),
                                       ),
                                     ],
@@ -343,6 +435,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 );
               },
             ),
+          // 自動朗讀按鈕 - 左下角
+          if (!_isLoading && _notifications.isNotEmpty)
+            Positioned(
+              left: 16,
+              bottom: 50,
+              child: GestureDetector(
+                onTap: _onAutoReadButtonTap,
+                onDoubleTap: _onAutoReadButtonDoubleTap,
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.secondery_2,
+                    border: Border.all(
+                      color: AppColors.secondery_2,
+                      width: 3,
+                    ),
+                  ),
+                  child: Icon(
+                    _isAutoReading ? Icons.pause : Icons.play_arrow,
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
