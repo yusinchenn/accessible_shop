@@ -20,13 +20,14 @@ dependencies:
   path_provider: ^2.1.5              # 取得裝置資料夾路徑
   flutter_tts: ^4.2.3                # 文字轉語音
   speech_to_text: ^7.3.0             # 語音轉文字
-  permission_handler: ^11.3.1        # 權限管理
+  permission_handler: ^12.0.1        # 權限管理
   shared_preferences: ^2.3.4         # 本地持久化存儲
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0
+  cloud_firestore: ^6.0.3            # Cloud Firestore 資料庫
   intl: ^0.20.2                      # 國際化與日期格式化
   dio: ^5.9.0
-  flutter_dotenv: ^5.2.1             # 環境變數管理
+  flutter_dotenv: ^6.0.0             # 環境變數管理
 
 # ------------------ 開發相關套件 ------------------
 dev_dependencies:

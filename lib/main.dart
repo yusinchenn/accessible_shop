@@ -28,6 +28,7 @@ import 'pages/wallet/wallet_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
+import 'services/firestore_service.dart';
 import 'services/order_automation_service.dart';
 
 // 匯入 Providers
@@ -154,6 +155,9 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
 
               /// DatabaseService 在背景初始化 Isar
               ChangeNotifierProvider(create: (_) => DatabaseService()),
+
+              /// FirestoreService 處理 Firebase Firestore 資料
+              ChangeNotifierProvider(create: (_) => FirestoreService()),
 
               /// 訂單自動化服務 (依賴 DatabaseService)
               ProxyProvider<DatabaseService, OrderAutomationService>(

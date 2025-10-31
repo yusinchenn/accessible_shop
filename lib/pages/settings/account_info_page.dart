@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/providers/auth_provider.dart';
-import 'package:accessible_shop/services/database_service.dart';
+import 'package:accessible_shop/services/firestore_service.dart';
 import 'package:accessible_shop/models/user_profile.dart';
 import 'package:accessible_shop/widgets/global_gesture_wrapper.dart';
 import 'package:accessible_shop/services/accessibility_service.dart';
@@ -56,10 +56,11 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
       return;
     }
 
-    final databaseService = context.read<DatabaseService>();
-    final profile = await databaseService.getUserProfile(userId);
+    final firestoreService = context.read<FirestoreService>();
+    final userData = await firestoreService.getUserProfile(userId);
 
-    if (profile != null) {
+    if (userData != null) {
+      final profile = UserProfile.fromFirestore(userData);
       setState(() {
         _userProfile = profile;
         _displayNameController.text = profile.displayName ?? '';
@@ -70,15 +71,24 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
     } else {
       // 如果沒有資料，建立初始資料
       final email = authProvider.userEmail;
-      final newProfile = await databaseService.saveUserProfile(
+      await firestoreService.saveUserProfile(
         userId: userId,
         email: email,
       );
 
-      setState(() {
-        _userProfile = newProfile;
-        _isLoading = false;
-      });
+      // 重新載入
+      final newUserData = await firestoreService.getUserProfile(userId);
+      if (newUserData != null) {
+        final newProfile = UserProfile.fromFirestore(newUserData);
+        setState(() {
+          _userProfile = newProfile;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -95,8 +105,8 @@ class _AccountInfoPageState extends State<AccountInfoPage> {
     setState(() => _isSaving = true);
 
     try {
-      final databaseService = context.read<DatabaseService>();
-      await databaseService.saveUserProfile(
+      final firestoreService = context.read<FirestoreService>();
+      await firestoreService.saveUserProfile(
         userId: userId,
         displayName: _displayNameController.text.trim().isEmpty
             ? null

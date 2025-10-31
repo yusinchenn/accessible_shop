@@ -1,1 +1,39 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"accessible-shop","appId":"1:534301846445:android:d586179866a76b2d56cf24","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"accessible-shop","configurations":{"android":"1:534301846445:android:d586179866a76b2d56cf24","ios":"1:534301846445:ios:80a3e53e843fd23f56cf24"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "accessible-shop",
+          "appId": "1:534301846445:android:d586179866a76b2d56cf24",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "accessible-shop",
+          "configurations": {
+            "android": "1:534301846445:android:d586179866a76b2d56cf24",
+            "ios": "1:534301846445:ios:80a3e53e843fd23f56cf24"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": []
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

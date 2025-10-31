@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==================== 輔助函數 ====================
+
+    // 檢查用戶是否已登入
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // 檢查用戶是否為資料擁有者
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 檢查是否為管理員（需要設定 Custom Claims）
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    // ==================== 用戶資料集合 ====================
+
+    match /users/{userId} {
+      // 讀取：只能讀取自己的資料
+      allow read: if isOwner(userId);
+
+      // 創建：只能創建自己的資料，且初始餘額必須為 0
+      allow create: if isOwner(userId)
+                    && request.resource.data.userId == userId
+                    && request.resource.data.walletBalance == 0;
+
+      // 更新：只能更新自己的資料，並檢查錢包餘額變更的合理性
+      allow update: if isOwner(userId)
+                    && request.resource.data.userId == userId
+                    // 限制條件：
+                    // 1. 餘額只能增加（每日獎勵）或減少（消費）
+                    // 2. 每日獎勵最多 +1 元
+                    // 3. 扣款不能讓餘額變成負數
+                    && (
+                      // 一般資料更新（不修改餘額）
+                      (request.resource.data.walletBalance == resource.data.walletBalance)
+                      ||
+                      // 每日獎勵：增加 0-1 元
+                      (request.resource.data.walletBalance > resource.data.walletBalance
+                       && request.resource.data.walletBalance <= resource.data.walletBalance + 1
+                       && request.resource.data.keys().hasAll(['lastDailyLogin']))
+                      ||
+                      // 消費扣款：減少金額，且不能變成負數
+                      (request.resource.data.walletBalance < resource.data.walletBalance
+                       && request.resource.data.walletBalance >= 0)
+                    );
+
+      // 刪除：不允許刪除
+      allow delete: if false;
+    }
+
+    // ==================== 訂單資料集合（範例） ====================
+
+    match /orders/{orderId} {
+      // 讀取：只能讀取自己的訂單
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // 創建：只能創建自己的訂單
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+
+      // 更新、刪除：不允許（訂單建立後不能修改或刪除）
+      allow update, delete: if false;
+    }
+
+    // ==================== 其他集合預設拒絕 ====================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

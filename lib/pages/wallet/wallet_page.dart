@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:accessible_shop/utils/tts_helper.dart';
 import 'package:accessible_shop/utils/app_constants.dart';
 import 'package:accessible_shop/providers/auth_provider.dart';
-import 'package:accessible_shop/services/database_service.dart';
+import 'package:accessible_shop/services/firestore_service.dart';
 import 'package:accessible_shop/models/user_profile.dart';
 import 'package:accessible_shop/widgets/global_gesture_wrapper.dart';
 import 'package:accessible_shop/widgets/voice_control_appbar.dart';
@@ -46,14 +46,18 @@ class _WalletPageState extends State<WalletPage> {
       return;
     }
 
-    final databaseService = context.read<DatabaseService>();
-    final profile = await databaseService.getUserProfile(userId);
-    final hasClaimed = await databaseService.hasClaimedDailyReward(userId);
+    final firestoreService = context.read<FirestoreService>();
+    final userData = await firestoreService.getUserProfile(userId);
+    final hasClaimed = await firestoreService.hasClaimedDailyReward(userId);
 
-    if (mounted) {
+    if (mounted && userData != null) {
       setState(() {
-        _userProfile = profile;
+        _userProfile = UserProfile.fromFirestore(userData);
         _hasClaimedToday = hasClaimed;
+        _isLoading = false;
+      });
+    } else if (mounted) {
+      setState(() {
         _isLoading = false;
       });
     }
@@ -71,8 +75,8 @@ class _WalletPageState extends State<WalletPage> {
     setState(() => _isClaiming = true);
 
     try {
-      final databaseService = context.read<DatabaseService>();
-      final reward = await databaseService.claimDailyReward(userId);
+      final firestoreService = context.read<FirestoreService>();
+      final reward = await firestoreService.claimDailyReward(userId);
 
       if (reward > 0) {
         // 重新載入資料
