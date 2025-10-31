@@ -152,6 +152,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_1,
+        titleTextStyle: const TextStyle(color: AppColors.text_2),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

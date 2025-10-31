@@ -134,32 +134,39 @@ class _WalletPageState extends State<WalletPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalGestureScaffold(
-      backgroundColor: AppColors.background_2,
-      appBar: VoiceControlAppBar(
-        title: '我的錢包',
-        backgroundColor: AppColors.background_2,
+    return Theme(
+      data: Theme.of(context).copyWith(
+        appBarTheme: const AppBarTheme(
+          foregroundColor: AppColors.text_2, // ✅ AppBar 標題與 icon 文字變白
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 錢包餘額卡片
-                  _buildBalanceCard(),
-                  const SizedBox(height: AppSpacing.lg),
+      child: GlobalGestureScaffold(
+        backgroundColor: AppColors.background_2,
+        appBar: VoiceControlAppBar(
+          title: '我的錢包',
+          backgroundColor: AppColors.background_2,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 錢包餘額卡片
+                    _buildBalanceCard(),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // 每日登入獎勵區塊
-                  _buildDailyRewardSection(),
-                  const SizedBox(height: AppSpacing.lg),
+                    // 每日登入獎勵區塊
+                    _buildDailyRewardSection(),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // 使用說明
-                  _buildInstructionsSection(),
-                ],
+                    // 使用說明
+                    _buildInstructionsSection(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

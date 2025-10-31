@@ -211,6 +211,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
         },
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
+        titleTextStyle: const TextStyle(color: AppColors.text_2),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

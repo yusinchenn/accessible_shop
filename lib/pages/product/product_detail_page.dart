@@ -315,7 +315,10 @@ $reviewsText
 
     try {
       final db = Provider.of<DatabaseService>(context, listen: false);
-      final cartProvider = Provider.of<ShoppingCartData>(context, listen: false);
+      final cartProvider = Provider.of<ShoppingCartData>(
+        context,
+        listen: false,
+      );
       final specification = '尺寸: $_selectedSize / 顏色: $_selectedColor';
 
       if (kDebugMode) {
@@ -348,16 +351,20 @@ $reviewsText
       if (kDebugMode) {
         print('🛒 [ProductDetail] 購物車項目數量: ${cartItems.length}');
         for (var item in cartItems) {
-          print('  - ${item.name}, 規格: ${item.specification}, 選取: ${item.isSelected}');
+          print(
+            '  - ${item.name}, 規格: ${item.specification}, 選取: ${item.isSelected}',
+          );
         }
       }
 
       // 查找匹配的項目（使用 where 來處理可能找不到的情況）
-      final matchingItems = cartItems.where(
-        (item) =>
-            item.productId == _product!.id &&
-            item.specification == specification,
-      ).toList();
+      final matchingItems = cartItems
+          .where(
+            (item) =>
+                item.productId == _product!.id &&
+                item.specification == specification,
+          )
+          .toList();
 
       if (matchingItems.isEmpty) {
         throw Exception('找不到剛加入的購物車項目');
@@ -366,7 +373,9 @@ $reviewsText
       final newItem = matchingItems.first;
 
       if (kDebugMode) {
-        print('🛒 [ProductDetail] 找到商品: ${newItem.name}, id: ${newItem.id}, 選取狀態: ${newItem.isSelected}');
+        print(
+          '🛒 [ProductDetail] 找到商品: ${newItem.name}, id: ${newItem.id}, 選取狀態: ${newItem.isSelected}',
+        );
       }
 
       // 設置該項目為選取狀態
@@ -382,10 +391,14 @@ $reviewsText
 
       // 最後再次確認購物車狀態
       final finalCartItems = await db.getCartItems();
-      final selectedCount = finalCartItems.where((item) => item.isSelected).length;
+      final selectedCount = finalCartItems
+          .where((item) => item.isSelected)
+          .length;
 
       if (kDebugMode) {
-        print('🛒 [ProductDetail] 最終確認 - 購物車項目: ${finalCartItems.length}, 已選取: $selectedCount');
+        print(
+          '🛒 [ProductDetail] 最終確認 - 購物車項目: ${finalCartItems.length}, 已選取: $selectedCount',
+        );
         for (var item in finalCartItems) {
           if (item.isSelected) {
             print('  ✓ ${item.name}, 規格: ${item.specification}');
@@ -740,6 +753,7 @@ $reviewsText
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
+        titleTextStyle: const TextStyle(color: AppColors.text_2),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

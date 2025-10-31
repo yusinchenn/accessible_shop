@@ -32,6 +32,9 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// 底部 Widget（通常用於 TabBar）
   final PreferredSizeWidget? bottom;
 
+  /// 標題文字樣式
+  final TextStyle? titleTextStyle;
+
   const VoiceControlAppBar({
     super.key,
     required this.title,
@@ -42,6 +45,7 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.actions,
     this.backgroundColor,
     this.bottom,
+    this.titleTextStyle,
   });
 
   @override
@@ -149,7 +153,7 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(widget.title),
+            Text(widget.title, style: widget.titleTextStyle),
             // 顯示處理指示器
             if (_isTogglingVoiceControl) ...[
               const SizedBox(width: 8),

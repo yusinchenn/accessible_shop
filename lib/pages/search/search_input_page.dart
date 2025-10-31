@@ -106,6 +106,7 @@ class _SearchInputPageState extends State<SearchInputPage> {
         centerTitle: true,
         backgroundColor: AppColors.background_2,
         automaticallyImplyLeading: false,
+        titleTextStyle: const TextStyle(color: AppColors.text_2),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -177,12 +178,17 @@ class _SearchInputPageState extends State<SearchInputPage> {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.botton_2,
-                    borderRadius: BorderRadius.circular(AppBorders.buttonBorderRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppBorders.buttonBorderRadius,
+                    ),
                   ),
                   child: const Text(
                     '搜尋',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 24, color: AppColors.bottonText_2),
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: AppColors.bottonText_2,
+                    ),
                   ),
                 ),
               ),

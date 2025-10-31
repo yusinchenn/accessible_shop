@@ -206,6 +206,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
+        titleTextStyle: const TextStyle(color: AppColors.text_2),
         actions: [
           // 全部標記為已讀按鈕
           IconButton(

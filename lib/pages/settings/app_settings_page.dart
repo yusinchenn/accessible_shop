@@ -78,7 +78,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
       appBar: AppBar(
-        title: const Text('App 設定'),
+        title: const Text('App 設定', style: TextStyle(color: AppColors.text_2)),
         centerTitle: true,
         backgroundColor: AppColors.background_2,
         automaticallyImplyLeading: false,
