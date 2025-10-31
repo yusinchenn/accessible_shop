@@ -467,6 +467,7 @@ class _SearchPageState extends State<SearchPage> {
 
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
+      resizeToAvoidBottomInset: false,
       appBar: VoiceControlAppBar(
         title: title,
         onTap: _speakAppBarInfo,
