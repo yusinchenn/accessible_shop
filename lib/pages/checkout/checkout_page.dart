@@ -1187,7 +1187,7 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
                     decoration: BoxDecoration(
                       color: widget.selectedPayment != null
                           ? AppColors.botton_1
-                          : Colors.grey,
+                          : AppColors.primary_1,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
