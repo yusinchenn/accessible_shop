@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../services/database_service.dart';
 import '../../services/order_status_service.dart';
 import '../../services/order_review_service.dart';
@@ -126,7 +127,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           final incompleteCount = await _countIncompleteOrders();
           final unreviewedCount = await _countUnreviewedOrders();
-          ttsHelper.speak('進入訂單頁面。有$incompleteCount個未完成項目，有$unreviewedCount個未評論項目');
+          ttsHelper.speak(
+            '進入訂單頁面。有$incompleteCount個未完成項目，有$unreviewedCount個未評論項目',
+          );
         });
         _hasSpokenInitialMessage = true;
       }
@@ -139,10 +142,13 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   /// 統計未完成訂單數量
   Future<int> _countIncompleteOrders() async {
     final allOrders = await _db.getOrders();
-    return allOrders.where((order) =>
-      order.mainStatus != OrderMainStatus.completed &&
-      order.mainStatus != OrderMainStatus.invalid
-    ).length;
+    return allOrders
+        .where(
+          (order) =>
+              order.mainStatus != OrderMainStatus.completed &&
+              order.mainStatus != OrderMainStatus.invalid,
+        )
+        .length;
   }
 
   /// 統計未評論訂單數量
@@ -154,7 +160,10 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
       if (await _reviewService.canReviewOrder(order.id)) {
         final items = await _db.getOrderItems(order.id);
         for (var item in items) {
-          final hasReview = await _reviewService.hasReviewedProduct(order.id, item.productId);
+          final hasReview = await _reviewService.hasReviewedProduct(
+            order.id,
+            item.productId,
+          );
           if (!hasReview) {
             count++;
             break; // 這個訂單有未評論商品，計數後跳出
@@ -193,16 +202,13 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.primary_2,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            ttsHelper.speak('訂單頁面。上方可以切換訂單分類，單擊朗讀分類，雙擊進入分類。下方陳列訂單項目，單擊朗讀訂單，雙擊進入訂單詳情頁面');
-          },
-          child: Text(
-            '訂單',
-            style: AppTextStyles.title.copyWith(color: AppColors.text_2),
-          ),
-        ),
+      appBar: VoiceControlAppBar(
+        title: '訂單',
+        onTap: () {
+          ttsHelper.speak(
+            '訂單頁面。上方可以切換訂單分類，單擊朗讀分類，雙擊進入分類。下方陳列訂單項目，單擊朗讀訂單，雙擊進入訂單詳情頁面',
+          );
+        },
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,
         actions: [
@@ -272,14 +278,17 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
 
         // 構建語音朗讀內容
         final items = _orderItems[order.id] ?? [];
-        final itemsText = items.map((item) {
-          return '${item.productName}，'
-              '規格${item.specification}，'
-              '數量${item.quantity}，'
-              '單價${item.unitPrice.toStringAsFixed(0)}元';
-        }).join('，');
+        final itemsText = items
+            .map((item) {
+              return '${item.productName}，'
+                  '規格${item.specification}，'
+                  '數量${item.quantity}，'
+                  '單價${item.unitPrice.toStringAsFixed(0)}元';
+            })
+            .join('，');
 
-        final orderSpeech = '訂單，商家${order.storeName}，'
+        final orderSpeech =
+            '訂單，商家${order.storeName}，'
             '$itemsText，'
             '總價${order.total.toStringAsFixed(0)}元'
             '${canComplete ? '，此訂單等待完成確認' : ''}';

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../services/accessibility_service.dart';
 import '../../services/database_service.dart';
 import '../../models/notification.dart';
@@ -200,8 +201,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
-      appBar: AppBar(
-        title: const Text('通知'),
+      appBar: VoiceControlAppBar(
+        title: '通知',
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,

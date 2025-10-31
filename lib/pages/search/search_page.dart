@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart'; // 使用相對路徑匯入全域的文字轉語音工具（TTS Helper）
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../widgets/product_card.dart';
 import '../../models/product.dart';
 import '../../models/store.dart';
@@ -466,8 +467,9 @@ class _SearchPageState extends State<SearchPage> {
 
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
-      appBar: AppBar(
-        title: GestureDetector(onTap: _speakAppBarInfo, child: Text(title)),
+      appBar: VoiceControlAppBar(
+        title: title,
+        onTap: _speakAppBarInfo,
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),

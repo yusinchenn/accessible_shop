@@ -8,6 +8,7 @@ import '../../services/database_service.dart';
 import '../../utils/tts_helper.dart'; // ✅ 改用全域 ttsHelper
 import '../../utils/app_constants.dart'; // ✅ 匯入全域樣式常數
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
+import '../../widgets/voice_control_appbar.dart'; // 匯入語音控制 AppBar
 
 /// 購物車頁面
 class ShoppingCartPage extends StatefulWidget {
@@ -85,15 +86,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1, // 套用背景色
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            ttsHelper.speak(
-              '購物車頁面。上方為查看比較按紐，中間為購物車商品項目，可以上下滑動，下方為結帳按紐。購物車項目下方包含減少和增加數量按紐。購物車項目單擊朗讀內容，雙擊選取結帳，長按更多功能。更多功能包含瀏覽商品頁面、加入/移除比較、刪除商品',
-            );
-          },
-          child: const Text('購物車'),
-        ),
+      appBar: VoiceControlAppBar(
+        title: '購物車',
+        onTap: () {
+          ttsHelper.speak(
+            '購物車頁面。上方為查看比較按紐，中間為購物車商品項目，可以上下滑動，下方為結帳按紐。購物車項目下方包含減少和增加數量按紐。購物車項目單擊朗讀內容，雙擊選取結帳，長按更多功能。更多功能包含瀏覽商品頁面、加入/移除比較、刪除商品',
+          );
+        },
         automaticallyImplyLeading: false,
       ),
       body: Consumer<ShoppingCartData>(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../services/accessibility_service.dart';
 
 /// 短影音項目資料結構
@@ -152,8 +153,8 @@ class _ShortVideosPageState extends State<ShortVideosPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
-      appBar: AppBar(
-        title: const Text('短影音'),
+      appBar: VoiceControlAppBar(
+        title: '短影音',
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../services/database_service.dart';
 import '../../services/order_review_service.dart';
 import '../../models/order.dart';
@@ -146,8 +147,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
-      appBar: AppBar(
-        title: Text(_order?.orderNumber ?? '訂單詳情'),
+      appBar: VoiceControlAppBar(
+        title: _order?.orderNumber ?? '訂單詳情',
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_1,

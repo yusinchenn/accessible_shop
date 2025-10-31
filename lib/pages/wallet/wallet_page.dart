@@ -6,6 +6,7 @@ import 'package:accessible_shop/providers/auth_provider.dart';
 import 'package:accessible_shop/services/database_service.dart';
 import 'package:accessible_shop/models/user_profile.dart';
 import 'package:accessible_shop/widgets/global_gesture_wrapper.dart';
+import 'package:accessible_shop/widgets/voice_control_appbar.dart';
 import 'package:accessible_shop/services/accessibility_service.dart';
 import 'package:accessible_shop/widgets/accessible_gesture_wrapper.dart';
 import 'package:intl/intl.dart';
@@ -135,8 +136,8 @@ class _WalletPageState extends State<WalletPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
-      appBar: AppBar(
-        title: const Text('我的錢包'),
+      appBar: VoiceControlAppBar(
+        title: '我的錢包',
         backgroundColor: AppColors.background_2,
       ),
       body: _isLoading

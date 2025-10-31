@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../services/accessibility_service.dart';
 
 /// 搜尋輸入頁面
@@ -95,15 +96,13 @@ class _SearchInputPageState extends State<SearchInputPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            if (accessibilityService.shouldUseCustomTTS) {
-              ttsHelper.speak('搜尋輸入頁面，由上到下包含推薦商品按鈕、搜尋輸入欄位、搜尋按鈕');
-            }
-          },
-          child: const Text('搜尋', style: TextStyle(color: AppColors.text_2)),
-        ),
+      appBar: VoiceControlAppBar(
+        title: '搜尋',
+        onTap: () {
+          if (accessibilityService.shouldUseCustomTTS) {
+            ttsHelper.speak('搜尋輸入頁面，由上到下包含推薦商品按鈕、搜尋輸入欄位、搜尋按鈕');
+          }
+        },
         centerTitle: true,
         backgroundColor: AppColors.background_2,
         automaticallyImplyLeading: false,

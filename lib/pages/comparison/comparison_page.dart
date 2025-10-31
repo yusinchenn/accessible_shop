@@ -5,6 +5,7 @@ import '../../providers/comparison_provider.dart';
 import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 
 /// 商品比較頁面
 class ComparisonPage extends StatefulWidget {
@@ -84,15 +85,13 @@ class _ComparisonPageState extends State<ComparisonPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            ttsHelper.speak(
-              "商品比較頁面，右上可移除全部比較商品，中間有AI比較分析結果，左滑可察看選取商品項目，下方有重新AI比較按紐",
-            );
-          },
-          child: const Text('商品比較'),
-        ),
+      appBar: VoiceControlAppBar(
+        title: '商品比較',
+        onTap: () {
+          ttsHelper.speak(
+            "商品比較頁面，右上可移除全部比較商品，中間有AI比較分析結果，左滑可察看選取商品項目，下方有重新AI比較按紐",
+          );
+        },
         automaticallyImplyLeading: false,
       ),
       body: Consumer<ComparisonProvider>(

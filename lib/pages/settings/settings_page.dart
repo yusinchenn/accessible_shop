@@ -7,6 +7,7 @@ import '../../utils/tts_helper.dart';
 import '../../utils/app_constants.dart';
 import '../../services/accessibility_service.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import 'account_info_page.dart';
 import 'app_settings_page.dart';
 import 'help_support_page.dart';
@@ -181,8 +182,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
-      appBar: AppBar(
-        title: const Text('帳號'),
+      appBar: VoiceControlAppBar(
+        title: '帳號',
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),

@@ -45,6 +45,14 @@ class TtsHelper {
   Completer<void>? _speechStartCompleter;
   Completer<void>? _speechCompleteCompleter;
 
+  // 語音播放狀態監聽器
+  bool _isSpeaking = false;
+  Function()? onSpeakingStart;
+  Function()? onSpeakingEnd;
+
+  /// 是否正在播放語音
+  bool get isSpeaking => _isSpeaking;
+
   TtsHelper() {
     _initFuture = _init();
   }
@@ -58,6 +66,8 @@ class TtsHelper {
       // 設置語音開始的回調
       _flutterTts.setStartHandler(() {
         debugPrint('[TTS] 🚀 Start handler triggered');
+        _isSpeaking = true;
+        onSpeakingStart?.call();
         if (_speechStartCompleter != null && !_speechStartCompleter!.isCompleted) {
           _speechStartCompleter!.complete();
           debugPrint('[TTS] ▶️ Speech started - completer resolved');
@@ -69,6 +79,8 @@ class TtsHelper {
       // 設置語音完成的回調
       _flutterTts.setCompletionHandler(() {
         debugPrint('[TTS] 🎉 Completion handler triggered');
+        _isSpeaking = false;
+        onSpeakingEnd?.call();
         if (_speechCompleteCompleter != null && !_speechCompleteCompleter!.isCompleted) {
           _speechCompleteCompleter!.complete();
           debugPrint('[TTS] ✅ Speech completed - completer resolved');
@@ -249,6 +261,12 @@ class TtsHelper {
     }
     _speechStartCompleter = null;
     _speechCompleteCompleter = null;
+
+    // 重置語音播放狀態並通知監聽器
+    if (_isSpeaking) {
+      _isSpeaking = false;
+      onSpeakingEnd?.call();
+    }
 
     _isProcessing = false;
     _currentTask = null;

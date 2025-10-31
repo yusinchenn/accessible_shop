@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
 import '../../widgets/global_gesture_wrapper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../models/product.dart';
 import '../../models/store.dart';
 import '../../models/product_review.dart';
@@ -733,16 +734,9 @@ $reviewsText
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_2,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: _speakAppBarInfo,
-          child: Text(
-            _product?.name ?? '商品詳情',
-            style: TextStyle(
-              color: AppColors.text_2, // 設定文字顏色
-            ),
-          ),
-        ),
+      appBar: VoiceControlAppBar(
+        title: _product?.name ?? '商品詳情',
+        onTap: _speakAppBarInfo,
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background_2,

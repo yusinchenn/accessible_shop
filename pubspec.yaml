@@ -20,6 +20,8 @@ dependencies:
   path_provider: ^2.1.5              # 取得裝置資料夾路徑
   flutter_tts: ^4.2.3                # 文字轉語音
   speech_to_text: ^7.3.0             # 語音轉文字
+  permission_handler: ^11.3.1        # 權限管理
+  shared_preferences: ^2.3.4         # 本地持久化存儲
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0
   intl: ^0.20.2                      # 國際化與日期格式化
@@ -43,6 +45,8 @@ flutter:
   assets:
     - .env                             # 環境變數檔案
     - assets/images/app_icon.png       # 應用程式圖標
+    - assets/images/agent_on.png       # 語音助手開啟動畫
+    - assets/images/agent_off.png      # 語音助手關閉動畫
   # fonts:
   #   - family: Schyler
   #     fonts:

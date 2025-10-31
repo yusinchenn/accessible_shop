@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/tts_helper.dart';
+import '../../widgets/voice_control_appbar.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/database_service.dart';
@@ -106,8 +107,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (selectedItems.isEmpty) {
       return GlobalGestureScaffold(
         backgroundColor: AppColors.background_1,
-        appBar: AppBar(
-          title: const Text('結帳'),
+        appBar: VoiceControlAppBar(
+          title: '結帳',
           automaticallyImplyLeading: false,
         ),
         body: Center(
@@ -128,8 +129,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     return GlobalGestureScaffold(
       backgroundColor: AppColors.background_1,
-      appBar: AppBar(
-        title: Text('結帳 - 步驟 ${_currentStep + 1}/5'),
+      appBar: VoiceControlAppBar(
+        title: '結帳 - 步驟 ${_currentStep + 1}/5',
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
