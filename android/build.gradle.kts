@@ -22,8 +22,19 @@ subprojects {
 
 // 為第三方 Android library（如 isar_flutter_libs）自動補 namespace
 subprojects {
+    // 先配置所有項目，使用 SDK 36
+    afterEvaluate {
+        extensions.findByType<com.android.build.gradle.LibraryExtension>()?.apply {
+            compileSdk = 36
+            println("Force set compileSdk=36 for ${project.name}")
+        }
+    }
+
     plugins.withId("com.android.library") {
         configure<com.android.build.gradle.LibraryExtension> {
+            // 強制設置 compileSdk 為 36
+            compileSdk = 36
+
             if (namespace == null) {
                 val manifestFile = file("src/main/AndroidManifest.xml")
                 if (manifestFile.exists()) {
