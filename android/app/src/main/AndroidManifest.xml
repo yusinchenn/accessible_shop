@@ -14,6 +14,15 @@
     <!-- Wake Lock (防止 TTS 時螢幕關閉中斷播放) -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- ===================================================== -->
+
+    <!-- ==================== 通知權限設定 ==================== -->
+    <!-- Android 13+ 需要請求通知權限 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 通知震動權限 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 接收啟動完成廣播 (用於排程通知) -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- ===================================================== -->
     <application
         android:label="accessible_shop"
         android:name="${applicationName}"
@@ -45,6 +54,17 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- 通知接收器 (用於排程通知) -->
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

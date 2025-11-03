@@ -30,6 +30,7 @@ import 'pages/wallet/wallet_page.dart';
 import 'services/database_service.dart';
 import 'services/firestore_service.dart';
 import 'services/order_automation_service.dart';
+import 'services/notification_service.dart';
 
 // 匯入 Providers
 import 'providers/cart_provider.dart';
@@ -53,6 +54,14 @@ void main() async {
     // 如果載入失敗，僅在 debug 模式下印出警告
     debugPrint('⚠️ [Main] 無法載入 .env 檔案: $e');
     debugPrint('   請確保專案根目錄有 .env 檔案，並設置 DEEPSEEK_API_KEY');
+  }
+
+  // 初始化通知服務
+  try {
+    await notificationService.initialize();
+    debugPrint('✅ [Main] 通知服務初始化成功');
+  } catch (e) {
+    debugPrint('⚠️ [Main] 通知服務初始化失敗: $e');
   }
 
   runApp(const AccessibleShopApp());

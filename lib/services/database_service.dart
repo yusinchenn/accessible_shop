@@ -16,6 +16,9 @@ import '../models/product_review.dart';
 // 匯入工具類
 import '../utils/fuzzy_search_helper.dart';
 
+// 匯入服務
+import 'notification_service.dart';
+
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
 
@@ -995,6 +998,15 @@ class DatabaseService extends ChangeNotifier {
         print('🔔 [DatabaseService] 創建通知: $title');
       }
     });
+
+    // 同步發送手機通知
+    await notificationService.showNotification(
+      id: notification.id,
+      title: title,
+      body: content,
+      type: type,
+      payload: orderId != null ? 'order_$orderId' : null,
+    );
 
     notifyListeners();
     return notification;

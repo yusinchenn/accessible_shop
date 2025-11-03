@@ -11,6 +11,7 @@ import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝�
 import '../../widgets/voice_control_appbar.dart'; // 匯入語音控制 AppBar
 import '../../services/accessibility_service.dart'; // 匯入無障礙服務
 import '../../services/database_service.dart'; // 匯入資料庫服務
+import '../../services/notification_service.dart'; // 匯入通知服務
 import '../../models/order_status.dart'; // 匯入訂單狀態枚舉
 import '../../models/notification.dart'; // 匯入通知模型
 import '../../models/cart_item.dart'; // 匯入購物車項目模型
@@ -350,6 +351,17 @@ class _HomePageState extends State<HomePage> {
     );
     _currentPageIndex = initialPageOffset % _entryItems.length; // 計算實際的卡片索引
     _pageController.addListener(_onPageChanged); // 監聽頁面變化事件
+
+    // 請求通知權限
+    _requestNotificationPermission();
+  }
+
+  /// 請求通知權限
+  Future<void> _requestNotificationPermission() async {
+    final hasPermission = await notificationService.checkNotificationPermission();
+    if (!hasPermission) {
+      await notificationService.requestNotificationPermission();
+    }
   }
 
   /// 構建購物車摘要 Widget

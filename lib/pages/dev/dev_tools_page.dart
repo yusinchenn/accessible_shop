@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../services/test_data_service.dart';
+import '../../services/notification_service.dart';
+import '../../models/notification.dart';
 import '../../utils/app_constants.dart';
 import '../../widgets/global_gesture_wrapper.dart'; // 匯入全域手勢包裝器
 
@@ -140,6 +142,125 @@ class _DevToolsPageState extends State<DevToolsPage> {
         false;
   }
 
+  /// 測試系統通知
+  Future<void> _testSystemNotification() async {
+    setState(() {
+      _message = '正在發送系統通知...';
+    });
+
+    try {
+      await notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '系統通知測試',
+        body: '這是一則系統測試通知',
+        type: NotificationType.system,
+      );
+
+      setState(() {
+        _message = '✅ 系統通知已發送！';
+      });
+    } catch (e) {
+      setState(() {
+        _message = '❌ 發送失敗: $e';
+      });
+    }
+  }
+
+  /// 測試訂單通知
+  Future<void> _testOrderNotification() async {
+    setState(() {
+      _message = '正在發送訂單通知...';
+    });
+
+    try {
+      await notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '訂單通知測試',
+        body: '您的訂單 #20250103-0001 已成立，總金額 \$1,234 元',
+        type: NotificationType.order,
+        payload: 'order_1',
+      );
+
+      setState(() {
+        _message = '✅ 訂單通知已發送！';
+      });
+    } catch (e) {
+      setState(() {
+        _message = '❌ 發送失敗: $e';
+      });
+    }
+  }
+
+  /// 測試促銷通知
+  Future<void> _testPromotionNotification() async {
+    setState(() {
+      _message = '正在發送促銷通知...';
+    });
+
+    try {
+      await notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: '促銷活動通知',
+        body: '限時優惠！全館商品8折起，趕快來選購吧！',
+        type: NotificationType.promotion,
+      );
+
+      setState(() {
+        _message = '✅ 促銷通知已發送！';
+      });
+    } catch (e) {
+      setState(() {
+        _message = '❌ 發送失敗: $e';
+      });
+    }
+  }
+
+  /// 檢查通知權限
+  Future<void> _checkNotificationPermission() async {
+    setState(() {
+      _message = '正在檢查通知權限...';
+    });
+
+    try {
+      final hasPermission = await notificationService.checkNotificationPermission();
+
+      setState(() {
+        if (hasPermission) {
+          _message = '✅ 通知權限已授予';
+        } else {
+          _message = '⚠️ 通知權限未授予';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _message = '❌ 檢查失敗: $e';
+      });
+    }
+  }
+
+  /// 請求通知權限
+  Future<void> _requestNotificationPermission() async {
+    setState(() {
+      _message = '正在請求通知權限...';
+    });
+
+    try {
+      final granted = await notificationService.requestNotificationPermission();
+
+      setState(() {
+        if (granted) {
+          _message = '✅ 通知權限已授予';
+        } else {
+          _message = '❌ 通知權限被拒絕';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _message = '❌ 請求失敗: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GlobalGestureScaffold(
@@ -241,6 +362,75 @@ class _DevToolsPageState extends State<DevToolsPage> {
 
                   const SizedBox(height: AppSpacing.lg),
 
+                  // 通知測試
+                  Text('通知測試', style: AppTextStyles.subtitle),
+                  const SizedBox(height: AppSpacing.md),
+
+                  ElevatedButton.icon(
+                    onPressed: _checkNotificationPermission,
+                    icon: const Icon(Icons.info),
+                    label: const Text('檢查通知權限'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  ElevatedButton.icon(
+                    onPressed: _requestNotificationPermission,
+                    icon: const Icon(Icons.notifications_active),
+                    label: const Text('請求通知權限'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  ElevatedButton.icon(
+                    onPressed: _testSystemNotification,
+                    icon: const Icon(Icons.notifications),
+                    label: const Text('測試系統通知'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  ElevatedButton.icon(
+                    onPressed: _testOrderNotification,
+                    icon: const Icon(Icons.shopping_bag),
+                    label: const Text('測試訂單通知'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  ElevatedButton.icon(
+                    onPressed: _testPromotionNotification,
+                    icon: const Icon(Icons.local_offer),
+                    label: const Text('測試促銷通知'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
                   // 測試與示範
                   Text('測試與示範', style: AppTextStyles.subtitle),
                   const SizedBox(height: AppSpacing.md),
@@ -285,8 +475,15 @@ class _DevToolsPageState extends State<DevToolsPage> {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
+                            '【資料管理】\n'
                             '• 重置測試資料：清除訂單、購物車和用戶評論，重置商家(3個)、商品(20個)和測試評論。適合重新開始測試。\n'
-                            '• 清空所有資料：完全清空資料庫，刪除所有記錄（包括基礎測試資料）。',
+                            '• 清空所有資料：完全清空資料庫，刪除所有記錄（包括基礎測試資料）。\n\n'
+                            '【通知測試】\n'
+                            '• 檢查通知權限：查看當前是否已授予通知權限。\n'
+                            '• 請求通知權限：向系統請求通知權限（Android 13+ 需要）。\n'
+                            '• 測試系統通知：發送一則系統類型的測試通知。\n'
+                            '• 測試訂單通知：發送一則訂單類型的測試通知。\n'
+                            '• 測試促銷通知：發送一則促銷類型的測試通知。',
                             style: AppTextStyles.small.copyWith(
                               color: Colors.blue.shade900,
                             ),
