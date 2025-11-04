@@ -7,6 +7,7 @@ enum NotificationType {
   order, // 訂單通知
   promotion, // 促銷通知
   system, // 系統通知
+  reward, // 獎勵通知
 }
 
 /// 通知項目資料模型

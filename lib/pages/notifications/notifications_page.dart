@@ -180,6 +180,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         return Icons.local_offer;
       case NotificationType.system:
         return Icons.info_outline;
+      case NotificationType.reward:
+        return Icons.card_giftcard;
     }
   }
 

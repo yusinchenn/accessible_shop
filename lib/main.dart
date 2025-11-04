@@ -31,6 +31,7 @@ import 'services/database_service.dart';
 import 'services/firestore_service.dart';
 import 'services/order_automation_service.dart';
 import 'services/notification_service.dart';
+import 'services/daily_reward_scheduler.dart';
 
 // 匯入 Providers
 import 'providers/cart_provider.dart';
@@ -311,9 +312,14 @@ class AppRouter extends StatelessWidget {
       /// 根據登入狀態決定首頁
       home: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
-          return authProvider.isAuthenticated
-              ? const HomePage()
-              : const AccessibleAuthPage();
+          if (authProvider.isAuthenticated) {
+            // 用戶已登入，初始化每日獎勵調度器
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              dailyRewardScheduler.initialize(authProvider.userId);
+            });
+            return const HomePage();
+          }
+          return const AccessibleAuthPage();
         },
       ),
 

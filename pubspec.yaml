@@ -29,6 +29,7 @@ dependencies:
   dio: ^5.9.0
   flutter_dotenv: ^6.0.0             # 環境變數管理
   flutter_local_notifications: ^18.0.1  # 本地推送通知
+  timezone: ^0.10.0                      # 時區支援（用於定時通知）
 
 # ------------------ 開發相關套件 ------------------
 dev_dependencies:

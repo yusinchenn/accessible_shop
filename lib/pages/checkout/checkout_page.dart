@@ -7,6 +7,7 @@ import '../../widgets/voice_control_appbar.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/database_service.dart';
+import '../../services/firestore_service.dart';
 import '../../services/order_automation_service.dart';
 import '../../services/accessibility_service.dart';
 import '../../models/cart_item.dart';
@@ -876,8 +877,8 @@ class _Step4SelectPaymentState extends State<_Step4SelectPayment> {
     final userId = authProvider.userId;
 
     if (userId != null) {
-      final databaseService = context.read<DatabaseService>();
-      final balance = await databaseService.getWalletBalance(userId);
+      final firestoreService = context.read<FirestoreService>();
+      final balance = await firestoreService.getWalletBalance(userId);
 
       if (mounted) {
         setState(() {
@@ -1284,7 +1285,8 @@ class _Step5CompleteState extends State<_Step5Complete> {
         final userId = authProvider.userId;
 
         if (userId != null) {
-          final success = await db.useWalletBalance(
+          final firestoreService = Provider.of<FirestoreService>(context, listen: false);
+          final success = await firestoreService.useWalletBalance(
             userId,
             widget.walletAmount,
           );
