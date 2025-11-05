@@ -12,6 +12,8 @@ import '../models/order_status.dart';
 import '../models/user_profile.dart';
 import '../models/notification.dart';
 import '../models/product_review.dart';
+import '../models/conversation.dart';
+import '../models/chat_message.dart';
 
 // 匯入工具類
 import '../utils/fuzzy_search_helper.dart';
@@ -41,6 +43,8 @@ class DatabaseService extends ChangeNotifier {
       UserProfileSchema,
       NotificationModelSchema,
       ProductReviewSchema,
+      ConversationSchema,
+      ChatMessageSchema,
     ], directory: dir.path);
   }
 
@@ -602,10 +606,10 @@ class DatabaseService extends ChangeNotifier {
 
     if (kDebugMode) {
       print('📦 [DatabaseService] 購物車商品分組: 共 ${itemsByStore.length} 個商家');
-      itemsByStore.forEach((storeId, items) {
-        final storeName = items.first.storeName;
-        print('   - 商家 $storeName (ID: $storeId): ${items.length} 項商品');
-      });
+      for (var entry in itemsByStore.entries) {
+        final storeName = entry.value.first.storeName;
+        print('   - 商家 $storeName (ID: ${entry.key}): ${entry.value.length} 項商品');
+      }
     }
 
     // 計算每個商家應分攤的優惠和運費
@@ -1214,6 +1218,193 @@ class DatabaseService extends ChangeNotifier {
           print('⭐ [DatabaseService] 更新商品 $productId 評分: ${averageRating.toStringAsFixed(1)} (${reviews.length} 則評論)');
         }
       }
+    }
+  }
+
+  // ==================== 對話相關方法 ====================
+
+  /// 取得所有對話對象（按最後訊息時間倒序）
+  Future<List<Conversation>> getConversations() async {
+    final isar = await _isarFuture;
+    final conversations = await isar.conversations.where().findAll();
+
+    // 按最後訊息時間排序（最新的在前）
+    conversations.sort((a, b) {
+      if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
+      if (a.lastMessageTime == null) return 1;
+      if (b.lastMessageTime == null) return -1;
+      return b.lastMessageTime!.compareTo(a.lastMessageTime!);
+    });
+
+    return conversations;
+  }
+
+  /// 取得單個對話對象
+  Future<Conversation?> getConversationById(int conversationId) async {
+    final isar = await _isarFuture;
+    return await isar.conversations.get(conversationId);
+  }
+
+  /// 初始化默認的"小千助手"對話對象
+  Future<Conversation> initializeDefaultConversation() async {
+    final isar = await _isarFuture;
+
+    // 檢查是否已存在小千助手
+    final existing = await isar.conversations
+        .filter()
+        .nameEqualTo('小千助手')
+        .findFirst();
+
+    if (existing != null) {
+      return existing;
+    }
+
+    // 創建小千助手對話對象
+    final conversation = Conversation()
+      ..name = '小千助手'
+      ..type = ConversationType.platform
+      ..avatarEmoji = '🤖'
+      ..unreadCount = 0;
+
+    await isar.writeTxn(() async {
+      await isar.conversations.put(conversation);
+    });
+
+    if (kDebugMode) {
+      print('💬 [DatabaseService] 創建默認對話: 小千助手');
+    }
+
+    notifyListeners();
+    return conversation;
+  }
+
+  /// 更新對話的最後訊息信息
+  Future<void> updateConversationLastMessage({
+    required int conversationId,
+    required String lastMessage,
+    required DateTime lastMessageTime,
+  }) async {
+    final isar = await _isarFuture;
+    final conversation = await isar.conversations.get(conversationId);
+
+    if (conversation != null) {
+      await isar.writeTxn(() async {
+        conversation.lastMessage = lastMessage;
+        conversation.lastMessageTime = lastMessageTime;
+        await isar.conversations.put(conversation);
+      });
+
+      notifyListeners();
+    }
+  }
+
+  /// 增加對話的未讀數量
+  Future<void> incrementUnreadCount(int conversationId) async {
+    final isar = await _isarFuture;
+    final conversation = await isar.conversations.get(conversationId);
+
+    if (conversation != null) {
+      await isar.writeTxn(() async {
+        conversation.unreadCount += 1;
+        await isar.conversations.put(conversation);
+      });
+
+      notifyListeners();
+    }
+  }
+
+  /// 清除對話的未讀數量
+  Future<void> clearUnreadCount(int conversationId) async {
+    final isar = await _isarFuture;
+    final conversation = await isar.conversations.get(conversationId);
+
+    if (conversation != null) {
+      await isar.writeTxn(() async {
+        conversation.unreadCount = 0;
+        await isar.conversations.put(conversation);
+      });
+
+      notifyListeners();
+    }
+  }
+
+  // ==================== 聊天訊息相關方法 ====================
+
+  /// 取得某個對話的所有訊息（按時間順序）
+  Future<List<ChatMessage>> getChatMessages(int conversationId) async {
+    final isar = await _isarFuture;
+    return await isar.chatMessages
+        .filter()
+        .conversationIdEqualTo(conversationId)
+        .sortByTimestamp()
+        .findAll();
+  }
+
+  /// 添加聊天訊息
+  Future<ChatMessage> addChatMessage({
+    required int conversationId,
+    required String content,
+    required bool isUserMessage,
+  }) async {
+    final isar = await _isarFuture;
+    final now = DateTime.now();
+
+    final message = ChatMessage()
+      ..conversationId = conversationId
+      ..content = content
+      ..isUserMessage = isUserMessage
+      ..timestamp = now;
+
+    await isar.writeTxn(() async {
+      await isar.chatMessages.put(message);
+    });
+
+    // 更新對話的最後訊息
+    await updateConversationLastMessage(
+      conversationId: conversationId,
+      lastMessage: content.length > 30 ? '${content.substring(0, 30)}...' : content,
+      lastMessageTime: now,
+    );
+
+    if (kDebugMode) {
+      print('💬 [DatabaseService] 添加訊息: ${isUserMessage ? "用戶" : "AI"} - ${content.length > 20 ? "${content.substring(0, 20)}..." : content}');
+    }
+
+    notifyListeners();
+    return message;
+  }
+
+  /// 清空某個對話的所有訊息
+  Future<void> clearChatMessages(int conversationId) async {
+    final isar = await _isarFuture;
+    final messages = await isar.chatMessages
+        .filter()
+        .conversationIdEqualTo(conversationId)
+        .findAll();
+
+    if (messages.isNotEmpty) {
+      await isar.writeTxn(() async {
+        for (var message in messages) {
+          await isar.chatMessages.delete(message.id);
+        }
+      });
+
+      // 清空對話的最後訊息信息
+      final conversation = await isar.conversations.get(conversationId);
+      if (conversation != null) {
+        await isar.writeTxn(() async {
+          conversation.lastMessage = null;
+          conversation.lastMessageTime = null;
+          conversation.unreadCount = 0;
+          await isar.conversations.put(conversation);
+        });
+      }
+
+      if (kDebugMode) {
+        print('💬 [DatabaseService] 已清空對話 $conversationId 的所有訊息 (${messages.length} 則)');
+      }
+
+      notifyListeners();
     }
   }
 

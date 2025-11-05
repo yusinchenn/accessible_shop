@@ -26,6 +26,8 @@ import 'pages/short_videos/short_videos_page.dart';
 import 'pages/notifications/notifications_page.dart';
 import 'pages/comparison/comparison_page.dart';
 import 'pages/wallet/wallet_page.dart';
+import 'pages/messages/messages_page.dart';
+import 'pages/messages/chat_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -369,6 +371,10 @@ class AppRouter extends StatelessWidget {
             _buildProtectedRoute(context, const NotificationsPage()),
         '/wallet': (context) =>
             _buildProtectedRoute(context, const WalletPage()),
+        '/messages': (context) =>
+            _buildProtectedRoute(context, const MessagesPage()),
+        '/chat': (context) =>
+            _buildProtectedRoute(context, const ChatPage()),
       },
 
       /// 動態路由（需要參數的頁面）

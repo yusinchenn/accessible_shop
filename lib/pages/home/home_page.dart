@@ -336,6 +336,20 @@ class _HomePageState extends State<HomePage> {
       route: '/notifications',
       contentBuilder: (context) => Center(child: _buildNotificationSummary()),
     ),
+    ShopEntryItem(
+      title: '訊息',
+      icon: Icons.message,
+      route: '/messages',
+      contentBuilder: (context) => const Center(
+        child: ColorWaveText(
+          text: '與小千助手對話',
+          baseStyle: TextStyle(fontSize: 24),
+          baseColor: AppColors.subtitle_1,
+          highlightColor: AppColors.accent_1,
+          duration: Duration(milliseconds: 500),
+        ),
+      ),
+    ),
   ];
 
   /// 初始化狀態，設置 PageView 控制器並監聽頁面變化

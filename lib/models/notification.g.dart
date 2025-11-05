@@ -166,11 +166,13 @@ const _NotificationModeltypeEnumValueMap = {
   'order': 0,
   'promotion': 1,
   'system': 2,
+  'reward': 3,
 };
 const _NotificationModeltypeValueEnumMap = {
   0: NotificationType.order,
   1: NotificationType.promotion,
   2: NotificationType.system,
+  3: NotificationType.reward,
 };
 
 Id _notificationModelGetId(NotificationModel object) {
