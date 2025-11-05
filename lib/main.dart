@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 // 匯入頁面
 import 'pages/home/home_page.dart';
 import 'widgets/splash_screen.dart';
+import 'widgets/connectivity_wrapper.dart';
 import 'pages/product/product_detail_page.dart';
 import 'pages/store/store_page.dart';
 import 'pages/cart/cart_page.dart';
@@ -32,6 +33,7 @@ import 'services/firestore_service.dart';
 import 'services/order_automation_service.dart';
 import 'services/notification_service.dart';
 import 'services/daily_reward_scheduler.dart';
+import 'services/connectivity_service.dart';
 
 // 匯入 Providers
 import 'providers/cart_provider.dart';
@@ -63,6 +65,14 @@ void main() async {
     debugPrint('✅ [Main] 通知服務初始化成功');
   } catch (e) {
     debugPrint('⚠️ [Main] 通知服務初始化失敗: $e');
+  }
+
+  // 初始化網路連線監聽服務
+  try {
+    await connectivityService.initialize();
+    debugPrint('✅ [Main] 網路連線服務初始化成功');
+  } catch (e) {
+    debugPrint('⚠️ [Main] 網路連線服務初始化失敗: $e');
   }
 
   runApp(const AccessibleShopApp());
@@ -97,7 +107,7 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
   }
 
   Future<FirebaseApp> _initializeFirebase() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // 確保啟動畫面顯示
+    await Future.delayed(const Duration(milliseconds: 1000)); // 確保啟動畫面顯示（延長至 1 秒）
     return await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -273,7 +283,9 @@ class AppRouter extends StatelessWidget {
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(1.0), // 固定為 1.0，完全忽略系統字體大小
           ),
-          child: child!,
+          child: ConnectivityWrapper(
+            child: child!,
+          ),
         );
       },
       theme: ThemeData(

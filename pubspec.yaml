@@ -22,6 +22,7 @@ dependencies:
   speech_to_text: ^7.3.0             # 語音轉文字
   permission_handler: ^12.0.1        # 權限管理
   shared_preferences: ^2.3.4         # 本地持久化存儲
+  connectivity_plus: ^6.1.2          # 網路連線狀態檢查
   firebase_core: ^4.1.1
   firebase_auth: ^6.1.0
   cloud_firestore: ^6.0.3            # Cloud Firestore 資料庫
