@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'firebase_options.dart';
 import 'pages/home/home_page.dart';
 import 'widgets/splash_screen.dart';
 import 'widgets/connectivity_wrapper.dart';
+import 'widgets/waiting_for_network_screen.dart';
 import 'pages/product/product_detail_page.dart';
 import 'pages/store/store_page.dart';
 import 'pages/cart/cart_page.dart';
@@ -44,9 +46,14 @@ import 'providers/comparison_provider.dart';
 
 // 匯入常數
 import 'utils/app_constants.dart';
+import 'utils/connectivity_navigator_observer.dart';
 
 // 全域 RouteObserver，用於監聽頁面狀態變化
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
+// 全域 ConnectivityNavigatorObserver，用於在頁面切換時檢查網路
+final ConnectivityNavigatorObserver connectivityNavigatorObserver =
+    ConnectivityNavigatorObserver();
 
 void main() async {
   // 確保 Flutter binding 已初始化
@@ -101,11 +108,15 @@ class FirebaseInitializer extends StatefulWidget {
 
 class _FirebaseInitializerState extends State<FirebaseInitializer> {
   Future<FirebaseApp>? _initialization;
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _isConnected = true;
+  bool _hasCheckedInitialConnection = false;
 
   @override
   void initState() {
     super.initState();
     _initialization = _initializeFirebase();
+    _listenToConnectivity();
   }
 
   Future<FirebaseApp> _initializeFirebase() async {
@@ -113,6 +124,37 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
     return await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  }
+
+  /// 監聽網路連線狀態
+  void _listenToConnectivity() {
+    _connectivitySubscription =
+        connectivityService.connectionStatus.listen((bool isConnected) {
+      if (mounted) {
+        setState(() {
+          _isConnected = isConnected;
+          _hasCheckedInitialConnection = true;
+        });
+        debugPrint('🌐 [FirebaseInitializer] 網路狀態: ${isConnected ? "已連線" : "已斷線"}');
+      }
+    });
+
+    // 立即檢查初始連線狀態
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && !_hasCheckedInitialConnection) {
+        setState(() {
+          _isConnected = connectivityService.isConnected;
+          _hasCheckedInitialConnection = true;
+        });
+        debugPrint('🔍 [FirebaseInitializer] 初始網路狀態: $_isConnected');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -170,6 +212,25 @@ class _FirebaseInitializerState extends State<FirebaseInitializer> {
 
         // 初始化完成
         if (snapshot.connectionState == ConnectionState.done) {
+          // 檢查網路連線狀態
+          if (_hasCheckedInitialConnection && !_isConnected) {
+            // 如果沒有網路，顯示等待網路畫面
+            debugPrint('❌ [FirebaseInitializer] 無網路連線，顯示等待畫面');
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: WaitingForNetworkScreen(
+                onConnected: () {
+                  debugPrint('✅ [FirebaseInitializer] 網路已恢復');
+                  // 網路恢復時重新渲染
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              ),
+            );
+          }
+
+          // 有網路，繼續正常流程
           return MultiProvider(
             providers: [
               /// 身份驗證
@@ -268,7 +329,10 @@ class AppRouter extends StatelessWidget {
       title: 'Accessible Shop',
       debugShowCheckedModeBanner: false,
       // 添加路由觀察器
-      navigatorObservers: [routeObserver],
+      navigatorObservers: [
+        routeObserver,
+        connectivityNavigatorObserver, // 網路檢查觀察器
+      ],
       // 添加本地化支援
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

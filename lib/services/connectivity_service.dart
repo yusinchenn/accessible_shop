@@ -29,7 +29,16 @@ class ConnectivityService {
   /// 初始化網路監聽
   Future<void> initialize() async {
     // 檢查初始網路狀態
-    await checkConnectivity();
+    final bool isConnected = await checkConnectivity();
+
+    // 立即廣播初始狀態，確保監聽者能收到（即使狀態沒有改變）
+    debugPrint('🚀 [ConnectivityService] 初始化完成，廣播初始狀態: ${isConnected ? "已連線" : "已斷線"}');
+    // 延遲一點確保監聽者已經設置好
+    Future.microtask(() {
+      if (!_connectionStatusController.isClosed) {
+        _connectionStatusController.add(_isConnected);
+      }
+    });
 
     // 監聽網路狀態變化
     _subscription = _connectivity.onConnectivityChanged.listen(
@@ -57,8 +66,9 @@ class ConnectivityService {
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     // 判斷是否有網路連線
     // ConnectivityResult.none 表示沒有網路
+    // 修正：如果 results 為空或只包含 none，則表示無連線
     final bool hasConnection = results.isNotEmpty &&
-        !results.every((result) => result == ConnectivityResult.none);
+        results.any((result) => result != ConnectivityResult.none);
 
     // 只有當狀態改變時才發送通知
     if (_isConnected != hasConnection) {
