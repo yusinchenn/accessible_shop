@@ -64,6 +64,12 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   /// 是否正在處理語音控制切換
   bool _isTogglingVoiceControl = false;
 
+  /// 長按持續時間（秒）
+  int _longPressDuration = 0;
+
+  /// 長按階段計時器
+  Timer? _durationTimer;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +84,7 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   @override
   void dispose() {
     _longPressTimer?.cancel();
+    _durationTimer?.cancel();
     super.dispose();
   }
 
@@ -85,11 +92,34 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   void _onLongPressStart(LongPressStartDetails details) {
     // 取消之前的計時器（如果有）
     _longPressTimer?.cancel();
+    _durationTimer?.cancel();
 
-    // 啟動計時器，1秒後自動觸發
-    _longPressTimer = Timer(const Duration(seconds: 1), () {
-      if (mounted && !_isTogglingVoiceControl) {
-        _toggleVoiceControl();
+    // 重置長按持續時間
+    setState(() {
+      _longPressDuration = 0;
+    });
+
+    // 啟動持續時間計時器，每秒更新一次
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _longPressDuration += 1;
+      });
+
+      // 第1秒：開啟"小千助理"（語音控制）
+      if (_longPressDuration == 1) {
+        if (!voiceControlService.isEnabled) {
+          _toggleVoiceControl();
+        }
+      }
+      // 第2秒：開啟"大千世界"
+      else if (_longPressDuration == 2) {
+        _openAIAgent();
+        timer.cancel();
       }
     });
   }
@@ -99,6 +129,15 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
     // 取消計時器（如果還沒觸發）
     _longPressTimer?.cancel();
     _longPressTimer = null;
+    _durationTimer?.cancel();
+    _durationTimer = null;
+
+    // 重置持續時間
+    if (mounted) {
+      setState(() {
+        _longPressDuration = 0;
+      });
+    }
   }
 
   /// 處理長按取消
@@ -106,6 +145,15 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
     // 取消計時器
     _longPressTimer?.cancel();
     _longPressTimer = null;
+    _durationTimer?.cancel();
+    _durationTimer = null;
+
+    // 重置持續時間
+    if (mounted) {
+      setState(() {
+        _longPressDuration = 0;
+      });
+    }
   }
 
   /// 切換語音控制
@@ -138,6 +186,16 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
     }
   }
 
+  /// 開啟"大千世界" AI 智能代理
+  void _openAIAgent() {
+    // 取消所有計時器
+    _longPressTimer?.cancel();
+    _durationTimer?.cancel();
+
+    // 導航到 AI 代理頁面
+    Navigator.of(context).pushNamed('/ai-agent');
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -154,8 +212,36 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(widget.title, style: widget.titleTextStyle),
+            // 顯示長按進度指示器
+            if (_longPressDuration > 0) ...[
+              const SizedBox(width: 8),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      value: _longPressDuration / 2, // 2秒完成
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(Colors.amber),
+                      backgroundColor: Colors.white38,
+                    ),
+                  ),
+                  Text(
+                    '$_longPressDuration',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ]
             // 顯示處理指示器
-            if (_isTogglingVoiceControl) ...[
+            else if (_isTogglingVoiceControl) ...[
               const SizedBox(width: 8),
               const SizedBox(
                 width: 16,

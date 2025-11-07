@@ -51,6 +51,7 @@ flutter:
     - assets/images/app_icon.png       # 應用程式圖標
     - assets/images/agent_on.png       # 語音助手開啟動畫
     - assets/images/agent_off.png      # 語音助手關閉動畫
+    - assets/images/agent_pro.png      # 大千世界 AI 代理圖片
   # fonts:
   #   - family: Schyler
   #     fonts:

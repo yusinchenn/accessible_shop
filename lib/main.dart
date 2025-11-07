@@ -30,6 +30,7 @@ import 'pages/comparison/comparison_page.dart';
 import 'pages/wallet/wallet_page.dart';
 import 'pages/messages/messages_page.dart';
 import 'pages/messages/chat_page.dart';
+import 'pages/ai_agent/ai_agent_page.dart';
 
 // 匯入服務
 import 'services/database_service.dart';
@@ -439,6 +440,8 @@ class AppRouter extends StatelessWidget {
             _buildProtectedRoute(context, const MessagesPage()),
         '/chat': (context) =>
             _buildProtectedRoute(context, const ChatPage()),
+        '/ai-agent': (context) =>
+            _buildProtectedRoute(context, const AIAgentPage()),
       },
 
       /// 動態路由（需要參數的頁面）
