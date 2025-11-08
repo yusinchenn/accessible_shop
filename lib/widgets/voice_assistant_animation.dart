@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'golden_lotus_animation.dart';
 
 /// 語音助手動畫類型
 enum VoiceAssistantAnimationType {
@@ -7,6 +8,9 @@ enum VoiceAssistantAnimationType {
 
   /// 關閉動畫（從右側滑入，停留1秒，往右側滑出）
   disable,
+
+  /// 開啟代理人動畫（蓮花綻放動畫）
+  enableAgent,
 }
 
 /// 語音助手動畫 Widget
@@ -40,8 +44,10 @@ class _VoiceAssistantAnimationState extends State<VoiceAssistantAnimation>
 
     // 根據動畫類型設置持續時間
     final duration = widget.type == VoiceAssistantAnimationType.enable
-        ? const Duration(milliseconds: 3000) // 開啟動畫：2秒
-        : const Duration(milliseconds: 3000); // 關閉動畫：2秒
+        ? const Duration(milliseconds: 3000) // 開啟動畫：3秒
+        : widget.type == VoiceAssistantAnimationType.enableAgent
+            ? const Duration(milliseconds: 3500) // 開啟代理人動畫：3.5秒
+            : const Duration(milliseconds: 3000); // 關閉動畫：3秒
 
     _controller = AnimationController(vsync: this, duration: duration);
 
@@ -67,6 +73,12 @@ class _VoiceAssistantAnimationState extends State<VoiceAssistantAnimation>
     if (widget.type == VoiceAssistantAnimationType.enable) {
       // 開啟動畫：從下往上冒出，水平轉一圈，然後下降
       return _buildEnableAnimation(screenSize);
+    } else if (widget.type == VoiceAssistantAnimationType.enableAgent) {
+      // 開啟代理人動畫：使用蓮花綻放動畫
+      return GoldenLotusAnimation(
+        durationSeconds: 3,
+        onComplete: widget.onComplete,
+      );
     } else {
       // 關閉動畫：從右往左冒出，停留1秒，往右隱藏
       return _buildDisableAnimation(screenSize);
@@ -193,6 +205,7 @@ class _VoiceAssistantAnimationState extends State<VoiceAssistantAnimation>
       },
     );
   }
+
 }
 
 /// 顯示語音助手動畫的 Overlay

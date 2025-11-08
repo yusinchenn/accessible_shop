@@ -104,10 +104,11 @@ class VoiceControlService {
   }
 
   /// 關閉語音控制
-  Future<void> disable() async {
+  /// [silent] 為 true 時，不播放動畫和語音提示（用於切換到語音代理人）
+  Future<void> disable({bool silent = false}) async {
     if (!_isEnabled) return;
 
-    debugPrint('[VoiceControl] Disabling voice control');
+    debugPrint('[VoiceControl] Disabling voice control (silent: $silent)');
 
     // 停止語音監聽
     await _stopVoiceControl();
@@ -121,16 +122,19 @@ class VoiceControlService {
     // 震動反饋
     HapticFeedback.mediumImpact();
 
-    // 顯示關閉動畫（如果有 context）
-    if (_context != null && _context!.mounted) {
-      VoiceAssistantAnimationOverlay.show(
-        _context!,
-        type: VoiceAssistantAnimationType.disable,
-      );
-    }
+    // 只有在非靜默模式下才播放動畫和語音
+    if (!silent) {
+      // 顯示關閉動畫（如果有 context）
+      if (_context != null && _context!.mounted) {
+        VoiceAssistantAnimationOverlay.show(
+          _context!,
+          type: VoiceAssistantAnimationType.disable,
+        );
+      }
 
-    // 語音提示：「您的語音操作助手 小千 告退」
-    await ttsHelper.speak('您的語音操作助手 小千 告退');
+      // 語音提示：「您的語音操作助手 小千 告退」
+      await ttsHelper.speak('您的語音操作助手 小千 告退');
+    }
   }
 
   /// 啟動語音控制

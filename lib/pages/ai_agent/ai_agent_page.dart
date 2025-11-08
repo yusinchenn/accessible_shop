@@ -10,6 +10,9 @@ import '../../utils/tts_helper.dart';
 import '../../widgets/voice_control_appbar.dart';
 import '../../widgets/golden_lotus_animation.dart';
 
+// 導入 VoiceFeatureState enum
+// (已經在 voice_control_appbar.dart 中定義，但需要確保可以訪問)
+
 /// AI 代理頁面
 class AIAgentPage extends StatefulWidget {
   const AIAgentPage({super.key});
@@ -18,9 +21,12 @@ class AIAgentPage extends StatefulWidget {
   State<AIAgentPage> createState() => _AIAgentPageState();
 }
 
-class _AIAgentPageState extends State<AIAgentPage> {
+class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin {
   /// 是否顯示開場動畫
   bool _showAnimation = true;
+
+  /// 頁面淡入透明度
+  double _pageOpacity = 0.0;
 
   /// 對話訊息列表（用於顯示）
   final List<_ChatMessage> _messages = [];
@@ -63,6 +69,15 @@ class _AIAgentPageState extends State<AIAgentPage> {
     sttService.onError = (error) {
       debugPrint('❌ [AIAgent] STT Error: $error');
     };
+
+    // 動畫播放到 2.5 秒（一半）時開始淡入頁面
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted && _showAnimation) {
+        setState(() {
+          _pageOpacity = 1.0;
+        });
+      }
+    });
   }
 
   /// 動畫完成處理
@@ -185,20 +200,12 @@ class _AIAgentPageState extends State<AIAgentPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 如果正在顯示動畫，返回動畫全屏
-    if (_showAnimation) {
-      return Scaffold(
-        body: GoldenLotusAnimation(
-          onComplete: _onAnimationComplete,
-          durationSeconds: 5, // 5秒動畫
-        ),
-      );
-    }
-
-    // 動畫完成後顯示聊天界面
-    return Scaffold(
+    // 構建聊天界面
+    final chatInterface = Scaffold(
       appBar: VoiceControlAppBar(
         title: '大千世界',
+        automaticallyImplyLeading: false, // 不顯示返回按鈕
+        initialState: VoiceFeatureState.voiceAgent, // 設置初始狀態為語音代理人
         onTap: () {
           ttsHelper.speak('大千世界智能助理頁面。您可以按住麥克風按鈕開始對話。');
         },
@@ -225,6 +232,33 @@ class _AIAgentPageState extends State<AIAgentPage> {
         ],
       ),
     );
+
+    // 如果正在顯示動畫，使用 Stack 疊加
+    if (_showAnimation) {
+      return Stack(
+        children: [
+          // 底層：全屏蓮花動畫
+          Positioned.fill(
+            child: GoldenLotusAnimation(
+              onComplete: _onAnimationComplete,
+              durationSeconds: 5, // 5秒動畫
+            ),
+          ),
+          // 上層：聊天界面（動畫播放到一半後淡入）
+          Positioned.fill(
+            child: AnimatedOpacity(
+              opacity: _pageOpacity,
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeIn,
+              child: chatInterface,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 動畫完成後只顯示聊天界面
+    return chatInterface;
   }
 
   /// 構建空狀態

@@ -45,11 +45,21 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
         widget.onComplete?.call();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 獲取螢幕尺寸以計算蓮花散開距離
+    final screenSize = MediaQuery.of(context).size;
+    final maxDistance = screenSize.width * 0.8; // 散開到螢幕寬度的80%
 
     // 前方 10 朵蓮花
     frontLotuses = List.generate(10, (i) {
       final baseAngle = (i / 10) * 2 * pi;
-      final distance = 180 + random.nextDouble() * 180;
+      final distance =
+          maxDistance * 0.5 + random.nextDouble() * maxDistance * 0.5;
       final scale = 0.6 + random.nextDouble() * 0.8;
       final delay = random.nextDouble() * 0.3;
       return _LotusInfo(
@@ -64,7 +74,8 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
     // 後方 10 朵蓮花（更小更淡）
     backLotuses = List.generate(10, (i) {
       final baseAngle = (i / 10) * 2 * pi + 0.15; // 稍微錯開
-      final distance = 150 + random.nextDouble() * 120;
+      final distance =
+          maxDistance * 0.3 + random.nextDouble() * maxDistance * 0.4;
       final scale = 0.4 + random.nextDouble() * 0.4;
       final delay = random.nextDouble() * 0.3;
       return _LotusInfo(
@@ -85,11 +96,15 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       color: Colors.black,
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (_, __) {
+        builder: (context, _) {
           final t = _controller.value;
 
           return Stack(
@@ -97,20 +112,14 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
             children: [
               // 🌼 後方蓮花（在主體後面）
               for (final lotus in backLotuses)
-                _buildAnimatedLotus(lotus, t),
+                _buildAnimatedLotus(lotus, t, screenSize),
 
               // ✨ 中央主體 - agent_pro.png
               _buildCenterImage(t),
 
               // 🌸 前方蓮花（在主體前方）
               for (final lotus in frontLotuses)
-                _buildAnimatedLotus(lotus, t),
-
-              // 標題文字
-              Positioned(
-                bottom: 80,
-                child: _buildTitle(t),
-              ),
+                _buildAnimatedLotus(lotus, t, screenSize),
             ],
           );
         },
@@ -124,39 +133,43 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
     double opacity = t < 0.3 ? Curves.easeIn.transform(t / 0.3) : 1.0;
 
     // 縮放效果
-    double scale = t < 0.5
-        ? Curves.easeOutBack.transform(t / 0.5)
-        : 1.0;
+    double scale = t < 0.5 ? Curves.easeOutBack.transform(t / 0.5) : 1.0;
+
+    // 放大 1.5 倍：120*1.5=180, 180*1.5=270
+    const imageWidth = 360.0;
+    const imageHeight = 540.0;
 
     return Opacity(
       opacity: opacity,
       child: Transform.scale(
         scale: scale,
         child: Container(
-          width: 120,
-          height: 180,
+          width: imageWidth,
+          height: imageHeight,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: Colors.white.withValues(alpha: 0.3),
-                blurRadius: 30,
-                spreadRadius: 10,
+                blurRadius: 40,
+                spreadRadius: 15,
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             child: Image.asset(
               'assets/images/agent_pro.png',
-              fit: BoxFit.cover,
+              width: imageWidth,
+              height: imageHeight,
+              fit: BoxFit.contain, // 改為 contain 以避免裁切
               errorBuilder: (context, error, stackTrace) {
                 // 如果圖片載入失敗，顯示佔位符
                 return Container(
                   color: Colors.white,
                   child: const Icon(
                     Icons.auto_awesome,
-                    size: 60,
+                    size: 80,
                     color: Colors.amber,
                   ),
                 );
@@ -168,32 +181,8 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
     );
   }
 
-  /// 構建標題
-  Widget _buildTitle(double t) {
-    double opacity = t < 0.5 ? 0 : Curves.easeIn.transform((t - 0.5) / 0.5);
-
-    return Opacity(
-      opacity: opacity,
-      child: const Text(
-        '大千世界',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 8,
-          shadows: [
-            Shadow(
-              color: Colors.amber,
-              blurRadius: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 構建動畫蓮花
-  Widget _buildAnimatedLotus(_LotusInfo lotus, double t) {
+  Widget _buildAnimatedLotus(_LotusInfo lotus, double t, Size screenSize) {
     double progress = (t + lotus.delay) % 1.0;
 
     // 淡入淡出
@@ -207,16 +196,21 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
     }
     opacity *= lotus.opacityFactor;
 
-    // 散開距離
-    double move = lotus.distance * Curves.easeOut.transform(progress);
+    // 散開距離（降低移動速度：0.6倍）
+    double move = lotus.distance * Curves.easeOut.transform(progress) * 0.6;
 
-    // 呼吸縮放
-    double scale = lotus.scale * (0.6 + 0.4 * sin(progress * pi));
+    // 呼吸縮放（降低呼吸速度）
+    double scale = lotus.scale * (0.6 + 0.4 * sin(progress * pi * 0.5));
 
-    // 橢圓分佈
+    // 根據螢幕寬高比調整垂直分佈
+    // 計算垂直係數，讓蓮花能充滿整個螢幕高度
+    final aspectRatio = screenSize.height / screenSize.width;
+    final verticalFactor = aspectRatio * 0.8; // 調整為螢幕高度的80%
+
+    // 橢圓分佈（根據螢幕比例調整）
     final offset = Offset(
       cos(lotus.angle) * move,
-      sin(lotus.angle) * move * 0.7,
+      sin(lotus.angle) * move * verticalFactor,
     );
 
     return Opacity(
@@ -226,7 +220,8 @@ class _GoldenLotusAnimationState extends State<GoldenLotusAnimation>
         child: Transform.scale(
           scale: scale * 0.25,
           child: CustomPaint(
-            painter: _SideLotusPainter(rotation: (t + lotus.delay) * 2 * pi),
+            // 降低旋轉速度：從 2π 改為 0.5π（減慢 4 倍）
+            painter: _SideLotusPainter(rotation: (t + lotus.delay) * 0.5 * pi),
             size: const Size(250, 250),
           ),
         ),
@@ -267,10 +262,7 @@ class _SideLotusPainter extends CustomPainter {
     // 光暈效果
     final glow = Paint()
       ..shader = RadialGradient(
-        colors: [
-          Colors.yellow.withValues(alpha: 0.25),
-          Colors.transparent,
-        ],
+        colors: [Colors.yellow.withValues(alpha: 0.25), Colors.transparent],
       ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.7));
     canvas.drawCircle(center, size.width * 0.7, glow);
 
@@ -305,11 +297,12 @@ class _SideLotusPainter extends CustomPainter {
 
     // 花蕊
     final corePaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Colors.orangeAccent, Colors.deepOrange],
-      ).createShader(
-        Rect.fromCircle(center: const Offset(0, 0), radius: radius * 1.1),
-      );
+      ..shader =
+          const RadialGradient(
+            colors: [Colors.orangeAccent, Colors.deepOrange],
+          ).createShader(
+            Rect.fromCircle(center: const Offset(0, 0), radius: radius * 1.1),
+          );
     canvas.drawOval(
       Rect.fromCenter(
         center: const Offset(0, 0),

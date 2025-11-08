@@ -5,6 +5,20 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/voice_control_service.dart';
+import '../utils/tts_helper.dart';
+import 'voice_assistant_animation.dart';
+
+/// 語音功能狀態
+enum VoiceFeatureState {
+  /// 未啟用任何功能
+  none,
+
+  /// 語音切換頁面功能已啟用
+  voiceControl,
+
+  /// 語音代理人控制功能已啟用
+  voiceAgent,
+}
 
 /// 自定義 AppBar，支援長按 1 秒開啟/關閉語音控制
 class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -35,6 +49,9 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// 標題文字樣式
   final TextStyle? titleTextStyle;
 
+  /// 初始語音功能狀態
+  final VoiceFeatureState? initialState;
+
   const VoiceControlAppBar({
     super.key,
     required this.title,
@@ -46,6 +63,7 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.bottom,
     this.titleTextStyle,
+    this.initialState,
   });
 
   @override
@@ -58,11 +76,8 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
-  /// 長按計時器
-  Timer? _longPressTimer;
-
-  /// 是否正在處理語音控制切換
-  bool _isTogglingVoiceControl = false;
+  /// 當前語音功能狀態
+  late VoiceFeatureState _currentState;
 
   /// 長按持續時間（秒）
   int _longPressDuration = 0;
@@ -70,9 +85,15 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   /// 長按階段計時器
   Timer? _durationTimer;
 
+  /// 是否正在處理狀態切換
+  bool _isProcessing = false;
+
   @override
   void initState() {
     super.initState();
+    // 使用初始狀態，如果沒有提供則默認為 none
+    _currentState = widget.initialState ?? VoiceFeatureState.none;
+
     // 設置當前 BuildContext 到語音控制服務
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -83,21 +104,25 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
     _durationTimer?.cancel();
     super.dispose();
   }
 
   /// 處理長按開始
   void _onLongPressStart(LongPressStartDetails details) {
+    // 如果正在處理中，忽略新的長按
+    if (_isProcessing) return;
+
     // 取消之前的計時器（如果有）
-    _longPressTimer?.cancel();
     _durationTimer?.cancel();
 
     // 重置長按持續時間
     setState(() {
       _longPressDuration = 0;
     });
+
+    // 記錄長按開始時的狀態
+    final startState = _currentState;
 
     // 啟動持續時間計時器，每秒更新一次
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -110,25 +135,31 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
         _longPressDuration += 1;
       });
 
-      // 第1秒：開啟"小千助理"（語音控制）
-      if (_longPressDuration == 1) {
-        if (!voiceControlService.isEnabled) {
-          _toggleVoiceControl();
+      // 根據長按開始時的狀態處理長按
+      if (startState == VoiceFeatureState.none) {
+        // 從未啟用狀態開始長按
+        if (_longPressDuration == 1) {
+          // 長按1秒 -> 啟用語音控制
+          _activateVoiceControl();
+        } else if (_longPressDuration == 5) {
+          // 繼續長按到5秒 -> 啟用語音代理人
+          timer.cancel();
+          _activateVoiceAgent();
         }
-      }
-      // 第2秒：開啟"大千世界"
-      else if (_longPressDuration == 2) {
-        _openAIAgent();
-        timer.cancel();
+      } else {
+        // 從已啟用狀態（語音控制/語音代理人）開始長按
+        if (_longPressDuration == 1) {
+          // 長按1秒 -> 關閉所有功能
+          timer.cancel();
+          _deactivateAll();
+        }
       }
     });
   }
 
   /// 處理長按放開
   void _onLongPressEnd(LongPressEndDetails details) {
-    // 取消計時器（如果還沒觸發）
-    _longPressTimer?.cancel();
-    _longPressTimer = null;
+    // 取消計時器
     _durationTimer?.cancel();
     _durationTimer = null;
 
@@ -143,8 +174,6 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   /// 處理長按取消
   void _onLongPressCancel() {
     // 取消計時器
-    _longPressTimer?.cancel();
-    _longPressTimer = null;
     _durationTimer?.cancel();
     _durationTimer = null;
 
@@ -156,44 +185,148 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
     }
   }
 
-  /// 切換語音控制
-  Future<void> _toggleVoiceControl() async {
-    // 防止重複呼叫
-    if (_isTogglingVoiceControl) return;
+  /// 啟用語音控制功能（播放 agent_on 動畫）
+  void _activateVoiceControl() {
+    if (_isProcessing) return;
 
-    // 取消計時器
-    _longPressTimer?.cancel();
-    _longPressTimer = null;
+    // 播放開啟動畫
+    VoiceAssistantAnimationOverlay.show(
+      context,
+      type: VoiceAssistantAnimationType.enable,
+      onComplete: () {
+        debugPrint('✅ agent_on 動畫播放完成');
+      },
+    );
+
+    // 更新 context
+    voiceControlService.setContext(context);
+
+    // 開啟語音控制（非同步執行，不阻塞）
+    if (!voiceControlService.isEnabled) {
+      voiceControlService.toggle().catchError((e) {
+        debugPrint('❌ [VoiceControlAppBar] 啟用語音控制失敗: $e');
+      });
+    }
+
+    // 更新狀態
+    setState(() {
+      _currentState = VoiceFeatureState.voiceControl;
+    });
+
+    debugPrint('✅ 語音控制功能已啟用');
+  }
+
+  /// 啟用語音代理人功能（播放 agent_pro 動畫）
+  Future<void> _activateVoiceAgent() async {
+    if (_isProcessing) return;
 
     setState(() {
-      _isTogglingVoiceControl = true;
+      _isProcessing = true;
     });
 
     try {
-      // 更新 context
-      voiceControlService.setContext(context);
+      // 靜默關閉語音控制（不播放動畫，不語音提示）
+      if (voiceControlService.isEnabled) {
+        // 先停止當前的語音播放
+        await ttsHelper.stop();
+        // 靜默關閉語音控制服務（不觸發動畫和語音提示）
+        await voiceControlService.disable(silent: true);
+      }
 
-      // 切換語音控制
-      await voiceControlService.toggle();
+      // 檢查 mounted 後再使用 context
+      if (!mounted) return;
+
+      // 播放語音提示："大千世界，開！"
+      ttsHelper.speak('大千世界，開！');
+
+      // 播放代理人動畫
+      VoiceAssistantAnimationOverlay.show(
+        context,
+        type: VoiceAssistantAnimationType.enableAgent,
+        onComplete: () {
+          debugPrint('✅ agent_pro 動畫播放完成');
+        },
+      );
+
+      // 導航到 AI 代理頁面
+      if (mounted) {
+        Navigator.of(context).pushNamed('/ai-agent');
+      }
+
+      // 更新狀態
+      if (mounted) {
+        setState(() {
+          _currentState = VoiceFeatureState.voiceAgent;
+        });
+      }
+
+      debugPrint('✅ 語音代理人功能已啟用（已靜默關閉語音控制）');
     } catch (e) {
-      debugPrint('❌ [VoiceControlAppBar] 切換語音控制失敗: $e');
+      debugPrint('❌ [VoiceControlAppBar] 啟用語音代理人失敗: $e');
     } finally {
       if (mounted) {
         setState(() {
-          _isTogglingVoiceControl = false;
+          _isProcessing = false;
         });
       }
     }
   }
 
-  /// 開啟"大千世界" AI 智能代理
-  void _openAIAgent() {
-    // 取消所有計時器
-    _longPressTimer?.cancel();
-    _durationTimer?.cancel();
+  /// 停用所有語音功能
+  Future<void> _deactivateAll() async {
+    if (_isProcessing) return;
 
-    // 導航到 AI 代理頁面
-    Navigator.of(context).pushNamed('/ai-agent');
+    final previousState = _currentState;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // 如果是從語音控制關閉，播放 agent_off 動畫
+      if (previousState == VoiceFeatureState.voiceControl) {
+        VoiceAssistantAnimationOverlay.show(
+          context,
+          type: VoiceAssistantAnimationType.disable,
+          onComplete: () {
+            debugPrint('✅ agent_off 動畫播放完成');
+          },
+        );
+      }
+
+      // 關閉語音控制
+      if (voiceControlService.isEnabled) {
+        await voiceControlService.toggle();
+      }
+
+      // 如果是從語音代理人狀態關閉，導航回首頁
+      if (previousState == VoiceFeatureState.voiceAgent) {
+        if (mounted) {
+          // 使用 Navigator 導航回首頁，清除所有路由堆疊
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/',
+            (route) => false,
+          );
+        }
+      }
+
+      // 更新狀態
+      if (mounted) {
+        setState(() {
+          _currentState = VoiceFeatureState.none;
+        });
+      }
+
+      debugPrint('✅ 所有語音功能已關閉');
+    } catch (e) {
+      debugPrint('❌ [VoiceControlAppBar] 關閉語音功能失敗: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -223,9 +356,14 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      value: _longPressDuration / 2, // 2秒完成
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(Colors.amber),
+                      value: _currentState == VoiceFeatureState.none
+                          ? _longPressDuration / 5 // 無狀態：5秒完成（1秒語音控制，5秒代理人）
+                          : _longPressDuration / 1, // 有狀態：1秒關閉
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _currentState == VoiceFeatureState.none
+                            ? Colors.amber // 啟用時為琥珀色
+                            : Colors.red, // 關閉時為紅色
+                      ),
                       backgroundColor: Colors.white38,
                     ),
                   ),
@@ -241,7 +379,7 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
               ),
             ]
             // 顯示處理指示器
-            else if (_isTogglingVoiceControl) ...[
+            else if (_isProcessing) ...[
               const SizedBox(width: 8),
               const SizedBox(
                 width: 16,
