@@ -15,8 +15,11 @@ class SttService {
   bool _isListening = false;
   bool _shouldContinueListening = false; // 是否應該持續監聽
 
-  /// 語音識別結果回調
+  /// 語音識別結果回調（最終結果）
   Function(String)? onResult;
+
+  /// 語音識別部分結果回調（即時語音轉文字）
+  Function(String)? onPartialResult;
 
   /// 語音識別錯誤回調
   Function(String)? onError;
@@ -126,9 +129,12 @@ class SttService {
           if (result.recognizedWords.isNotEmpty) {
             debugPrint('[STT] Recognized (final: ${result.finalResult}): ${result.recognizedWords}');
 
-            // 只在最終結果時才觸發回調
             if (result.finalResult) {
+              // 最終結果
               onResult?.call(result.recognizedWords);
+            } else {
+              // 部分結果（即時語音轉文字）
+              onPartialResult?.call(result.recognizedWords);
             }
           }
         },
@@ -174,9 +180,12 @@ class SttService {
           if (result.recognizedWords.isNotEmpty) {
             debugPrint('[STT] Recognized (final: ${result.finalResult}): ${result.recognizedWords}');
 
-            // 只在最終結果時才觸發回調
             if (result.finalResult) {
+              // 最終結果
               onResult?.call(result.recognizedWords);
+            } else {
+              // 部分結果（即時語音轉文字）
+              onPartialResult?.call(result.recognizedWords);
             }
           }
         },

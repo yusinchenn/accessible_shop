@@ -3,15 +3,13 @@
 /// 整合語音輸入和 AI 對話的智能助理界面
 library;
 
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../services/ai_agent_service.dart';
 import '../../services/stt_service.dart';
 import '../../utils/tts_helper.dart';
-import '../../widgets/voice_control_appbar.dart';
 import '../../widgets/golden_lotus_animation.dart';
-
-// 導入 VoiceFeatureState enum
-// (已經在 voice_control_appbar.dart 中定義，但需要確保可以訪問)
 
 /// AI 代理頁面
 class AIAgentPage extends StatefulWidget {
@@ -28,9 +26,6 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
   /// 頁面淡入透明度
   double _pageOpacity = 0.0;
 
-  /// 對話訊息列表（用於顯示）
-  final List<_ChatMessage> _messages = [];
-
   /// 是否正在監聽語音
   bool _isListening = false;
 
@@ -43,8 +38,14 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
   /// 當前 AI 回應文字
   String _currentAIResponse = '';
 
-  /// 滾動控制器
-  final ScrollController _scrollController = ScrollController();
+  /// 最後一次的訊息（用於在沒有新輸入時顯示）
+  String _lastMessage = '';
+
+  /// 長按持續時間（秒）
+  int _longPressDuration = 0;
+
+  /// 長按階段計時器
+  Timer? _durationTimer;
 
   @override
   void initState() {
@@ -54,8 +55,9 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _durationTimer?.cancel();
     sttService.stopListening();
+    _closeAgent();
     super.dispose();
   }
 
@@ -66,6 +68,7 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
 
     // 設置 STT 回調
     sttService.onResult = _handleSttResult;
+    sttService.onPartialResult = _handleSttPartialResult;
     sttService.onError = (error) {
       debugPrint('❌ [AIAgent] STT Error: $error');
     };
@@ -90,6 +93,13 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
     await ttsHelper.speak('歡迎來到大千世界！我是您的智能助理，您可以按住麥克風按鈕與我對話。');
   }
 
+  /// 處理語音識別部分結果（即時顯示）
+  void _handleSttPartialResult(String text) {
+    setState(() {
+      _currentUserInput = text;
+    });
+  }
+
   /// 處理語音識別結果（最終結果）
   void _handleSttResult(String text) {
     setState(() {
@@ -104,20 +114,11 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
 
   /// 發送訊息給 AI
   Future<void> _sendMessageToAI(String message) async {
-    // 添加用戶訊息到列表
     setState(() {
-      _messages.add(_ChatMessage(
-        content: message,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
       _currentUserInput = '';
       _isAIResponding = true;
       _currentAIResponse = '';
     });
-
-    // 滾動到底部
-    _scrollToBottom();
 
     try {
       // 使用流式獲取 AI 回應
@@ -126,9 +127,6 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
           setState(() {
             _currentAIResponse += response.content;
           });
-
-          // 實時滾動到底部
-          _scrollToBottom();
         } else if (response.type == AIAgentResponseType.error) {
           setState(() {
             _currentAIResponse = response.content;
@@ -136,20 +134,17 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
         }
       }
 
-      // AI 回應完成，添加到訊息列表
+      // AI 回應完成
       if (_currentAIResponse.isNotEmpty) {
+        final aiResponse = _currentAIResponse;
         setState(() {
-          _messages.add(_ChatMessage(
-            content: _currentAIResponse,
-            isUser: false,
-            timestamp: DateTime.now(),
-          ));
           _isAIResponding = false;
           _currentAIResponse = '';
+          _lastMessage = aiResponse; // 保存最後一次訊息
         });
 
         // 朗讀 AI 回應
-        await ttsHelper.speak(_messages.last.content);
+        await ttsHelper.speak(aiResponse);
       }
     } catch (e) {
       debugPrint('❌ [AIAgent] Error: $e');
@@ -160,19 +155,6 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
 
       await ttsHelper.speak('抱歉，發生錯誤，請稍後再試。');
     }
-  }
-
-  /// 滾動到底部
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   /// 開始語音輸入
@@ -198,37 +180,101 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
     await sttService.stopListening();
   }
 
+  /// 關閉 Agent（導航回首頁）
+  void _closeAgent() {
+    if (!mounted) return;
+
+    // 靜默停止 TTS
+    ttsHelper.stop();
+
+    // 導航回首頁
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/',
+      (route) => false,
+    );
+  }
+
+  /// 處理 AppBar 長按開始
+  void _onAppBarLongPressStart(LongPressStartDetails details) {
+    // 取消之前的計時器（如果有）
+    _durationTimer?.cancel();
+
+    // 重置長按持續時間
+    setState(() {
+      _longPressDuration = 0;
+    });
+
+    // 啟動持續時間計時器
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _longPressDuration += 1;
+      });
+
+      // 長按 1 秒後關閉
+      if (_longPressDuration >= 1) {
+        timer.cancel();
+        _closeAgent();
+      }
+    });
+  }
+
+  /// 處理 AppBar 長按結束
+  void _onAppBarLongPressEnd(LongPressEndDetails details) {
+    _durationTimer?.cancel();
+    _durationTimer = null;
+
+    if (mounted) {
+      setState(() {
+        _longPressDuration = 0;
+      });
+    }
+  }
+
+  /// 處理 AppBar 長按取消
+  void _onAppBarLongPressCancel() {
+    _durationTimer?.cancel();
+    _durationTimer = null;
+
+    if (mounted) {
+      setState(() {
+        _longPressDuration = 0;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 構建聊天界面
-    final chatInterface = Scaffold(
-      appBar: VoiceControlAppBar(
-        title: '大千世界',
-        automaticallyImplyLeading: false, // 不顯示返回按鈕
-        initialState: VoiceFeatureState.voiceAgent, // 設置初始狀態為語音代理人
-        onTap: () {
-          ttsHelper.speak('大千世界智能助理頁面。您可以按住麥克風按鈕開始對話。');
-        },
-      ),
-      body: Column(
+    // 構建主界面
+    final mainInterface = Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
         children: [
-          // 對話區域
-          Expanded(
-            child: _messages.isEmpty && !_isAIResponding
-                ? _buildEmptyState()
-                : _buildMessageList(),
+          // 主要內容區域 - 可按住觸發錄音
+          Positioned.fill(
+            child: GestureDetector(
+              onLongPressStart: (_) => _startListening(),
+              onLongPressEnd: (_) => _stopListening(),
+              child: Container(
+                color: Colors.transparent,
+                child: Center(
+                  child: _buildCurrentMessage(),
+                ),
+              ),
+            ),
           ),
 
-          // 當前用戶輸入顯示
-          if (_isListening && _currentUserInput.isNotEmpty)
-            _buildCurrentInput(),
-
-          // 當前 AI 回應顯示
-          if (_isAIResponding && _currentAIResponse.isNotEmpty)
-            _buildCurrentAIResponse(),
-
-          // 麥克風按鈕
-          _buildMicrophoneButton(),
+          // 玻璃感 AppBar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildGlassAppBar(context),
+          ),
         ],
       ),
     );
@@ -244,189 +290,163 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
               durationSeconds: 5, // 5秒動畫
             ),
           ),
-          // 上層：聊天界面（動畫播放到一半後淡入）
+          // 上層：主界面（動畫播放到一半後淡入）
           Positioned.fill(
             child: AnimatedOpacity(
               opacity: _pageOpacity,
               duration: const Duration(milliseconds: 1000),
               curve: Curves.easeIn,
-              child: chatInterface,
+              child: mainInterface,
             ),
           ),
         ],
       );
     }
 
-    // 動畫完成後只顯示聊天界面
-    return chatInterface;
+    // 動畫完成後只顯示主界面
+    return mainInterface;
   }
 
-  /// 構建空狀態
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.mic_none,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '按住麥克風按鈕開始對話',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
+  /// 構建玻璃感 AppBar
+  Widget _buildGlassAppBar(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: GestureDetector(
+          onLongPressStart: _onAppBarLongPressStart,
+          onLongPressEnd: _onAppBarLongPressEnd,
+          onLongPressCancel: _onAppBarLongPressCancel,
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            constraints: BoxConstraints(
+              minWidth: MediaQuery.of(context).size.width * 0.5,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '我可以幫助您搜索商品、解答疑問',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(100),
+              color: Colors.white.withValues(alpha: 0.1),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 構建訊息列表
-  Widget _buildMessageList() {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final message = _messages[index];
-        return _buildMessageBubble(message);
-      },
-    );
-  }
-
-  /// 構建訊息氣泡
-  Widget _buildMessageBubble(_ChatMessage message) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: message.isUser
-              ? Theme.of(context).primaryColor
-              : Colors.grey[300],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          message.content,
-          style: TextStyle(
-            fontSize: 16,
-            color: message.isUser ? Colors.white : Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 構建當前用戶輸入
-  Widget _buildCurrentInput() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.blue[50],
-      child: Row(
-        children: [
-          const Icon(Icons.mic, color: Colors.blue),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _currentUserInput,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 標題
+                      const Text(
+                        'agent',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // beta 標籤
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white, width: 1),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: const Text(
+                          'beta',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      // 長按進度指示器
+                      if (_longPressDuration > 0) ...[
+                        const SizedBox(width: 12),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                value: _longPressDuration / 1,
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                                backgroundColor: Colors.white38,
+                              ),
+                            ),
+                            Text(
+                              '$_longPressDuration',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// 構建當前 AI 回應
-  Widget _buildCurrentAIResponse() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[100],
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _currentAIResponse,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 構建麥克風按鈕
-  Widget _buildMicrophoneButton() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: GestureDetector(
-        onLongPressStart: (_) => _startListening(),
-        onLongPressEnd: (_) => _stopListening(),
-        child: Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            color: _isListening
-                ? Colors.red
-                : Theme.of(context).primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            _isListening ? Icons.mic : Icons.mic_none,
-            size: 32,
-            color: Colors.white,
-          ),
         ),
       ),
     );
   }
-}
 
-/// 聊天訊息
-class _ChatMessage {
-  final String content;
-  final bool isUser;
-  final DateTime timestamp;
+  /// 構建當前訊息顯示
+  Widget _buildCurrentMessage() {
+    String displayText = '';
+    bool showPlaceholder = false;
 
-  _ChatMessage({
-    required this.content,
-    required this.isUser,
-    required this.timestamp,
-  });
+    // 優先顯示 AI 回應
+    if (_isAIResponding && _currentAIResponse.isNotEmpty) {
+      displayText = _currentAIResponse;
+    }
+    // 其次顯示用戶輸入
+    else if (_isListening && _currentUserInput.isNotEmpty) {
+      displayText = _currentUserInput;
+    }
+    // 顯示上一個訊息（如果有）
+    else if (_lastMessage.isNotEmpty) {
+      displayText = _lastMessage;
+    }
+    // 空狀態
+    else {
+      showPlaceholder = true;
+    }
+
+    if (showPlaceholder) {
+      return const Text(
+        '按住螢幕開始對話',
+        style: TextStyle(
+          color: Colors.white54,
+          fontSize: 18,
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
+      child: Text(
+        displayText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          height: 1.5,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
 }
