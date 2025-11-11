@@ -219,7 +219,7 @@ $reviewsText
 ''';
 
       // 調用 DeepSeek API
-      final response = await _aiClient!.chatCompletion(
+      final response = await _aiClient!.chatCompletionText(
         ChatCompletionOptions(
           messages: [
             ChatMessage(

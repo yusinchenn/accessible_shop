@@ -70,9 +70,8 @@ class VoiceControlAppBar extends StatefulWidget implements PreferredSizeWidget {
   State<VoiceControlAppBar> createState() => _VoiceControlAppBarState();
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        kToolbarHeight + (bottom?.preferredSize.height ?? 0.0),
-      );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 }
 
 class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
@@ -237,7 +236,7 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
       if (!mounted) return;
 
       // 播放語音提示："大千世界，開！"
-      ttsHelper.speak('大千世界，開！');
+      ttsHelper.speak('大千世界，開啟！');
 
       // 播放代理人動畫
       VoiceAssistantAnimationOverlay.show(
@@ -303,10 +302,7 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
       if (previousState == VoiceFeatureState.voiceAgent) {
         if (mounted) {
           // 使用 Navigator 導航回首頁，清除所有路由堆疊
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/',
-            (route) => false,
-          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       }
 
@@ -345,6 +341,18 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(widget.title, style: widget.titleTextStyle),
+            // 顯示小千助理開啟狀態圖示
+            if (_currentState == VoiceFeatureState.voiceAgent) ...[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Image.asset(
+                  'assets/images/agent_logo.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ],
             // 顯示長按進度指示器
             if (_longPressDuration > 0) ...[
               const SizedBox(width: 8),
@@ -357,11 +365,13 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       value: _currentState == VoiceFeatureState.none
-                          ? _longPressDuration / 5 // 無狀態：5秒完成（1秒語音控制，5秒代理人）
+                          ? _longPressDuration /
+                                5 // 無狀態：5秒完成（1秒語音控制，5秒代理人）
                           : _longPressDuration / 1, // 有狀態：1秒關閉
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _currentState == VoiceFeatureState.none
-                            ? Colors.amber // 啟用時為琥珀色
+                            ? Colors
+                                  .amber // 啟用時為琥珀色
                             : Colors.red, // 關閉時為紅色
                       ),
                       backgroundColor: Colors.white38,

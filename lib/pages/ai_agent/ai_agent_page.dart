@@ -10,6 +10,36 @@ import '../../services/ai_agent_service.dart';
 import '../../services/stt_service.dart';
 import '../../utils/tts_helper.dart';
 import '../../widgets/golden_lotus_animation.dart';
+import '../../models/product.dart';
+import '../../models/order.dart';
+import '../../models/cart_item.dart';
+import '../../models/notification.dart';
+import 'widgets/conversation_product_card.dart';
+import 'widgets/conversation_order_card.dart';
+import 'widgets/conversation_cart_card.dart';
+import 'widgets/conversation_notification_card.dart';
+
+/// 對話訊息類型
+enum ConversationMessageType {
+  user,
+  assistant,
+  card,
+}
+
+/// 對話訊息
+class ConversationMessage {
+  final ConversationMessageType type;
+  final String? text;
+  final AIAgentResponseType? cardType;
+  final dynamic cardData;
+
+  ConversationMessage({
+    required this.type,
+    this.text,
+    this.cardType,
+    this.cardData,
+  });
+}
 
 /// AI 代理頁面
 class AIAgentPage extends StatefulWidget {
@@ -47,6 +77,15 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
   /// 長按階段計時器
   Timer? _durationTimer;
 
+  /// 對話歷史
+  final List<ConversationMessage> _conversationHistory = [];
+
+  /// 滾動控制器
+  final ScrollController _scrollController = ScrollController();
+
+  /// 是否顯示對話歷史
+  bool _showConversationHistory = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +95,7 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
   @override
   void dispose() {
     _durationTimer?.cancel();
+    _scrollController.dispose();
     sttService.stopListening();
     _closeAgent();
     super.dispose();
@@ -120,6 +160,12 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
       _currentAIResponse = '';
     });
 
+    // 將用戶訊息添加到歷史
+    _conversationHistory.add(ConversationMessage(
+      type: ConversationMessageType.user,
+      text: message,
+    ));
+
     try {
       // 使用流式獲取 AI 回應
       await for (final response in aiAgentService.sendMessageStream(message)) {
@@ -131,12 +177,31 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
           setState(() {
             _currentAIResponse = response.content;
           });
+        } else if (response.type == AIAgentResponseType.displayProductCard ||
+            response.type == AIAgentResponseType.displayOrderCard ||
+            response.type == AIAgentResponseType.displayCartCard ||
+            response.type == AIAgentResponseType.displayNotificationCard) {
+          // 收到卡片資料，添加到對話歷史
+          setState(() {
+            _conversationHistory.add(ConversationMessage(
+              type: ConversationMessageType.card,
+              cardType: response.type,
+              cardData: response.cardData,
+            ));
+          });
         }
       }
 
       // AI 回應完成
       if (_currentAIResponse.isNotEmpty) {
         final aiResponse = _currentAIResponse;
+
+        // 將 AI 回應添加到歷史
+        _conversationHistory.add(ConversationMessage(
+          type: ConversationMessageType.assistant,
+          text: aiResponse,
+        ));
+
         setState(() {
           _isAIResponding = false;
           _currentAIResponse = '';
@@ -145,6 +210,11 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
 
         // 朗讀 AI 回應
         await ttsHelper.speak(aiResponse);
+
+        // 自動滾動到底部（如果顯示對話歷史）
+        if (_showConversationHistory) {
+          _scrollToBottom();
+        }
       }
     } catch (e) {
       debugPrint('❌ [AIAgent] Error: $e');
@@ -154,6 +224,32 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
       });
 
       await ttsHelper.speak('抱歉，發生錯誤，請稍後再試。');
+    }
+  }
+
+  /// 滾動到對話底部
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  /// 切換對話歷史顯示
+  void _toggleConversationHistory() {
+    setState(() {
+      _showConversationHistory = !_showConversationHistory;
+    });
+
+    if (_showConversationHistory) {
+      _scrollToBottom();
     }
   }
 
@@ -254,18 +350,20 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 主要內容區域 - 可按住觸發錄音
+          // 主要內容區域
           Positioned.fill(
-            child: GestureDetector(
-              onLongPressStart: (_) => _startListening(),
-              onLongPressEnd: (_) => _stopListening(),
-              child: Container(
-                color: Colors.transparent,
-                child: Center(
-                  child: _buildCurrentMessage(),
-                ),
-              ),
-            ),
+            child: _showConversationHistory
+                ? _buildConversationHistory()
+                : GestureDetector(
+                    onLongPressStart: (_) => _startListening(),
+                    onLongPressEnd: (_) => _stopListening(),
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Center(
+                        child: _buildCurrentMessage(),
+                      ),
+                    ),
+                  ),
           ),
 
           // 玻璃感 AppBar
@@ -275,6 +373,23 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
             right: 0,
             child: _buildGlassAppBar(context),
           ),
+
+          // 切換視圖按鈕（僅在有對話記錄時顯示）
+          if (_conversationHistory.isNotEmpty)
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: FloatingActionButton(
+                onPressed: _toggleConversationHistory,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                child: Icon(
+                  _showConversationHistory
+                      ? Icons.mic
+                      : Icons.chat_bubble_outline,
+                  color: Colors.white,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -447,6 +562,121 @@ class _AIAgentPageState extends State<AIAgentPage> with TickerProviderStateMixin
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  /// 構建對話歷史列表
+  Widget _buildConversationHistory() {
+    if (_conversationHistory.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.white30),
+            const SizedBox(height: 16),
+            const Text(
+              '還沒有對話記錄',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '按住螢幕開始對話',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 80, 16, 100),
+      itemCount: _conversationHistory.length,
+      itemBuilder: (context, index) {
+        final message = _conversationHistory[index];
+        return _buildConversationMessageWidget(message);
+      },
+    );
+  }
+
+  /// 構建單個對話訊息 Widget
+  Widget _buildConversationMessageWidget(ConversationMessage message) {
+    switch (message.type) {
+      case ConversationMessageType.user:
+        return Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12, left: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              message.text ?? '',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        );
+
+      case ConversationMessageType.assistant:
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12, right: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              message.text ?? '',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        );
+
+      case ConversationMessageType.card:
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: _buildCardWidget(message.cardType!, message.cardData),
+        );
+    }
+  }
+
+  /// 構建卡片 Widget
+  Widget _buildCardWidget(AIAgentResponseType cardType, dynamic cardData) {
+    switch (cardType) {
+      case AIAgentResponseType.displayProductCard:
+        final products = (cardData as List).cast<Product>();
+        return ConversationProductListCard(products: products);
+
+      case AIAgentResponseType.displayOrderCard:
+        final orders = (cardData as List).cast<Order>();
+        return ConversationOrderListCard(orders: orders);
+
+      case AIAgentResponseType.displayCartCard:
+        final cartItems = (cardData as List).cast<CartItem>();
+        return ConversationCartCard(cartItems: cartItems);
+
+      case AIAgentResponseType.displayNotificationCard:
+        final notifications = (cardData as List).cast<NotificationModel>();
+        return ConversationNotificationListCard(notifications: notifications);
+
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
 }

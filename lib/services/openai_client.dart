@@ -13,8 +13,8 @@ import 'package:dio/dio.dart';
 
 //// ------------ 基本資料結構 ------------
 
-/// Defines the role of a chat message: system, user, assistant, or function.
-enum Role { system, user, assistant, function }
+/// Defines the role of a chat message: system, user, assistant, function, or tool.
+enum Role { system, user, assistant, function, tool }
 
 /// Represents a single message in the conversation, with role and content.
 class ChatMessage {
@@ -24,10 +24,17 @@ class ChatMessage {
   /// The text content of the message, mutable for streaming
   String content;
 
-  /// Optional name for function messages
-  final String? name; // optional
+  /// Optional name for function/tool messages
+  final String? name;
+
   /// Optional data for function call responses
-  final Map<String, dynamic>? functionCallResult; // for function response
+  final Map<String, dynamic>? functionCallResult;
+
+  /// Optional tool calls (when assistant wants to call tools)
+  final List<Map<String, dynamic>>? toolCalls;
+
+  /// Optional tool call ID (when role is tool)
+  final String? toolCallId;
 
   /// Constructor to create a chat message instance
   ChatMessage({
@@ -35,15 +42,57 @@ class ChatMessage {
     required this.content,
     this.name,
     this.functionCallResult,
+    this.toolCalls,
+    this.toolCallId,
   });
 
   /// Serializes the ChatMessage to JSON for API requests
-  Map<String, dynamic> toJson() => {
-    'role': role.name,
-    'content': content,
-    if (name != null) 'name': name,
-    if (functionCallResult != null) 'function_call': functionCallResult,
-  };
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'role': role.name,
+      'content': content,
+      if (name != null) 'name': name,
+      if (functionCallResult != null) 'function_call': functionCallResult,
+      if (toolCalls != null) 'tool_calls': toolCalls,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
+    };
+    return json;
+  }
+}
+
+/// Represents a chat completion response from the API
+class ChatCompletionResponse {
+  /// The text content of the response (may be null if tool_calls present)
+  final String? content;
+
+  /// Tool calls requested by the assistant (may be null)
+  final List<Map<String, dynamic>>? toolCalls;
+
+  /// The finish reason
+  final String? finishReason;
+
+  ChatCompletionResponse({
+    this.content,
+    this.toolCalls,
+    this.finishReason,
+  });
+
+  /// Creates a response from the raw API JSON
+  factory ChatCompletionResponse.fromJson(Map<String, dynamic> json) {
+    final choices = json['choices'] as List?;
+    if (choices == null || choices.isEmpty) {
+      throw OpenAIException('No choices in response');
+    }
+
+    final firstChoice = choices.first as Map<String, dynamic>;
+    final message = firstChoice['message'] as Map<String, dynamic>?;
+
+    return ChatCompletionResponse(
+      content: message?['content'] as String?,
+      toolCalls: message?['tool_calls'] as List<Map<String, dynamic>>?,
+      finishReason: firstChoice['finish_reason'] as String?,
+    );
+  }
 }
 
 /// Configuration for different AI service providers: endpoint, API key, and model.
@@ -189,13 +238,20 @@ class OpenAICompatibleClient {
           );
   }
 
-  /// Sends a non-streaming chat completion request, returning full text.
-  Future<String> chatCompletion(ChatCompletionOptions opts) async {
+  /// Sends a non-streaming chat completion request, returning full response.
+  Future<ChatCompletionResponse> chatCompletion(ChatCompletionOptions opts) async {
     if (opts.stream) {
       throw ArgumentError('Use chatCompletionStream() for stream=true');
     }
     final res = await _post(opts.toRequestBody(_config.defaultModel));
-    return _extractContent(res);
+    return ChatCompletionResponse.fromJson(res);
+  }
+
+  /// Sends a non-streaming chat completion request, returning only content text.
+  /// Use this for simple cases where you don't need tool_calls.
+  Future<String> chatCompletionText(ChatCompletionOptions opts) async {
+    final response = await chatCompletion(opts);
+    return response.content ?? '';
   }
 
   /// Sends a streaming chat completion request, yielding content chunks as they arrive.
@@ -262,19 +318,6 @@ class OpenAICompatibleClient {
         'HTTP ${e.response?.statusCode ?? ''}: ${e.response?.data ?? e.message}',
       );
     }
-  }
-
-  /// Extracts the 'content' field from the API response JSON.
-  String _extractContent(Map<String, dynamic> resp) {
-    final choices = resp['choices'] as List?;
-    if (choices == null || choices.isEmpty) {
-      throw OpenAIException('No choices in response');
-    }
-    final msg = choices.first['message']?['content'];
-    if (msg is! String) {
-      throw OpenAIException('Invalid content type');
-    }
-    return msg;
   }
 }
 

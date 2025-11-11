@@ -197,7 +197,7 @@ class ProductComparisonService {
         maxTokens: 1500,
       );
 
-      final result = await _aiClient.chatCompletion(options);
+      final result = await _aiClient.chatCompletionText(options);
 
       if (kDebugMode) {
         print('✅ [ProductComparisonService] AI 比較完成，結果長度: ${result.length} 字元');
