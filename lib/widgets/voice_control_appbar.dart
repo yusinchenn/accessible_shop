@@ -90,8 +90,15 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
   @override
   void initState() {
     super.initState();
-    // 使用初始狀態，如果沒有提供則默認為 none
-    _currentState = widget.initialState ?? VoiceFeatureState.none;
+    // 使用初始狀態，如果沒有提供則從服務狀態判斷
+    if (widget.initialState != null) {
+      _currentState = widget.initialState!;
+    } else {
+      // 同步語音控制服務的狀態
+      _currentState = voiceControlService.isEnabled
+          ? VoiceFeatureState.voiceControl
+          : VoiceFeatureState.none;
+    }
 
     // 設置當前 BuildContext 到語音控制服務
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -342,11 +349,10 @@ class _VoiceControlAppBarState extends State<VoiceControlAppBar> {
           children: [
             Text(widget.title, style: widget.titleTextStyle),
             // 顯示小千助理開啟狀態圖示
-            if (_currentState == VoiceFeatureState.voiceAgent) ...[
+            if (_currentState == VoiceFeatureState.voiceControl) ...[
               const SizedBox(width: 8),
               SizedBox(
-                width: 20,
-                height: 20,
+                height: kToolbarHeight, // 圖片高度與 AppBar 同高
                 child: Image.asset(
                   'assets/images/agent_logo.png',
                   fit: BoxFit.contain,

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // 匯入模型
 import '../models/store.dart';
@@ -20,9 +21,11 @@ import '../utils/fuzzy_search_helper.dart';
 
 // 匯入服務
 import 'notification_service.dart';
+import 'test_data_service.dart';
 
 class DatabaseService extends ChangeNotifier {
   late Future<Isar> _isarFuture;
+  static const String _kDatabaseInitializedKey = 'database_initialized';
 
   DatabaseService() {
     _isarFuture = _initIsar();
@@ -31,7 +34,7 @@ class DatabaseService extends ChangeNotifier {
   /// 初始化 Isar（非同步，不阻塞 UI）
   Future<Isar> _initIsar() async {
     final dir = await getApplicationDocumentsDirectory();
-    return await Isar.open([
+    final isar = await Isar.open([
       StoreSchema,
       ProductSchema,
       CartItemSchema,
@@ -46,6 +49,46 @@ class DatabaseService extends ChangeNotifier {
       ConversationSchema,
       ChatMessageSchema,
     ], directory: dir.path);
+
+    // 檢查是否為首次啟動，如果是則自動初始化測試資料
+    await _checkAndInitializeTestData(isar);
+
+    return isar;
+  }
+
+  /// 檢查並在首次啟動時初始化測試資料
+  Future<void> _checkAndInitializeTestData(Isar isar) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isInitialized = prefs.getBool(_kDatabaseInitializedKey) ?? false;
+
+      if (!isInitialized) {
+        if (kDebugMode) {
+          print('📦 [DatabaseService] 偵測到首次啟動，開始自動初始化測試資料...');
+        }
+
+        // 使用 TestDataService 初始化測試資料
+        final testDataService = TestDataService(isar);
+        await testDataService.initializeAllTestData();
+
+        // 標記為已初始化
+        await prefs.setBool(_kDatabaseInitializedKey, true);
+
+        if (kDebugMode) {
+          print('✅ [DatabaseService] 測試資料初始化完成');
+        }
+      } else {
+        if (kDebugMode) {
+          print('ℹ️ [DatabaseService] 資料庫已初始化，跳過測試資料自動載入');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [DatabaseService] 自動初始化測試資料失敗: $e');
+        print('   您可以稍後從開發工具頁面手動初始化');
+      }
+      // 不要拋出錯誤，讓應用程式繼續運行
+    }
   }
 
   // ==================== 商家相關方法 ====================

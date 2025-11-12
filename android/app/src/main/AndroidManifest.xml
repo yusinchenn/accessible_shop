@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 接收啟動完成廣播 (用於排程通知) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android 13+ 精確鬧鐘權限 (用於每日獎勵提醒) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- ===================================================== -->
     <application
         android:label="accessible_shop"

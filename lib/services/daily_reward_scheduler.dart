@@ -44,8 +44,16 @@ class DailyRewardScheduler {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [DailyRewardScheduler] 初始化失敗: $e');
+        // 如果是權限錯誤，提供更友善的提示
+        if (e.toString().contains('exact_alarms_not_permitted')) {
+          print('⚠️ [DailyRewardScheduler] 精確鬧鐘權限未授予，每日提醒功能將無法使用');
+          print('   提示：Android 13+ 需要授予「鬧鐘和提醒」權限');
+        } else {
+          print('❌ [DailyRewardScheduler] 初始化失敗: $e');
+        }
       }
+      // 不要拋出錯誤，讓應用程式繼續運行
+      // 即使每日提醒無法使用，其他功能仍應正常運作
     }
   }
 
