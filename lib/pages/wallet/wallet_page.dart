@@ -136,6 +136,18 @@ class _WalletPageState extends State<WalletPage> {
     }
   }
 
+  /// 播放頁面布局與功能導覽
+  void _speakPageGuide() {
+    if (accessibilityService.shouldUseCustomTTS) {
+      ttsHelper.speak(
+        '我的錢包頁面，包含三個主要區塊：'
+        '第一，錢包餘額卡片，顯示您目前的錢包餘額 ${(_userProfile?.walletBalance ?? 0.0).toStringAsFixed(0)} 元，可用於購物折抵。'
+        '第二，每日登入獎勵區塊，每天登入可領取 1 元獎勵，${_hasClaimedToday ? '今天已經領取過了' : '今天還未領取，點擊領取今日獎勵按鈕即可獲得獎勵'}。'
+        '第三，使用說明區塊，說明錢包的使用方式和注意事項。'
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -149,6 +161,8 @@ class _WalletPageState extends State<WalletPage> {
         appBar: VoiceControlAppBar(
           title: '我的錢包',
           backgroundColor: AppColors.background_2,
+          automaticallyImplyLeading: false, // 移除返回按鈕
+          onTap: _speakPageGuide, // 點擊時播放頁面導覽
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
